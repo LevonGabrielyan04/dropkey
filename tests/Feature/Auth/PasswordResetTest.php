@@ -7,6 +7,8 @@ use Laravel\Fortify\Features;
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::resetPasswords());
+
+    fakeUncompromisedPasswordChecks();
 });
 
 test('reset password link screen can be rendered', function () {
@@ -52,8 +54,8 @@ test('password can be reset with valid token', function () {
         $response = $this->post(route('password.update'), [
             'token' => $notification->token,
             'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ValidPassword-15',
+            'password_confirmation' => 'ValidPassword-15',
         ]);
 
         $response

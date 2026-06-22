@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -44,7 +45,9 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function fakeUncompromisedPasswordChecks(): void
 {
-    // ..
+    Http::fake([
+        'api.pwnedpasswords.com/*' => Http::response(''),
+    ]);
 }

@@ -36,6 +36,8 @@ class SendRequest extends FormRequest
             'viewers' => [
                 'required',
                 'array',
+                'min:1',
+                'max:100',
             ],
             'viewers.*' => [
                 'required',

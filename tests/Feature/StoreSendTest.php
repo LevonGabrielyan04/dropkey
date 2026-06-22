@@ -2,6 +2,19 @@
 
 use App\Models\User;
 
+it('rejects sends without any viewers', function () {
+    $author = User::factory()->create();
+
+    $this->actingAs($author)
+        ->post(route('sends.store'), [
+            'name' => 'My Secret',
+            'message' => 'top secret',
+            'expire_after' => '1 day',
+            'viewers' => [],
+        ])
+        ->assertSessionHasErrors('viewers');
+});
+
 it('rejects viewer emails that are not registered users', function () {
     $author = User::factory()->create();
 

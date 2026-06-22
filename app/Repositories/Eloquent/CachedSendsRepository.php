@@ -135,7 +135,10 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     private function serializeSend(Send $send): array
     {
         $payload = [
-            'attributes' => $send->getAttributes(),
+            'attributes' => array_intersect_key(
+                $send->getAttributes(),
+                array_flip(self::INDEX_COLUMNS),
+            ),
             'relations' => [],
         ];
 
@@ -189,5 +192,5 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     /**
      * @var array<int, string>
      */
-    private const INDEX_COLUMNS = ['id', 'name', 'valid_to', 'public_id'];
+    private const INDEX_COLUMNS = ['id', 'user_id', 'name', 'valid_to', 'public_id'];
 }

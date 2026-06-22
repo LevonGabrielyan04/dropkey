@@ -5,12 +5,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
 
-Route::middleware(['auth', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
     Route::resource('sends', SendController::class)->except(['index']);
 });
 
 Route::get('/dashboard', [SendController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'throttle:60,1', 'verified'])
     ->name('dashboard');
 
 require __DIR__.'/settings.php';

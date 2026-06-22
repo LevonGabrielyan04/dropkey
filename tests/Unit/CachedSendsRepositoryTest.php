@@ -21,7 +21,7 @@ afterEach(function () {
  */
 function indexColumns(): array
 {
-    return ['id', 'name', 'valid_to', 'public_id'];
+    return ['id', 'user_id', 'name', 'valid_to', 'public_id'];
 }
 
 function sendsListCacheKey(string $userId, array $columns): string
@@ -46,7 +46,10 @@ function makeSend(?string $id = null, int $userId = 1, string $name = 'Test Send
 function serializeSend(Send $send): array
 {
     $payload = [
-        'attributes' => $send->getAttributes(),
+        'attributes' => array_intersect_key(
+            $send->getAttributes(),
+            array_flip(indexColumns()),
+        ),
         'relations' => [],
     ];
 
@@ -74,6 +77,37 @@ function makeCachedRepository(
         $cache,
     ];
 }
+
+it('find caches only index columns for send attributes', function () {
+    $send = makeSend();
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->shouldReceive('get')
+        ->once()
+        ->with("send_{$send->id}")
+        ->andReturnNull();
+
+    $innerRepository->shouldReceive('find')
+        ->once()
+        ->with($send->id)
+        ->andReturn($send);
+
+    $cache->shouldReceive('put')
+        ->once()
+        ->with(
+            "send_{$send->id}",
+            Mockery::on(function (array $payload): bool {
+                expect(array_keys($payload['attributes']))->toBe(indexColumns())
+                    ->and($payload['attributes'])->not->toHaveKey('message');
+
+                return true;
+            }),
+            Mockery::type(DateTimeInterface::class)
+        );
+
+    $repository->find($send->id);
+});
 
 it('find returns a hydrated send from cache without querying the inner repository', function () {
     $send = makeSend();

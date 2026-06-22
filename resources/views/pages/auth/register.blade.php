@@ -16,7 +16,7 @@
                 required
                 autofocus
                 autocomplete="name"
-                :placeholder="__('Full name')"
+                :placeholder="__('Display name')"
             />
 
             <!-- Email Address -->

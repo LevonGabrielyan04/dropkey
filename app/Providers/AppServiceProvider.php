@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Interfaces\PreparesSendPivotData;
 use App\Actions\PrepareSendPivotDataAction;
+use App\Models\User;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Eloquent\SendRepository;
 use App\Repositories\Interfaces\SendRepositoryInterface;
@@ -69,14 +70,18 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
-        );
+        Password::defaults(function (): Password {
+            $user = auth()->user();
+
+            if (! $user && request()->filled('email')) {
+                $user = User::query()
+                    ->where('email', request()->input('email'))
+                    ->first();
+            }
+
+            $minLength = $user?->hasEnabledTwoFactorAuthentication() ? 8 : 15;
+
+            return Password::min($minLength)->uncompromised();
+        });
     }
 }
