@@ -1,48 +1,4 @@
-@assets
-@vite('resources/js/passkeys.js')
-@endassets
-
-<div
-    x-data="{
-        supported: false,
-        showForm: false,
-        name: '',
-        loading: false,
-        error: null,
-        updateSupport() {
-            this.supported = Boolean(window.Passkeys?.isSupported());
-        },
-        init() {
-            this.updateSupport();
-
-            window.addEventListener('passkeys:ready', () => this.updateSupport(), { once: true });
-        },
-        async register() {
-            if (!this.name.trim()) return;
-
-            this.loading = true;
-            this.error = null;
-
-            try {
-                await window.Passkeys.register({ name: this.name });
-                this.name = '';
-                this.showForm = false;
-                await $wire.loadPasskeys();
-            } catch (e) {
-                if (e.constructor?.name !== 'UserCancelledError') {
-                    this.error = e.message;
-                }
-            } finally {
-                this.loading = false;
-            }
-        },
-        cancel() {
-            this.showForm = false;
-            this.name = '';
-            this.error = null;
-        },
-    }"
->
+<div x-data="passkeyRegistration">
     <template x-if="!supported">
         <flux:text>{{ __('Passkeys are not supported in this browser.') }}</flux:text>
     </template>
@@ -65,7 +21,7 @@
                 label="{{ __('Passkey name') }}"
                 x-model="name"
                 placeholder="{{ __('e.g., MacBook Pro, iPhone') }}"
-                x-on:keydown.enter.prevent="register()"
+                x-on:keydown.enter.prevent="register"
                 x-ref="passkeyNameInput"
                 x-init="$nextTick(() => $refs.passkeyNameInput?.focus())"
             />
@@ -76,7 +32,7 @@
             <div class="flex gap-2">
                 <flux:button
                     variant="primary"
-                    x-on:click="register()"
+                    x-on:click="register"
                     x-bind:disabled="loading || !name.trim()"
                 >
                     <span x-show="!loading">{{ __('Register passkey') }}</span>
@@ -84,7 +40,7 @@
                 </flux:button>
                 <flux:button
                     variant="ghost"
-                    x-on:click="cancel()"
+                    x-on:click="cancel"
                 >
                     {{ __('Cancel') }}
                 </flux:button>

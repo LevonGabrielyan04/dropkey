@@ -1,16 +1,75 @@
 <?php
 
+use App\Models\Send;
 use App\Models\User;
+use App\Services\Interfaces\SendServiceInterface;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-test('guests are redirected to the login page', function () {
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+uses(RefreshDatabase::class);
+
+it('shows an empty state when the user has no sends', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewIs('dashboard')
+        ->assertViewHas('sends', fn ($sends) => $sends->isEmpty())
+        ->assertSee('No sends yet.')
+        ->assertSee('Create your first send');
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+it('lists sends belonging to the authenticated user', function () {
+    $author = User::factory()->create();
+    $viewer = User::factory()->create();
+    $otherUser = User::factory()->create();
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $this->actingAs($author);
+
+    $send = app(SendServiceInterface::class)->createSend([
+        'name' => 'My Secret',
+        'message' => 'top secret',
+        'expire_after' => '1 day',
+        'viewers' => [$viewer->email],
+    ]);
+
+    Send::forceCreate([
+        'user_id' => $otherUser->id,
+        'message' => 'not mine',
+        'name' => 'Other User Send',
+        'valid_to' => now()->addDay(),
+    ]);
+
+    $this->actingAs($author)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertViewIs('dashboard')
+        ->assertSee('My Secret')
+        ->assertDontSee('Other User Send')
+        ->assertViewHas('sends', fn ($sends) => $sends->count() === 1 && $sends->first()->is($send));
+});
+
+it('shows a success message after creating a send', function () {
+    $author = User::factory()->create();
+    $viewer = User::factory()->create();
+
+    $this->actingAs($author)
+        ->post(route('sends.store'), [
+            'name' => 'My Secret',
+            'message' => 'top secret',
+            'expire_after' => '1 day',
+            'viewers' => [$viewer->email],
+        ])
+        ->assertRedirect(route('dashboard'));
+
+    $this->actingAs($author)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Send created successfully.')
+        ->assertSee('My Secret');
+});
+
+it('redirects unauthenticated users to login', function () {
+    $this->get(route('dashboard'))
+        ->assertRedirect(route('login'));
 });

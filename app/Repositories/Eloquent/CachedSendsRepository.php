@@ -1,0 +1,193 @@
+<?php
+
+namespace App\Repositories\Eloquent;
+
+use App\DTOs\SendData;
+use App\Models\Send;
+use App\Models\User;
+use App\Repositories\Interfaces\SendRepositoryInterface;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Database\Eloquent\Collection;
+
+readonly class CachedSendsRepository implements SendRepositoryInterface
+{
+    private readonly int $cacheTtl;
+
+    public function __construct(
+        private SendRepositoryInterface $repository,
+        private CacheRepository $cache
+    ) {
+        $this->cacheTtl = config('send.cache_ttl');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function find(string $id): ?Send
+    {
+        $cacheKey = "send_{$id}";
+        $cached = $this->cache->get($cacheKey);
+
+        if (is_array($cached)) {
+            return $this->hydrateSend($cached);
+        }
+
+        if ($cached !== null) {
+            $this->cache->forget($cacheKey);
+        }
+
+        /** @var Send $send */
+        $send = $this->repository->find($id);
+
+        if ($send !== null) {
+            $this->cache->put($cacheKey, $this->serializeSend($send), now()->addMinutes($this->cacheTtl));
+        }
+
+        return $send;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findAll(string $userId, array $columns): Collection
+    {
+        $cacheKey = $this->sendsCacheKey($userId, $columns);
+        $cached = $this->cache->get($cacheKey);
+
+        if (is_array($cached)) {
+            return $this->hydrateCollection($cached);
+        }
+
+        if ($cached !== null) {
+            $this->cache->forget($cacheKey);
+        }
+
+        $collection = $this->repository->findAll($userId, $columns);
+
+        $this->cache->put(
+            $cacheKey,
+            $this->serializeCollection($collection),
+            now()->addMinutes($this->cacheTtl)
+        );
+
+        return $collection;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function create(SendData $data, array $pivotData = []): Send
+    {
+        $send = $this->repository->create($data, $pivotData);
+        $this->cache->put("send_{$send->id}", $this->serializeSend($send), now()->addMinutes($this->cacheTtl));
+        $this->forgetUserSends((string) $send->user_id, self::INDEX_COLUMNS);
+
+        return $send;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function update(string $id, SendData $data, array $pivotData = []): Send
+    {
+        $result = $this->repository->update($id, $data, $pivotData);
+        $this->cache->put("send_{$id}", $this->serializeSend($result), now()->addMinutes($this->cacheTtl));
+        $this->forgetUserSends((string) $result->user_id, self::INDEX_COLUMNS);
+
+        return $result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function delete(int $id): bool
+    {
+        $send = $this->find((string) $id);
+        $this->cache->forget("send_{$id}");
+
+        if ($send) {
+            $this->forgetUserSends((string) $send->user_id, self::INDEX_COLUMNS);
+        }
+
+        return $this->repository->delete($id);
+    }
+
+    /**
+     * @param  array<int, string>  $columns
+     */
+    private function sendsCacheKey(string $userId, array $columns): string
+    {
+        return 'sends_'.$userId.'_'.hash('xxh128', json_encode(array_values($columns)));
+    }
+
+    /**
+     * @param  array<int, string>  $columns
+     */
+    private function forgetUserSends(string $userId, array $columns): void
+    {
+        $this->cache->forget("sends_{$userId}");
+        $this->cache->forget($this->sendsCacheKey($userId, $columns));
+    }
+
+    /**
+     * @return array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}
+     */
+    private function serializeSend(Send $send): array
+    {
+        $payload = [
+            'attributes' => $send->getAttributes(),
+            'relations' => [],
+        ];
+
+        foreach ($send->getRelations() as $name => $relation) {
+            if ($relation instanceof Collection) {
+                $payload['relations'][$name] = $relation
+                    ->map(fn ($model) => $model->getAttributes())
+                    ->all();
+            }
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return list<array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>
+     */
+    private function serializeCollection(Collection $collection): array
+    {
+        return $collection
+            ->map(fn (Send $send) => $this->serializeSend($send))
+            ->all();
+    }
+
+    /**
+     * @param  array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}  $payload
+     */
+    private function hydrateSend(array $payload): Send
+    {
+        $send = (new Send)->newFromBuilder($payload['attributes']);
+
+        foreach ($payload['relations'] ?? [] as $name => $items) {
+            if ($name === 'authorizedUsers') {
+                $send->setRelation($name, User::hydrate($items));
+            }
+        }
+
+        return $send;
+    }
+
+    /**
+     * @param  list<array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>  $payload
+     */
+    private function hydrateCollection(array $payload): Collection
+    {
+        return new Collection(
+            array_map(fn (array $item) => $this->hydrateSend($item), $payload)
+        );
+    }
+
+    /**
+     * @var array<int, string>
+     */
+    private const INDEX_COLUMNS = ['id', 'name', 'valid_to', 'public_id'];
+}

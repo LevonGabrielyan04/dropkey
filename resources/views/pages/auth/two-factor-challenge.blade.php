@@ -3,31 +3,8 @@
         <div
             class="relative w-full h-auto"
             x-cloak
-            x-data="{
-                showRecoveryInput: @js($errors->has('recovery_code')),
-                code: '',
-                recovery_code: '',
-                focusOtp() {
-                    this.$nextTick(() => this.$refs.otp?.querySelector('input')?.focus());
-                },
-                init() {
-                    if (! this.showRecoveryInput) {
-                        this.focusOtp();
-                    }
-                },
-                toggleInput() {
-                    this.showRecoveryInput = !this.showRecoveryInput;
-
-                    this.code = '';
-                    this.recovery_code = '';
-
-                    $nextTick(() => {
-                        this.showRecoveryInput
-                            ? this.$refs.recovery_code?.focus()
-                            : this.focusOtp();
-                    });
-                },
-            }"
+            x-data="twoFactorChallenge"
+            data-show-recovery-input="{{ $errors->has('recovery_code') ? 'true' : 'false' }}"
         >
             <div x-show="!showRecoveryInput">
                 <x-auth-header
@@ -91,8 +68,8 @@
                 <div class="mt-5 space-x-0.5 text-sm leading-5 text-center">
                     <span class="opacity-50">{{ __('or you can') }}</span>
                     <div class="inline font-medium underline cursor-pointer opacity-80">
-                        <span x-show="!showRecoveryInput" @click="toggleInput()">{{ __('login using a recovery code') }}</span>
-                        <span x-show="showRecoveryInput" @click="toggleInput()">{{ __('login using an authentication code') }}</span>
+                        <span x-show="!showRecoveryInput" @click="toggleInput">{{ __('login using a recovery code') }}</span>
+                        <span x-show="showRecoveryInput" @click="toggleInput">{{ __('login using an authentication code') }}</span>
                     </div>
                 </div>
             </form>

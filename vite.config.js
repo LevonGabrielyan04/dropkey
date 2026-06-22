@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import {
     defineConfig
 } from 'vite';
@@ -22,6 +23,10 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    test: {
+        environment: 'node',
+        include: ['resources/js/**/*.test.js'],
+    },
     server: {
         cors: true,
         watch: {

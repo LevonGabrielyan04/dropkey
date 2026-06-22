@@ -15,6 +15,9 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="paper-airplane" :href="route('sends.create')" :current="request()->routeIs('sends.*')" wire:navigate>
+                        {{ __('New Send') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
@@ -96,6 +99,6 @@
             </flux:toast.group>
         @endpersist
 
-        @fluxScripts
+        @include('partials.flux-scripts')
     </body>
 </html>
