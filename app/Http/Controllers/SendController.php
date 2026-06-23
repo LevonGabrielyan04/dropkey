@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSendRequest;
 use App\Http\Requests\UpdateSendRequest;
 use App\Models\Send;
-use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
 use App\Services\Interfaces\SendServiceInterface;
@@ -61,14 +60,7 @@ class SendController extends Controller implements HasMiddleware
      */
     public function show(Send $send)
     {
-        $send->setRelation(
-            'authorizedUsers',
-            User::query()
-                ->join('send_user', 'users.id', '=', 'send_user.user_id')
-                ->where('send_user.send_id', $send->getRawOriginal('id'))
-                ->select('users.*')
-                ->get()
-        );
+        $send = $this->sendReadService->findOne($send);
 
         return view('sends.show', compact('send'));
     }
@@ -86,7 +78,7 @@ class SendController extends Controller implements HasMiddleware
      */
     public function update(UpdateSendRequest $request, Send $send)
     {
-        $this->sendService->updateSend($send->id, $request->validated());
+        $this->sendService->updateSend($send->getKey(), $request->validated());
 
         return redirect()->route('dashboard')
             ->with('success', 'Send updated successfully.');
@@ -97,7 +89,7 @@ class SendController extends Controller implements HasMiddleware
      */
     public function destroy(Send $send)
     {
-        $this->sendRepository->delete($send->id);
+        $this->sendRepository->delete($send->getKey());
 
         return redirect()->route('dashboard')
             ->with('success', 'Send deleted successfully.');

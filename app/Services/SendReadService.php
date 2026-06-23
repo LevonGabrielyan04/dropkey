@@ -2,23 +2,30 @@
 
 namespace App\Services;
 
+use App\Models\Send;
+use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
+use App\Support\SendIndexColumns;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SendReadService implements SendReadServiceInterface
 {
-    /**
-     * @var array<int, string>
-     */
-    private const INDEX_COLUMNS = ['id', 'name', 'valid_to', 'public_id'];
-
     public function __construct(protected SendRepositoryInterface $sendRepository) {}
 
     public function findAll(): Collection
     {
         $userId ??= auth()->id();
 
-        return $this->sendRepository->findAll((string) $userId, self::INDEX_COLUMNS);
+        return $this->sendRepository->findAll((string) $userId, SendIndexColumns::COLUMNS);
+    }
+
+    public function findOne(Send $send): Send
+    {
+        return DB::transaction(function () use ($send) {
+            $send->loadMissing('authorizedUsers');
+            return $send;
+        });
     }
 }

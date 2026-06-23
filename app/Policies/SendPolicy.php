@@ -39,6 +39,7 @@ class SendPolicy
 
         return $this->sendResponse(
             $user->authorizedSends()->where('sends.id', BinaryCodec::encode($send->id, 'ulid'))->exists()
+            || $send->user_id === $user->id
         );
     }
 

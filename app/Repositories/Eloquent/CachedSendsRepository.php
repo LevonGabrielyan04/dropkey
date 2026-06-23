@@ -6,6 +6,7 @@ use App\DTOs\SendData;
 use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
+use App\Support\SendIndexColumns;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -80,7 +81,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $send = $this->repository->create($data, $pivotData);
         $this->cache->put("send_{$send->id}", $this->serializeSend($send), now()->addMinutes($this->cacheTtl));
-        $this->forgetUserSends((string) $send->user_id, self::INDEX_COLUMNS);
+        $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
 
         return $send;
     }
@@ -92,7 +93,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $result = $this->repository->update($id, $data, $pivotData);
         $this->cache->put("send_{$id}", $this->serializeSend($result), now()->addMinutes($this->cacheTtl));
-        $this->forgetUserSends((string) $result->user_id, self::INDEX_COLUMNS);
+        $this->forgetUserSends((string) $result->user_id, SendIndexColumns::COLUMNS);
 
         return $result;
     }
@@ -102,11 +103,11 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
      */
     public function delete(int $id): bool
     {
-        $send = $this->find((string) $id);
+        $send = $this->repository->find((string) $id);
         $this->cache->forget("send_{$id}");
 
-        if ($send) {
-            $this->forgetUserSends((string) $send->user_id, self::INDEX_COLUMNS);
+        if ($send !== null) {
+            $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
         }
 
         return $this->repository->delete($id);
@@ -137,7 +138,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $payload = [
             'attributes' => array_intersect_key(
                 $send->getAttributes(),
-                array_flip(self::INDEX_COLUMNS),
+                array_flip(SendIndexColumns::COLUMNS),
             ),
             'relations' => [],
         ];
@@ -188,9 +189,4 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             array_map(fn (array $item) => $this->hydrateSend($item), $payload)
         );
     }
-
-    /**
-     * @var array<int, string>
-     */
-    private const INDEX_COLUMNS = ['id', 'user_id', 'name', 'valid_to', 'public_id'];
 }

@@ -5,6 +5,8 @@ use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Eloquent\SendRepository;
 use App\Repositories\Interfaces\SendRepositoryInterface;
+use App\Services\Interfaces\SendServiceInterface;
+use App\Support\SendIndexColumns;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -111,4 +113,27 @@ it('returns hydrated sends from cache without incomplete class errors', function
     expect($sends)->toHaveCount(1)
         ->and($sends->first())->toBeInstanceOf(Send::class)
         ->and($sends->first()->name)->toBe('Cached Send');
+});
+
+it('invalidates findAll cache after creating a send', function () {
+    $author = User::factory()->create();
+    $columns = SendIndexColumns::COLUMNS;
+    $cacheKey = 'sends_'.$author->id.'_'.hash('xxh128', json_encode(array_values($columns)));
+
+    $repository = app(SendRepositoryInterface::class);
+    Cache::flush();
+
+    $this->actingAs($author);
+
+    $repository->findAll((string) $author->id, $columns);
+
+    expect(Cache::has($cacheKey))->toBeTrue();
+
+    app(SendServiceInterface::class)->createSend([
+        'name' => 'New Send',
+        'message' => 'secret',
+        'expire_after' => '1 day',
+    ]);
+
+    expect(Cache::has($cacheKey))->toBeFalse();
 });

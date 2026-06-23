@@ -5,6 +5,7 @@ use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Interfaces\SendRepositoryInterface;
+use App\Support\SendIndexColumns;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -21,7 +22,7 @@ afterEach(function () {
  */
 function indexColumns(): array
 {
-    return ['id', 'user_id', 'name', 'valid_to', 'public_id'];
+    return SendIndexColumns::COLUMNS;
 }
 
 function sendsListCacheKey(string $userId, array $columns): string
@@ -407,10 +408,10 @@ it('delete invalidates send and user list caches before deleting from the inner 
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
-    $cache->shouldReceive('get')
+    $innerRepository->shouldReceive('find')
         ->once()
-        ->with("send_{$numericId}")
-        ->andReturn(serializeSend($send));
+        ->with((string) $numericId)
+        ->andReturn($send);
 
     $cache->shouldReceive('forget')
         ->once()
@@ -424,8 +425,6 @@ it('delete invalidates send and user list caches before deleting from the inner 
         ->once()
         ->with(sendsListCacheKey($userId, $columns));
 
-    $innerRepository->shouldNotReceive('find');
-
     $innerRepository->shouldReceive('delete')
         ->once()
         ->with($numericId)
@@ -438,11 +437,6 @@ it('delete forgets only the send cache when the send cannot be found', function 
     $numericId = 99;
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
-
-    $cache->shouldReceive('get')
-        ->once()
-        ->with("send_{$numericId}")
-        ->andReturnNull();
 
     $innerRepository->shouldReceive('find')
         ->once()

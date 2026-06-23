@@ -3,6 +3,7 @@
 use App\Models\Send;
 use App\Models\User;
 use App\Services\Interfaces\SendReadServiceInterface;
+use App\Services\Interfaces\SendServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -88,4 +89,24 @@ it('returns an empty collection when the user has no sends', function () {
     $sends = $this->service->findAll();
 
     expect($sends)->toBeEmpty();
+});
+
+it('loads authorized users when finding a single send', function () {
+    $author = User::factory()->create();
+    $viewer = User::factory()->create();
+    $this->actingAs($author);
+
+    $send = app(SendServiceInterface::class)->createSend([
+        'name' => 'Shared Send',
+        'message' => 'secret',
+        'expire_after' => '1 day',
+        'viewers' => [$viewer->email],
+    ]);
+
+    $result = $this->service->findOne($send);
+
+    expect($result->is($send))->toBeTrue()
+        ->and($result->relationLoaded('authorizedUsers'))->toBeTrue()
+        ->and($result->authorizedUsers)->toHaveCount(1)
+        ->and($result->authorizedUsers->first()->email)->toBe($viewer->email);
 });
