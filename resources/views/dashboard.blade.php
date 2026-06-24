@@ -55,9 +55,26 @@
                                         {{ $send->authorizedUsers->pluck('email')->join(', ') ?: __('None') }}
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
-                                        <flux:link :href="route('sends.show', $send)" wire:navigate>
-                                            {{ __('View') }}
-                                        </flux:link>
+                                        <div class="inline-flex items-center justify-end gap-2">
+                                            <flux:link :href="route('sends.show', $send)" wire:navigate>
+                                                {{ __('View') }}
+                                            </flux:link>
+                                            <span
+                                                x-data="copyText"
+                                                data-copy-text="{{ route('sends.show', $send) }}"
+                                                class="inline-flex"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    @click="copy"
+                                                    class="inline-flex cursor-pointer text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                                    title="{{ __('Copy link') }}"
+                                                >
+                                                    <flux:icon.document-duplicate x-show="!copied" variant="outline" class="size-4" />
+                                                    <flux:icon.check x-show="copied" variant="solid" class="size-4 text-green-500" />
+                                                </button>
+                                            </span>
+                                        </div>
 {{--                                        @can('update', $send)--}}
 {{--                                            <span class="mx-2 text-zinc-300 dark:text-zinc-600">|</span>--}}
 {{--                                            <flux:link :href="route('sends.edit', $send)" wire:navigate>--}}

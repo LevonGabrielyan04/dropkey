@@ -178,6 +178,31 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('copyText', () => ({
+        copied: false,
+        text: '',
+
+        init() {
+            this.text = this.$el.dataset.copyText ?? '';
+        },
+
+        async copy() {
+            if (! this.text) {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(this.text);
+                this.copied = true;
+                setTimeout(() => {
+                    this.copied = false;
+                }, 1500);
+            } catch {
+                console.warn('Could not copy to clipboard');
+            }
+        },
+    }));
+
     Alpine.data('setupKeyCopy', () => ({
         copied: false,
         setupKey: '',

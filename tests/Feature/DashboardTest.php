@@ -46,6 +46,7 @@ it('lists sends belonging to the authenticated user', function () {
         ->assertViewIs('dashboard')
         ->assertSee('My Secret')
         ->assertDontSee('Other User Send')
+        ->assertSee(route('sends.show', $send), false)
         ->assertViewHas('sends', fn ($sends) => $sends->count() === 1 && $sends->first()->is($send));
 });
 
