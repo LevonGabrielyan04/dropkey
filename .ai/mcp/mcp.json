@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "laravel-boost": {
+      "command": "C:\\Users\\User\\.config\\herd\\bin\\php.bat",
+      "args": [
+        "artisan",
+        "boost:mcp"
+      ]
+    },
+    "context7": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    }
+  }
+}

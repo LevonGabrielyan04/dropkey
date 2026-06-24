@@ -41,7 +41,7 @@ it('returns all sends created by the given user', function () {
         'valid_to' => now()->addDay(),
     ]);
 
-    $sends = $this->repository->findAll((string) $author->id, ['id', 'name', 'valid_to', 'public_id']);
+    $sends = $this->repository->findAll((string) $author->id, SendIndexColumns::COLUMNS);
 
     expect($sends)->toHaveCount(2)
         ->and($sends->pluck('name')->all())->toBe(['First Send', 'Second Send'])
@@ -51,7 +51,7 @@ it('returns all sends created by the given user', function () {
 it('returns an empty collection when the user has no sends', function () {
     $user = User::factory()->create();
 
-    $sends = $this->repository->findAll((string) $user->id, ['id', 'name', 'valid_to', 'public_id']);
+    $sends = $this->repository->findAll((string) $user->id, SendIndexColumns::COLUMNS);
 
     expect($sends)->toBeEmpty();
 });
@@ -72,7 +72,7 @@ it('throws when updating a send that does not exist', function () {
 
 it('caches findAll results by user id', function () {
     $author = User::factory()->create();
-    $columns = ['id', 'name', 'valid_to', 'public_id'];
+    $columns = SendIndexColumns::COLUMNS;
 
     Send::forceCreate([
         'user_id' => $author->id,
@@ -94,7 +94,7 @@ it('caches findAll results by user id', function () {
 
 it('returns hydrated sends from cache without incomplete class errors', function () {
     $author = User::factory()->create();
-    $columns = ['id', 'name', 'valid_to', 'public_id'];
+    $columns = SendIndexColumns::COLUMNS;
 
     Send::forceCreate([
         'user_id' => $author->id,

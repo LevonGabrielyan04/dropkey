@@ -9,5 +9,5 @@ final class SendIndexColumns
      *
      * @var array<int, string>
      */
-    public const COLUMNS = ['id', 'name', 'valid_to', 'public_id'];
+    public const COLUMNS = ['id', 'user_id', 'name', 'valid_to', 'public_id'];
 }

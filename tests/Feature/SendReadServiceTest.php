@@ -41,7 +41,7 @@ it('returns sends for the authenticated user with index columns', function () {
 
     expect($sends)->toHaveCount(2)
         ->and($sends->pluck('name')->all())->toBe(['First Send', 'Second Send'])
-        ->and($sends->every(fn (Send $send) => array_keys($send->getAttributes()) === ['id', 'name', 'valid_to', 'public_id']))->toBeTrue();
+        ->and($sends->every(fn (Send $send) => array_keys($send->getAttributes()) === ['id', 'user_id', 'name', 'valid_to', 'public_id']))->toBeTrue();
 });
 
 it('does not include the message column in findAll results', function () {

@@ -3,6 +3,8 @@
 use App\Models\User;
 use App\Services\Interfaces\SendServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -77,6 +79,14 @@ it('shows the decryption UI for password-protected sends', function () {
 });
 
 it('forbids viewing a send for an unauthorized user', function () {
+    $denialLog = null;
+
+    Log::listen(function (MessageLogged $event) use (&$denialLog) {
+        if ($event->message === 'Policy authorization denied') {
+            $denialLog = $event;
+        }
+    });
+
     $author = User::factory()->create();
     $stranger = User::factory()->create();
     $this->actingAs($author);
@@ -91,4 +101,11 @@ it('forbids viewing a send for an unauthorized user', function () {
     $this->actingAs($stranger)
         ->get(route('sends.show', $send))
         ->assertNotFound();
+
+    expect($denialLog)->not->toBeNull()
+        ->and($denialLog->level)->toBe('warning')
+        ->and($denialLog->context['method'])->toBe('GET')
+        ->and($denialLog->context['user_id'])->toBe($stranger->id)
+        ->and($denialLog->context['url'])->toBe(route('sends.show', $send))
+        ->and($denialLog->context['ip'])->not->toBeEmpty();
 });

@@ -2,6 +2,7 @@
 
 namespace App\Policies\Traits;
 
+use App\Support\PolicyDenialLogger;
 use Illuminate\Auth\Access\Response;
 
 trait HandlesPolicyResponses
@@ -11,6 +12,10 @@ trait HandlesPolicyResponses
      */
     protected function sendResponse(bool $allow): Response
     {
+        if (! $allow) {
+            app(PolicyDenialLogger::class)->log();
+        }
+
         return $allow ? Response::allow() : Response::denyAsNotFound();
     }
 }
