@@ -11,10 +11,10 @@ class UpdateSendRequest extends SendRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    public function authorize(): bool
-    {
-        return Gate::allows('update', $this->route('send'));
-    }
+    //    public function authorize(): bool
+    //    {
+    //        return Gate::allows('update', $this->route('send'));
+    //    }
 
     /**
      * @return array<string, mixed>

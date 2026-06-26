@@ -46,7 +46,7 @@ class StrictPolicyPreset implements Preset
     {
         $origins = ApplicationOrigins::webAuthn();
 
-        if (config('app.env') === 'local') {
+        if (in_array(config('app.env'), ['local', 'testing'])) {
             $origins = [...$origins, ...$this->localDevAppOrigins(), ...$this->viteDevOrigins()];
         }
 
@@ -60,7 +60,7 @@ class StrictPolicyPreset implements Preset
     {
         $sources = $this->allowedOrigins();
 
-        if (config('app.env') === 'local') {
+        if (in_array(config('app.env'), ['local', 'testing'])) {
             $sources = [...$sources, ...$this->viteDevWebSocketOrigins()];
         }
 
