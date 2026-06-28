@@ -126,6 +126,28 @@ document.addEventListener('alpine:init', () => {
         },
 
         /**
+         * Copy current field values from the live form into the clone.
+         * cloneNode() does not preserve the user's selection on <select> elements.
+         */
+        syncClonedFormValues(originalForm, clonedForm) {
+            for (const field of originalForm.elements) {
+                if (!field.name || field.name === 'viewers[]' || field.type === 'hidden') {
+                    continue;
+                }
+
+                const clonedField = clonedForm.elements.namedItem(field.name);
+
+                if (
+                    clonedField instanceof HTMLInputElement
+                    || clonedField instanceof HTMLTextAreaElement
+                    || clonedField instanceof HTMLSelectElement
+                ) {
+                    clonedField.value = field.value;
+                }
+            }
+        },
+
+        /**
          * Handles form submission. Pending viewer emails are committed first,
          * then the message is optionally encrypted off-thread before the cloned
          * form is submitted without the password field.
@@ -145,9 +167,11 @@ document.addEventListener('alpine:init', () => {
 
             await this.$nextTick();
 
-            const form = event.target.cloneNode(true);
+            const originalForm = event.target;
+            const form = originalForm.cloneNode(true);
             form.noValidate = true;
             this.prepareClonedForm(form);
+            this.syncClonedFormValues(originalForm, form);
 
             const messageInput = form.querySelector('[name="message"]');
             const passwordInput = form.querySelector('[name="password"]');

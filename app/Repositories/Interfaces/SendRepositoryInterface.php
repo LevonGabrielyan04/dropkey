@@ -43,4 +43,16 @@ interface SendRepositoryInterface
      * @return bool
      */
     public function delete(int $id);
+
+    /**
+     * Find sends whose validity has expired.
+     *
+     * @return Collection<int, Send>
+     */
+    public function findExpired(): Collection;
+
+    /**
+     * Permanently delete all sends whose validity has expired.
+     */
+    public function deleteExpired(): int;
 }

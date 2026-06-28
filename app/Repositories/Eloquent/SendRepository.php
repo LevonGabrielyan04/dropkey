@@ -72,4 +72,18 @@ class SendRepository implements SendRepositoryInterface
     {
         return (bool) $this->model->where('id', $id)->delete();
     }
+
+    public function findExpired(): Collection
+    {
+        return $this->model->query()
+            ->where('valid_to', '<', now())
+            ->get(['id', 'user_id']);
+    }
+
+    public function deleteExpired(): int
+    {
+        return $this->model->query()
+            ->where('valid_to', '<', now())
+            ->delete();
+    }
 }

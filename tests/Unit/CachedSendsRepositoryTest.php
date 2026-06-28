@@ -456,6 +456,59 @@ it('delete forgets only the send cache when the send cannot be found', function 
     expect($repository->delete($numericId))->toBeTrue();
 });
 
+it('deleteExpired invalidates send and user list caches before deleting expired sends', function () {
+    $expiredSend = makeSend(name: 'Expired Send');
+    $expiredSend->valid_to = now()->subMinute();
+    $otherExpiredSend = makeSend(name: 'Other Expired Send', userId: 2);
+    $otherExpiredSend->valid_to = now()->subHour();
+    $expired = new Collection([$expiredSend, $otherExpiredSend]);
+    $columns = indexColumns();
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $innerRepository->shouldReceive('findExpired')
+        ->once()
+        ->andReturn($expired);
+
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with("send_{$expiredSend->id}");
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with('sends_1');
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with(sendsListCacheKey('1', $columns));
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with("send_{$otherExpiredSend->id}");
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with('sends_2');
+    $cache->shouldReceive('forget')
+        ->once()
+        ->with(sendsListCacheKey('2', $columns));
+
+    $innerRepository->shouldReceive('deleteExpired')
+        ->once()
+        ->andReturn(2);
+
+    expect($repository->deleteExpired())->toBe(2);
+});
+
+it('deleteExpired returns zero without touching the cache when no sends have expired', function () {
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $innerRepository->shouldReceive('findExpired')
+        ->once()
+        ->andReturn(new Collection);
+
+    $cache->shouldNotReceive('forget');
+    $innerRepository->shouldNotReceive('deleteExpired');
+
+    expect($repository->deleteExpired())->toBe(0);
+});
+
 it('find uses valid_to as cache expiration when it is sooner than the configured ttl', function () {
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60]);

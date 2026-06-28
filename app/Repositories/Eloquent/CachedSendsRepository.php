@@ -114,6 +114,27 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $this->repository->delete($id);
     }
 
+    public function findExpired(): Collection
+    {
+        return $this->repository->findExpired();
+    }
+
+    public function deleteExpired(): int
+    {
+        $expired = $this->repository->findExpired();
+
+        foreach ($expired as $send) {
+            $this->cache->forget("send_{$send->id}");
+            $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
+        }
+
+        if ($expired->isEmpty()) {
+            return 0;
+        }
+
+        return $this->repository->deleteExpired();
+    }
+
     private function cacheExpiresAt(Send $send): \DateTimeInterface
     {
         return Carbon::parse($send->valid_to)->min(now()->addMinutes($this->cacheTtl));
