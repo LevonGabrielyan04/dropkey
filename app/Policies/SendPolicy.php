@@ -29,7 +29,12 @@ class SendPolicy
             return Response::deny();
         }
 
-        $allowed = Send::query()->where('user_id', auth()->id())->count() <= config('send.max_per_user');
+        $activeSendCount = Send::query()
+            ->where('user_id', auth()->id())
+            ->where('valid_to', '>=', now())
+            ->count();
+
+        $allowed = $activeSendCount < config('send.max_per_user');
 
         return $allowed ? Response::allow() :
             Response::deny('You have exceeded the maximum

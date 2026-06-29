@@ -574,3 +574,69 @@ it('findAll uses the earliest valid_to as cache expiration when it is sooner tha
 
     $repository->findAll($userId, $columns);
 });
+
+it('find does not cache sends when valid_to is in the past', function () {
+    Carbon::setTestNow(now());
+    config(['send.cache_ttl' => 60]);
+
+    $send = makeSend();
+    $send->valid_to = now()->subMinute();
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->shouldReceive('get')
+        ->once()
+        ->with("send_{$send->id}")
+        ->andReturnNull();
+
+    $innerRepository->shouldReceive('find')
+        ->once()
+        ->with($send->id)
+        ->andReturn($send);
+
+    $cache->shouldReceive('put')
+        ->once()
+        ->with(
+            "send_{$send->id}",
+            serializeSend($send),
+            Mockery::on(fn (DateTimeInterface $expiresAt): bool => Carbon::parse($expiresAt)->equalTo(now()))
+        );
+
+    $repository->find($send->id);
+});
+
+it('findAll expires list cache immediately when any send valid_to is in the past', function () {
+    Carbon::setTestNow(now());
+    config(['send.cache_ttl' => 60]);
+
+    $expiredSend = makeSend(name: 'Expired Send');
+    $expiredSend->valid_to = now()->subMinute();
+    $activeSend = makeSend(name: 'Active Send', userId: $expiredSend->user_id);
+    $activeSend->valid_to = now()->addDay();
+    $userId = (string) $expiredSend->user_id;
+    $columns = indexColumns();
+    $cacheKey = sendsListCacheKey($userId, $columns);
+    $collection = new Collection([$expiredSend, $activeSend]);
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->shouldReceive('get')
+        ->once()
+        ->with($cacheKey)
+        ->andReturnNull();
+
+    $innerRepository->shouldReceive('findAll')
+        ->once()
+        ->with($userId, $columns)
+        ->andReturn($collection);
+
+    $cache->shouldReceive('put')
+        ->once()
+        ->with(
+            $cacheKey,
+            [serializeSend($expiredSend), serializeSend($activeSend)],
+            Mockery::on(fn (DateTimeInterface $expiresAt): bool => Carbon::parse($expiresAt)->equalTo(now()))
+        );
+
+    $repository->findAll($userId, $columns);
+});

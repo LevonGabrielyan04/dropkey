@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSendRequest;
-use App\Http\Requests\UpdateSendRequest;
 use App\Models\Send;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
@@ -24,7 +23,6 @@ class SendController extends Controller implements HasMiddleware
             new Middleware(['can:create,App\Models\Send'], only: ['create']),
             new Middleware(['throttle:sends-write', 'can:create,App\Models\Send'], only: ['store']),
             new Middleware('can:view,send', only: ['show']),
-            new Middleware(['throttle:sends-write', 'can:update,send'], only: ['edit', 'update']),
             new Middleware('can:forceDelete,send', only: ['destroy']),
         ];
     }
@@ -68,21 +66,21 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Show the form for editing the specified resource.
      */
-//    public function edit(Send $send)
-//    {
-//        return view('sends.edit', compact('send'));
-//    }
+    //    public function edit(Send $send)
+    //    {
+    //        return view('sends.edit', compact('send'));
+    //    }
 
     /**
      * Update the specified resource in storage.
      */
-//    public function update(UpdateSendRequest $request, Send $send)
-//    {
-//        $this->sendService->updateSend($send->getKey(), $request->validated());
-//
-//        return redirect()->route('dashboard')
-//            ->with('success', 'Send updated successfully.');
-//    }
+    //    public function update(UpdateSendRequest $request, Send $send)
+    //    {
+    //        $this->sendService->updateSend($send->getKey(), $request->validated());
+    //
+    //        return redirect()->route('dashboard')
+    //            ->with('success', 'Send updated successfully.');
+    //    }
 
     /**
      * Remove the specified resource from storage.

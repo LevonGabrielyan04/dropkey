@@ -137,7 +137,14 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
 
     private function cacheExpiresAt(Send $send): \DateTimeInterface
     {
-        return Carbon::parse($send->valid_to)->min(now()->addMinutes($this->cacheTtl));
+        $validTo = Carbon::parse($send->valid_to);
+        $ttlLimit = now()->addMinutes($this->cacheTtl);
+
+        if ($validTo->isPast()) {
+            return now();
+        }
+
+        return $validTo->min($ttlLimit);
     }
 
     private function cacheExpiresAtForCollection(Collection $collection): \DateTimeInterface

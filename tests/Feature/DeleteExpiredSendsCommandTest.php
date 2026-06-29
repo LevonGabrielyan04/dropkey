@@ -49,13 +49,6 @@ it('clears cached send lists when expired sends are deleted', function () {
 
     Send::forceCreate([
         'user_id' => $user->id,
-        'message' => 'expired secret',
-        'name' => 'Expired Send',
-        'valid_to' => now()->subMinute(),
-    ]);
-
-    Send::forceCreate([
-        'user_id' => $user->id,
         'message' => 'active secret',
         'name' => 'Active Send',
         'valid_to' => now()->addDay(),
@@ -65,7 +58,14 @@ it('clears cached send lists when expired sends are deleted', function () {
     app(SendReadServiceInterface::class)->findAll();
 
     $cacheKey = 'sends_'.$user->id.'_'.hash('xxh128', json_encode(array_values(SendIndexColumns::COLUMNS)));
-    expect(Cache::get($cacheKey))->toHaveCount(2);
+    expect(Cache::get($cacheKey))->toHaveCount(1);
+
+    Send::forceCreate([
+        'user_id' => $user->id,
+        'message' => 'expired secret',
+        'name' => 'Expired Send',
+        'valid_to' => now()->subMinute(),
+    ]);
 
     app(DeleteExpiredSendsAction::class)->execute();
 
