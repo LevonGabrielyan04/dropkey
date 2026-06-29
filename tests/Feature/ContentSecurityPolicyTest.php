@@ -141,6 +141,22 @@ it('adds the csp nonce to flux appearance inline assets', function () {
         ->toContain('window.Flux.applyAppearance');
 });
 
+it('does not add content security policy headers to pulse pages', function () {
+    config(['app.url' => 'https://example.test']);
+
+    $user = User::factory()->create([
+        'email' => 'levongabrielyan44@gmail.com',
+        'email_verified_at' => now(),
+    ]);
+
+    $response = $this->actingAs($user)->get('/'.trim((string) config('pulse.path', 'pulse'), '/'));
+
+    $response->assertSuccessful();
+
+    expect($response->headers->has('Content-Security-Policy'))->toBeFalse()
+        ->and($response->headers->has('Content-Security-Policy-Report-Only'))->toBeFalse();
+});
+
 it('does not render inline display styles that violate the content security policy', function () {
     config(['app.url' => 'https://example.test']);
 

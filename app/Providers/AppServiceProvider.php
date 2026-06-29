@@ -19,6 +19,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -57,6 +58,11 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('sends-index', function (Request $request) {
             return Limit::perMinute(15)->by($request->user()->id);
+        });
+
+        Gate::define('viewPulse', function (User $user) {
+            return ! is_null($user->email_verified_at)
+                && $user->email === 'levongabrielyan44@gmail.com';
         });
     }
 
