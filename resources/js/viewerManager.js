@@ -1,7 +1,7 @@
 import { encryptViaWorker } from './cryptography/encrypt/encryptViaWorker.js';
 
 /**
- * Alpine component that manages the list of viewer email addresses
+ * Alpine component that manages the list of viewer user names
  * for a Send, handling client-side validation and de-duplication.
  *
  * Registered globally so both the create and edit forms can reuse it
@@ -38,21 +38,19 @@ document.addEventListener('alpine:init', () => {
 
         addViewer() {
             this.error = '';
-            const email = this.newViewer.trim().replace(',', '');
+            const name = this.newViewer.trim().replace(/,/g, '');
 
-            if (!email) {
+            if (!name) {
                 return;
             }
 
-            // Basic email validation regex
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                this.error = 'Please enter a valid email address.';
+            if (name.length > 255) {
+                this.error = 'User name must be 255 characters or fewer.';
                 return;
             }
 
-            if (this.viewers.includes(email)) {
-                this.error = 'This email has already been added.';
+            if (this.viewers.includes(name)) {
+                this.error = 'This user name has already been added.';
                 return;
             }
 
@@ -61,7 +59,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            this.viewers.push(email);
+            this.viewers.push(name);
             this.newViewer = '';
         },
 
@@ -95,7 +93,7 @@ document.addEventListener('alpine:init', () => {
         /**
          * Strip Alpine directives from a cloned form so Livewire's Alpine
          * does not re-initialize it and evaluate x-for loop variables such
-         * as `email` outside their scope.
+         * as loop variables outside their scope.
          */
         prepareClonedForm(form) {
             form.querySelectorAll('template').forEach((template) => template.remove());
@@ -148,7 +146,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         /**
-         * Handles form submission. Pending viewer emails are committed first,
+         * Handles form submission. Pending viewer names are committed first,
          * then the message is optionally encrypted off-thread before the cloned
          * form is submitted without the password field.
          */

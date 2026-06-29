@@ -6,7 +6,10 @@ use Livewire\Livewire;
 test('profile page is displayed', function () {
     $this->actingAs($user = User::factory()->create());
 
-    $this->get(route('profile.edit'))->assertOk();
+    $this->get(route('profile.edit'))
+        ->assertOk()
+        ->assertSee(__('Nickname'), false)
+        ->assertSee(__('Update your nickname and email address'), false);
 });
 
 test('profile information can be updated', function () {
@@ -41,6 +44,39 @@ test('email verification status is unchanged when email address is unchanged', f
     $response->assertHasNoErrors();
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
+});
+
+test('profile update rejects duplicate nicknames', function () {
+    User::factory()->create(['name' => 'Taken Nickname']);
+
+    $user = User::factory()->create(['name' => 'Original Nickname']);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')
+        ->set('name', 'Taken Nickname')
+        ->set('email', $user->email)
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['name']);
+
+    expect($user->refresh()->name)->toEqual('Original Nickname');
+});
+
+test('profile update allows keeping the same nickname', function () {
+    $user = User::factory()->create(['name' => 'My Nickname']);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')
+        ->set('name', 'My Nickname')
+        ->set('email', 'updated@example.com')
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    $user->refresh();
+
+    expect($user->name)->toEqual('My Nickname');
+    expect($user->email)->toEqual('updated@example.com');
 });
 
 test('user can delete their account', function () {

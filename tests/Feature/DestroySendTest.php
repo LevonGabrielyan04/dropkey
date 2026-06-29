@@ -21,7 +21,7 @@ it('allows the owner to delete a send', function () {
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $this->actingAs($author)
@@ -42,7 +42,7 @@ it('forbids deleting a send for a non-owner', function () {
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $this->actingAs($stranger)
@@ -61,7 +61,7 @@ it('shows a delete button on the dashboard for sends the user owns', function ()
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $this->actingAs($author)

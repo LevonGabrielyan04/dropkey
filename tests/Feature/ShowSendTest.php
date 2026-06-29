@@ -21,7 +21,7 @@ it('shows a send resolved by its public id to an authorized viewer', function ()
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $minLength = config('send.password.min_length');
@@ -34,7 +34,7 @@ it('shows a send resolved by its public id to an authorized viewer', function ()
         ->assertSee('My Secret')
         ->assertSee($send->public_id)
         ->assertSee('top secret')
-        ->assertSee($viewer->email)
+        ->assertSee($viewer->name)
         ->assertSee('x-data="sendDetailsManager"', false)
         ->assertSee('data-raw-message=', false)
         ->assertSee('data-min-password-length="'.$minLength.'"', false)
@@ -58,7 +58,7 @@ it('shows the decryption UI for password-protected sends', function () {
         'name' => 'Locked Send',
         'message' => $encryptedMessage,
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $minLength = config('send.password.min_length');
@@ -67,7 +67,7 @@ it('shows the decryption UI for password-protected sends', function () {
         ->get(route('sends.show', $send))
         ->assertOk()
         ->assertSee('Locked Send')
-        ->assertSee($viewer->email)
+        ->assertSee($viewer->name)
         ->assertSee('This message is password protected', false)
         ->assertSee('Decryption in progress', false)
         ->assertSee('x-data="sendDetailsManager"', false)

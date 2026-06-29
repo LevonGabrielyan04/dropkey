@@ -7,16 +7,16 @@
 
         <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
             @csrf
-            <!-- Name -->
+            <!-- Nickname -->
             <flux:input
                 name="name"
-                :label="__('Name')"
+                :label="__('Nickname')"
                 :value="old('name')"
                 type="text"
                 required
                 autofocus
                 autocomplete="name"
-                :placeholder="__('Display name')"
+                :placeholder="__('Nickname')"
             />
 
             <!-- Email Address -->

@@ -24,7 +24,7 @@
         <div>
             <dt class="text-sm font-medium text-zinc-500">{{ __('Viewers') }}</dt>
             <dd class="mt-1 text-sm">
-                {{ $send->authorizedUsers->pluck('email')->join(', ') ?: __('None') }}
+                {{ $send->authorizedUsers->pluck('name')->join(', ') ?: __('None') }}
             </dd>
         </div>
 

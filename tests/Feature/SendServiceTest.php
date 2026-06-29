@@ -20,7 +20,7 @@ it('creates a send from the given data and records its viewers', function () {
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     expect($send)->toBeInstanceOf(Send::class)

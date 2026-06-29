@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Actions\Interfaces\PreparesSendPivotData;
 use App\DTOs\SendData;
 use App\Enums\TimePeriod;
-use App\Exceptions\SendLimitExceededException;
 use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
@@ -48,13 +47,13 @@ class SendService implements SendServiceInterface
         return $period->toCarbon();
     }
 
-    private function resolveViewerIds(array $emails): Collection
+    private function resolveViewerIds(array $names): Collection
     {
-        if (empty($emails)) {
+        if (empty($names)) {
             return collect();
         }
 
-        return User::whereIn('email', $emails)->pluck('id');
+        return User::whereIn('name', $names)->pluck('id');
     }
 
     /**

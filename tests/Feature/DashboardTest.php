@@ -30,7 +30,7 @@ it('lists sends belonging to the authenticated user', function () {
         'name' => 'My Secret',
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     Send::forceCreate([
@@ -59,7 +59,7 @@ it('shows a success message after creating a send', function () {
             'name' => 'My Secret',
             'message' => 'top secret',
             'expire_after' => '1 day',
-            'viewers' => [$viewer->email],
+            'viewers' => [$viewer->name],
         ])
         ->assertRedirect(route('dashboard'));
 

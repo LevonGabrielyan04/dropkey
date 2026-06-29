@@ -52,7 +52,7 @@
                                         {{ \Illuminate\Support\Carbon::parse($send->valid_to)->timezone(config('app.timezone'))->format('M j, Y g:i A') }}
                                     </td>
                                     <td class="px-4 py-4 text-sm text-zinc-600 dark:text-zinc-400">
-                                        {{ $send->authorizedUsers->pluck('email')->join(', ') ?: __('None') }}
+                                        {{ $send->authorizedUsers->pluck('name')->join(', ') ?: __('None') }}
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-4 text-right text-sm">
                                         <div class="inline-flex items-center justify-end gap-2">

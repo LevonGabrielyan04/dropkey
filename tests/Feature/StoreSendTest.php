@@ -15,7 +15,7 @@ it('rejects sends without any viewers', function () {
         ->assertSessionHasErrors('viewers');
 });
 
-it('rejects viewer emails that are not registered users', function () {
+it('rejects viewer names that are not registered users', function () {
     $author = User::factory()->create();
 
     $this->actingAs($author)
@@ -23,10 +23,10 @@ it('rejects viewer emails that are not registered users', function () {
             'name' => 'My Secret',
             'message' => 'top secret',
             'expire_after' => '1 day',
-            'viewers' => ['unknown@example.com'],
+            'viewers' => ['Unknown User'],
         ])
         ->assertSessionHasErrors([
-            'viewers.0' => 'Email address number 1 is not found in our registered users table.',
+            'viewers.0' => 'User name "Unknown User" is not found in our registered users table.',
         ]);
 });
 
@@ -40,12 +40,12 @@ it('rejects messages that exceed the configured max length', function () {
             'name' => 'My Secret',
             'message' => str_repeat('a', $maxLength + 1),
             'expire_after' => '1 day',
-            'viewers' => [$viewer->email],
+            'viewers' => [$viewer->name],
         ])
         ->assertSessionHasErrors('message');
 });
 
-it('accepts viewer emails that belong to registered users', function () {
+it('accepts viewer names that belong to registered users', function () {
     $author = User::factory()->create();
     $viewer = User::factory()->create();
 
@@ -54,7 +54,7 @@ it('accepts viewer emails that belong to registered users', function () {
             'name' => 'My Secret',
             'message' => 'top secret',
             'expire_after' => '1 day',
-            'viewers' => [$viewer->email],
+            'viewers' => [$viewer->name],
         ])
         ->assertRedirect(route('dashboard'))
         ->assertSessionHasNoErrors();

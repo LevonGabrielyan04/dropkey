@@ -100,7 +100,7 @@ it('loads authorized users when finding a single send', function () {
         'name' => 'Shared Send',
         'message' => 'secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ]);
 
     $result = $this->service->findOne($send);

@@ -41,9 +41,10 @@ class SendRequest extends FormRequest
             ],
             'viewers.*' => [
                 'required',
-                'email',
+                'string',
+                'max:255',
                 'distinct',
-                Rule::exists(User::class, 'email'),
+                Rule::exists(User::class, 'name'),
             ],
             'message' => [
                 'required',
@@ -63,7 +64,7 @@ class SendRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'viewers.*.exists' => 'Email address number :position is not found in our registered users table.',
+            'viewers.*.exists' => 'User name ":input" is not found in our registered users table.',
         ];
     }
 }

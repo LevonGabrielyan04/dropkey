@@ -7,7 +7,7 @@
                 action="{{ route('sends.update', $send) }}"
                 method="POST"
                 x-data="viewerManager"
-                data-initial-viewers='@json(old('viewers', $send->authorizedUsers->pluck('email')->toArray()))'
+                data-initial-viewers='@json(old('viewers', $send->authorizedUsers->pluck('name')->toArray()))'
                 data-min-password-length="{{ config('send.password.min_length') }}"
                 @submit.prevent="submitForm"
             >
@@ -38,26 +38,25 @@
                     </div>
 
                     <input
-                        type="email"
+                        type="text"
                         id="viewer"
                         :value="newViewer"
                         @input="setNewViewer"
                         @keydown.enter.prevent="addViewer"
                         @keydown.comma.prevent="addViewer"
-                        @keydown.space.prevent="addViewer"
-                        placeholder="{{ __('Enter an email address and press Enter') }}"
+                        placeholder="{{ __('Enter a user name and press Enter') }}"
                         class="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 @error('viewers') border-red-500 @enderror"
                         :required="isViewerInputRequired"
                     />
 
-                    <template x-for="(email, index) in viewers" :key="index">
-                        <input type="hidden" name="viewers[]" :value="email" />
+                    <template x-for="(name, index) in viewers" :key="index">
+                        <input type="hidden" name="viewers[]" :value="name" />
                     </template>
 
                     <div class="mt-3 flex flex-wrap gap-2" x-show="hasViewers" x-cloak>
-                        <template x-for="(email, index) in viewers" :key="index">
+                        <template x-for="(name, index) in viewers" :key="index">
                             <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
-                                <span x-text="email"></span>
+                                <span x-text="name"></span>
                                 <button type="button" @click="removeViewerFromEvent" :data-index="index" class="ml-1 hover:text-red-600 focus:outline-none">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-4">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

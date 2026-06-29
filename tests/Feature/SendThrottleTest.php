@@ -14,7 +14,7 @@ function validSendPayload(User $viewer, string $name): array
         'name' => $name,
         'message' => 'top secret',
         'expire_after' => '1 day',
-        'viewers' => [$viewer->email],
+        'viewers' => [$viewer->name],
     ];
 }
 
