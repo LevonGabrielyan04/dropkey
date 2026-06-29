@@ -5,7 +5,7 @@ DropKey is a end-to-end encrypted application for sharing passwords and other se
 ## How it works
 
 1. **Create a Send** — Give it a name, add up to 100 viewer email addresses, write the secret, and choose when it expires (1 hour to 30 days).
-2. **Optional password protection** — If you set a password, the message is encrypted client-side with **AES-256-GCM**. The key is derived with **Argon2id** in a Web Worker. The password is stripped from the form before submission and is never sent to the server.
+2. **Password protection** — If you set a password, the message is encrypted client-side with **AES-256-GCM**. The key is derived with **Argon2id** in a Web Worker. The password is stripped from the form before submission and is never sent to the server.
 3. **Share with viewers** — Only registered users whose emails you listed can open the Send. Owners can also view their own Sends.
 4. **Decrypt in the browser** — Authorized viewers enter the shared password locally. Decryption runs off the main thread in a Web Worker.
 5. **Automatic expiry** — Sends are permanently deleted after their expiry time. A scheduled task removes expired records every 30 minutes.

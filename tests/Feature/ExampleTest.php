@@ -1,7 +1,11 @@
 <?php
 
-test('redirects to login', function () {
+test('landing page can be rendered', function () {
     $response = $this->get(route('home'));
 
-    $response->assertRedirect(route('login'));
+    $response
+        ->assertSuccessful()
+        ->assertSee('Share passwords.', false)
+        ->assertSee('Zero-knowledge secret sharing', false)
+        ->assertSee('Frequently asked questions', false);
 });

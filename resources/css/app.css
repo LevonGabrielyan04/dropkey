@@ -81,6 +81,76 @@ select:focus[data-flux-control] {
     }
 }
 
+/* Landing page */
+@layer base {
+    :root {
+        --landing-dominant: oklch(0.16 0.02 265);
+        --landing-dominant-foreground: oklch(0.97 0.005 265);
+        --landing-neutral: oklch(0.55 0.02 265);
+        --landing-surface: oklch(0.22 0.025 265);
+        --landing-surface-elevated: oklch(0.26 0.03 265);
+        --landing-accent: oklch(0.72 0.16 165);
+        --landing-accent-foreground: oklch(0.15 0.03 165);
+        --landing-border: oklch(0.35 0.025 265 / 0.5);
+    }
+}
+
+@layer utilities {
+    .landing-gradient {
+        background:
+            radial-gradient(ellipse 80% 60% at 50% -20%, oklch(0.35 0.08 165 / 0.25), transparent),
+            radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.3 0.06 265 / 0.2), transparent),
+            var(--landing-dominant);
+    }
+
+    .landing-grid-pattern {
+        background-image:
+            linear-gradient(oklch(1 0 0 / 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, oklch(1 0 0 / 0.03) 1px, transparent 1px);
+        background-size: 48px 48px;
+    }
+
+    .landing-fade-in {
+        animation: landing-fade-in 0.7s ease-out both;
+    }
+
+    .landing-fade-in-delay-1 {
+        animation-delay: 0.15s;
+    }
+
+    .landing-fade-in-delay-2 {
+        animation-delay: 0.3s;
+    }
+
+    .landing-fade-in-delay-3 {
+        animation-delay: 0.45s;
+    }
+
+    .landing-fade-in-delay-4 {
+        animation-delay: 0.6s;
+    }
+
+    .landing-cta-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-emerald-500 text-emerald-950 hover:scale-105 hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25;
+    }
+
+    .landing-cta-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 border border-white/15 bg-white/5 text-white hover:scale-105 hover:border-white/25 hover:bg-white/10;
+    }
+}
+
+@keyframes landing-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
