@@ -4,8 +4,16 @@ namespace App\Models\Relations;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\BinaryCodec;
 
+/**
+ * @template TRelatedModel of Model
+ * @template TDeclaringModel of Model
+ * @template TPivotModel of Pivot = Pivot
+ *
+ * @extends BelongsToMany<TRelatedModel, TDeclaringModel, TPivotModel>
+ */
 class BelongsToManyWithBinaryUlidParentKey extends BelongsToMany
 {
     /**

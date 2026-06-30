@@ -78,8 +78,14 @@ class FortifyServiceProvider extends ServiceProvider
                 $authMiddleware = config('fortify.auth_middleware', 'auth');
 
                 $action = $route->getAction();
-                $action['middleware'] = collect($action['middleware'] ?? [])
-                    ->reject(fn (string $middleware): bool => str_starts_with($middleware, $authMiddleware))
+                $middleware = $action['middleware'] ?? [];
+
+                if (! is_array($middleware)) {
+                    $middleware = [$middleware];
+                }
+
+                $action['middleware'] = collect($middleware)
+                    ->reject(fn (mixed $middleware): bool => is_string($middleware) && str_starts_with($middleware, $authMiddleware))
                     ->values()
                     ->all();
                 $action['uses'] = VerifyEmailController::class.'@__invoke';

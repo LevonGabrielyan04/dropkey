@@ -4,6 +4,7 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 
 class EncryptedMessage implements ValidationRule
 {
@@ -12,7 +13,7 @@ class EncryptedMessage implements ValidationRule
     private const IV_BYTES = 12;
 
     /**
-     * @param  Closure(string): void  $fail
+     * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

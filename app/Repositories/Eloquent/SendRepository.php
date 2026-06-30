@@ -21,6 +21,9 @@ class SendRepository implements SendRepositoryInterface
             ->first();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function findAll(string $userId, array $columns): Collection
     {
         return $this->model
@@ -85,6 +88,9 @@ class SendRepository implements SendRepositoryInterface
         return (bool) $record->delete();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function findExpired(): Collection
     {
         return $this->model->query()
