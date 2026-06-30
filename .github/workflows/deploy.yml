@@ -1,0 +1,108 @@
+# Build the Docker image, push to GHCR, and deploy to the production server over SSH.
+#
+# Triggers after the "tests" workflow succeeds on main, or manually via workflow_dispatch.
+#
+# Required GitHub repository secrets:
+#   DEPLOY_HOST       — server hostname or IP
+#   DEPLOY_USER       — SSH user on the server (e.g. deploy)
+#   DEPLOY_SSH_KEY    — private SSH key (PEM) authorized on the server
+#   DEPLOY_PATH       — absolute path to the repo on the server (e.g. /opt/passshare)
+#   FLUX_USERNAME     — Livewire Flux license (build-time, same as tests workflow)
+#   FLUX_LICENSE_KEY  — Livewire Flux license (build-time)
+#
+# Server .env must include GHCR_TOKEN (PAT with read:packages) for pulling images.
+#
+# One-time server setup: see docker/bin/deploy.sh header comments.
+
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [tests]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set image name
+        id: image
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ steps.sha.outputs.value }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:${{ steps.sha.outputs.value }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          secrets: |
+            flux_username=${{ secrets.FLUX_USERNAME }}
+            flux_license_key=${{ secrets.FLUX_LICENSE_KEY }}
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy on server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          APP_IMAGE: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:${{ steps.sha.outputs.value }}
+        run: |
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && \
+             APP_IMAGE='${APP_IMAGE}' \
+             GHCR_USERNAME='${{ github.actor }}' \
+             ./docker/bin/deploy.sh --tunnel"

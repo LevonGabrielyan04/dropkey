@@ -179,6 +179,31 @@ FLUX_LICENSE_KEY=...
 
 ```
 
+### Automated deployment (GitHub Actions)
+
+Pushes to `main` run tests first; when they pass, the **deploy** workflow builds the Docker image, pushes it to [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry), and restarts the stack on your server over SSH.
+
+**One-time server setup**
+
+1. Install [Docker Engine](https://docs.docker.com/engine/install/) and the Compose plugin.
+2. Clone the repo (e.g. `/opt/passshare`), then `cp .env.docker.example .env` and configure secrets.
+3. Create a [fine-grained PAT](https://github.com/settings/tokens) with **read:packages** and set `GHCR_TOKEN` in `.env`.
+4. Add the deploy user's SSH public key (matching `DEPLOY_SSH_KEY` in GitHub).
+
+**GitHub repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Purpose |
+| --- | --- |
+| `DEPLOY_HOST` | Server hostname or IP |
+| `DEPLOY_USER` | SSH user |
+| `DEPLOY_SSH_KEY` | Private SSH key (PEM) |
+| `DEPLOY_PATH` | Repo path on the server (e.g. `/opt/passshare`) |
+| `FLUX_USERNAME` / `FLUX_LICENSE_KEY` | Flux license (build-time; same as CI) |
+
+Create a **production** environment in GitHub (optional) for deployment approval gates.
+
+Manual deploy: Actions → **deploy** → **Run workflow**.
+
 ---
 
 ## Testing
