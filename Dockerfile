@@ -23,7 +23,7 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && apk del --purge $PHPIZE_DEPS \
     && rm -rf /tmp/pear /var/cache/apk/*
@@ -86,7 +86,7 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && addgroup -g "${GID}" -S app \
     && adduser -u "${UID}" -S -G app app \
