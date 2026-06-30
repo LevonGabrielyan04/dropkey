@@ -187,7 +187,7 @@ Pushes to `main` run tests first; when they pass, the **deploy** workflow builds
 
 1. Install [Docker Engine](https://docs.docker.com/engine/install/) and the Compose plugin.
 2. Clone the repo (e.g. `/opt/passshare`), then `cp .env.docker.example .env` and configure secrets.
-3. Create a [fine-grained PAT](https://github.com/settings/tokens) with **read:packages** and set `GHCR_TOKEN` in `.env`.
+3. Set `GHCR_USERNAME` (your GitHub account) and create a [fine-grained PAT](https://github.com/settings/tokens) with **read:packages** as `GHCR_TOKEN` in `.env`.
 4. Add the deploy user's SSH public key (matching `DEPLOY_SSH_KEY` in GitHub).
 
 **GitHub repository secrets** (Settings → Secrets and variables → Actions):

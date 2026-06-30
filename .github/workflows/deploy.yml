@@ -10,7 +10,7 @@
 #   FLUX_USERNAME     — Livewire Flux license (build-time, same as tests workflow)
 #   FLUX_LICENSE_KEY  — Livewire Flux license (build-time)
 #
-# Server .env must include GHCR_TOKEN (PAT with read:packages) for pulling images.
+# Server .env must include GHCR_USERNAME and GHCR_TOKEN (PAT with read:packages) for pulling images.
 #
 # One-time server setup: see docker/bin/deploy.sh header comments.
 

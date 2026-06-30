@@ -7,8 +7,8 @@
 #   2. Clone this repo to your deploy path (e.g. /opt/passshare).
 #   3. cp .env.docker.example .env and fill in production secrets.
 #   4. Add the deploy user's SSH public key for GitHub Actions.
-#   5. Create a GitHub PAT with read:packages and set GHCR_TOKEN in the server .env
-#      (or pass it from the workflow on each deploy).
+#   5. Set GHCR_USERNAME and a GitHub PAT with read:packages (GHCR_TOKEN) in the server .env
+#      (CI may override GHCR_USERNAME via GITHUB_ACTOR on each deploy).
 #
 # Usage:
 #   APP_IMAGE=ghcr.io/owner/passshare:sha ./docker/bin/deploy.sh [--tunnel]
@@ -42,6 +42,10 @@ if [[ ! -f .env ]]; then
 fi
 
 GHCR_USERNAME="${GHCR_USERNAME:-${GITHUB_ACTOR:-}}"
+
+if [[ -z "$GHCR_USERNAME" ]] && grep -qE '^GHCR_USERNAME=.+$' .env 2>/dev/null; then
+    GHCR_USERNAME="$(grep -E '^GHCR_USERNAME=' .env | head -1 | cut -d= -f2- | tr -d '"')"
+fi
 
 if [[ -z "${GHCR_TOKEN:-}" ]] && grep -qE '^GHCR_TOKEN=.+$' .env 2>/dev/null; then
     GHCR_TOKEN="$(grep -E '^GHCR_TOKEN=' .env | head -1 | cut -d= -f2- | tr -d '"')"
