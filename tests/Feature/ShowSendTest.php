@@ -78,6 +78,42 @@ it('shows the decryption UI for password-protected sends', function () {
         ->assertDontSee('sendDetailsManager(', false);
 });
 
+it('redirects unauthenticated users to login', function () {
+    $author = User::factory()->create();
+    $viewer = User::factory()->create();
+    $this->actingAs($author);
+
+    $send = $this->service->createSend([
+        'name' => 'My Secret',
+        'message' => 'top secret',
+        'expire_after' => '1 day',
+        'viewers' => [$viewer->name],
+    ]);
+
+    auth()->logout();
+
+    $this->get(route('sends.show', $send))
+        ->assertRedirect(route('login'));
+});
+
+it('forbids viewing a send for a user who is not in the viewers list', function () {
+    $author = User::factory()->create();
+    $viewer = User::factory()->create();
+    $stranger = User::factory()->create();
+    $this->actingAs($author);
+
+    $send = $this->service->createSend([
+        'name' => 'My Secret',
+        'message' => 'top secret',
+        'expire_after' => '1 day',
+        'viewers' => [$viewer->name],
+    ]);
+
+    $this->actingAs($stranger)
+        ->get(route('sends.show', $send))
+        ->assertNotFound();
+});
+
 it('forbids viewing a send for an unauthorized user', function () {
     $denialLog = null;
 
