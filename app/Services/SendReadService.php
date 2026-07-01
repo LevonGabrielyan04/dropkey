@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Send;
-use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
 use App\Support\SendIndexColumns;
@@ -14,9 +13,12 @@ class SendReadService implements SendReadServiceInterface
 {
     public function __construct(protected SendRepositoryInterface $sendRepository) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function findAll(): Collection
     {
-        $userId ??= auth()->id();
+        $userId = auth()->id();
 
         return $this->sendRepository->findAll((string) $userId, SendIndexColumns::COLUMNS);
     }
@@ -25,6 +27,7 @@ class SendReadService implements SendReadServiceInterface
     {
         return DB::transaction(function () use ($send) {
             $send->loadMissing('authorizedUsers');
+
             return $send;
         });
     }

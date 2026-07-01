@@ -53,7 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /**
      * The sends this user is authorized to view.
      *
-     * @return BelongsToMany<Send, $this>
+     * @return BelongsToMany<Send, $this, SendUser, 'pivot'>
      */
     public function authorizedSends(): BelongsToMany
     {

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Pinned hardened base images (Alpine 3.24 / LTS patch releases).
-ARG NODE_VERSION=22.18.0-alpine3.21
+ARG NODE_VERSION=24.18.0-alpine3.24
 ARG PHP_VERSION=8.4.22-fpm-alpine3.24
 ARG COMPOSER_VERSION=2.8.11
 
@@ -23,7 +23,7 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && apk del --purge $PHPIZE_DEPS \
     && rm -rf /tmp/pear /var/cache/apk/*
@@ -86,7 +86,7 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis \
+    && pecl install redis-6.2.0 \
     && docker-php-ext-enable redis \
     && addgroup -g "${GID}" -S app \
     && adduser -u "${UID}" -S -G app app \

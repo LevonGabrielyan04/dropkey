@@ -12,7 +12,7 @@ class AddCspHeaders extends SpatieAddCspHeaders
         Request $request,
         Closure $next,
         ?string $customPreset = null
-    ) {
+    ): mixed {
         if (DisablesCspForPulse::matches($request)) {
             return $next($request);
         }

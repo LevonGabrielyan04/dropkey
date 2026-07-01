@@ -13,7 +13,9 @@ enum TimePeriod: string
     case THIRTY_DAYS = '30 days';
 
     /**
-     * Get all values as an array
+     * Get all values as an array.
+     *
+     * @return array<int, string>
      */
     public static function values(): array
     {

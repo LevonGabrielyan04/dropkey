@@ -5,19 +5,19 @@ namespace App\Repositories\Interfaces;
 use App\DTOs\SendData;
 use App\Models\Send;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 
 interface SendRepositoryInterface
 {
     /**
      * Find a specific record by its ID.
-     *
-     * @return Model|null
      */
-    public function find(string $id);
+    public function find(string $id): ?Send;
 
     /**
      * Find all records created by the given user.
+     *
+     * @param  array<int, string>  $columns
+     * @return Collection<int, Send>
      */
     public function findAll(string $userId, array $columns): Collection;
 
@@ -25,9 +25,8 @@ interface SendRepositoryInterface
      * Create a new record.
      *
      * @param  array<int, array{send_id: string, user_id: int}>  $pivotData
-     * @return Model
      */
-    public function create(SendData $data, array $pivotData = []);
+    public function create(SendData $data, array $pivotData = []): Send;
 
     /**
      * Update an existing record by its ID.

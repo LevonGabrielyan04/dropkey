@@ -7,8 +7,10 @@ use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Support\SendIndexColumns;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 readonly class CachedSendsRepository implements SendRepositoryInterface
@@ -30,7 +32,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = "send_{$id}";
         $cached = $this->cache->get($cacheKey);
 
-        if (is_array($cached)) {
+        if ($this->isSerializedSendPayload($cached)) {
             return $this->hydrateSend($cached);
         }
 
@@ -38,7 +40,6 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             $this->cache->forget($cacheKey);
         }
 
-        /** @var Send $send */
         $send = $this->repository->find($id);
 
         if ($send !== null) {
@@ -56,7 +57,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = $this->sendsCacheKey($userId, $columns);
         $cached = $this->cache->get($cacheKey);
 
-        if (is_array($cached)) {
+        if ($this->isSerializedCollectionPayload($cached)) {
             return $this->hydrateCollection($cached);
         }
 
@@ -114,6 +115,9 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $this->repository->delete($id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function findExpired(): Collection
     {
         return $this->repository->findExpired();
@@ -135,7 +139,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $this->repository->deleteExpired();
     }
 
-    private function cacheExpiresAt(Send $send): \DateTimeInterface
+    private function cacheExpiresAt(Send $send): CarbonInterface
     {
         $validTo = Carbon::parse($send->valid_to);
         $ttlLimit = now()->addMinutes($this->cacheTtl);
@@ -147,7 +151,10 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $validTo->min($ttlLimit);
     }
 
-    private function cacheExpiresAtForCollection(Collection $collection): \DateTimeInterface
+    /**
+     * @param  Collection<int, Send>  $collection
+     */
+    private function cacheExpiresAtForCollection(Collection $collection): CarbonInterface
     {
         $expiresAt = now()->addMinutes($this->cacheTtl);
 
@@ -163,7 +170,13 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
      */
     private function sendsCacheKey(string $userId, array $columns): string
     {
-        return 'sends_'.$userId.'_'.hash('xxh128', json_encode(array_values($columns)));
+        $encodedColumns = json_encode(array_values($columns));
+
+        if ($encodedColumns === false) {
+            throw new \RuntimeException('Unable to encode columns for cache key.');
+        }
+
+        return 'sends_'.$userId.'_'.hash('xxh128', $encodedColumns);
     }
 
     /**
@@ -180,27 +193,40 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
      */
     private function serializeSend(Send $send): array
     {
-        $payload = [
+        return [
             'attributes' => array_intersect_key(
                 $send->getAttributes(),
                 array_flip(SendIndexColumns::COLUMNS),
             ),
-            'relations' => [],
+            'relations' => $this->serializeRelations($send),
         ];
-
-        foreach ($send->getRelations() as $name => $relation) {
-            if ($relation instanceof Collection) {
-                $payload['relations'][$name] = $relation
-                    ->map(fn ($model) => $model->getAttributes())
-                    ->all();
-            }
-        }
-
-        return $payload;
     }
 
     /**
-     * @return list<array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function serializeRelations(Send $send): array
+    {
+        $relations = [];
+
+        foreach ($send->getRelations() as $name => $relation) {
+            if (! is_string($name) || ! $relation instanceof Collection) {
+                continue;
+            }
+
+            $relations[$name] = array_values(
+                $relation
+                    ->map(fn (Model $model): array => $model->getAttributes())
+                    ->all()
+            );
+        }
+
+        return $relations;
+    }
+
+    /**
+     * @param  Collection<int, Send>  $collection
+     * @return array<int, array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>
      */
     private function serializeCollection(Collection $collection): array
     {
@@ -216,7 +242,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $send = (new Send)->newFromBuilder($payload['attributes']);
 
-        foreach ($payload['relations'] ?? [] as $name => $items) {
+        foreach ($payload['relations'] as $name => $items) {
             if ($name === 'authorizedUsers') {
                 $send->setRelation($name, User::hydrate($items));
             }
@@ -226,12 +252,57 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     }
 
     /**
-     * @param  list<array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>  $payload
+     * @param  array<int, array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}>  $payload
+     * @return Collection<int, Send>
      */
     private function hydrateCollection(array $payload): Collection
     {
         return new Collection(
             array_map(fn (array $item) => $this->hydrateSend($item), $payload)
         );
+    }
+
+    /**
+     * @return ($payload is array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>} ? true : false)
+     */
+    private function isSerializedSendPayload(mixed $payload): bool
+    {
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        if (! isset($payload['attributes']) || ! is_array($payload['attributes'])) {
+            return false;
+        }
+
+        if (! isset($payload['relations']) || ! is_array($payload['relations'])) {
+            return false;
+        }
+
+        foreach ($payload['relations'] as $relation) {
+            if (! is_array($relation)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return ($payload is list<array{attributes: array<string, mixed>, relations: array<string, list<array<string, mixed>>>}> ? true : false)
+     */
+    private function isSerializedCollectionPayload(mixed $payload): bool
+    {
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        foreach ($payload as $item) {
+            if (! $this->isSerializedSendPayload($item)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

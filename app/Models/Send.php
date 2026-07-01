@@ -23,7 +23,7 @@ class Send extends Model
     /**
      * The attributes that aren't mass assignable.
      *
-     * @var array
+     * @var list<string>
      */
     protected $guarded = [];
 
@@ -87,7 +87,7 @@ class Send extends Model
     /**
      * The users authorized for this send.
      *
-     * @return BelongsToMany<User, $this, SendUser>
+     * @return BelongsToMany<User, $this, SendUser, 'pivot'>
      */
     public function authorizedUsers(): BelongsToMany
     {
@@ -95,9 +95,6 @@ class Send extends Model
             ->using(SendUser::class);
     }
 
-    /**
-     * @return BelongsToMany<User, $this, SendUser>
-     */
     protected function newBelongsToMany(
         Builder $query,
         Model $parent,

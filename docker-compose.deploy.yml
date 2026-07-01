@@ -1,0 +1,20 @@
+# Production deployment overlay — pulls a pre-built image from GHCR instead of building on the server.
+# Used by docker/bin/deploy.sh and GitHub Actions.
+#
+# Set APP_IMAGE in .env (e.g. ghcr.io/owner/passshare:latest).
+
+services:
+  app:
+    image: ${APP_IMAGE}
+    pull_policy: always
+    build: !reset null
+
+  queue:
+    image: ${APP_IMAGE}
+    pull_policy: always
+    build: !reset null
+
+  scheduler:
+    image: ${APP_IMAGE}
+    pull_policy: always
+    build: !reset null

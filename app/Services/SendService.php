@@ -25,7 +25,7 @@ class SendService implements SendServiceInterface
         $sendData = $this->buildSendData($data, (string) Str::ulid());
 
         $viewerIds = $this->resolveViewerIds($data['viewers'] ?? []);
-        $pivotData = $this->prepareSendPivotData->execute($sendData->id, $viewerIds->toArray());
+        $pivotData = $this->prepareSendPivotData->execute($sendData->id, $viewerIds->values()->all());
 
         return $this->sendRepository->create($sendData, $pivotData);
     }
@@ -35,7 +35,7 @@ class SendService implements SendServiceInterface
         $sendData = $this->buildSendData($data);
 
         $viewerIds = $this->resolveViewerIds($data['viewers'] ?? []);
-        $pivotData = $this->prepareSendPivotData->execute($id, $viewerIds->toArray());
+        $pivotData = $this->prepareSendPivotData->execute($id, $viewerIds->values()->all());
 
         return $this->sendRepository->update($id, $sendData, $pivotData);
     }
@@ -47,6 +47,10 @@ class SendService implements SendServiceInterface
         return $period->toCarbon();
     }
 
+    /**
+     * @param  list<string>  $names
+     * @return Collection<int, int>
+     */
     private function resolveViewerIds(array $names): Collection
     {
         if (empty($names)) {
@@ -64,7 +68,7 @@ class SendService implements SendServiceInterface
     private function buildSendData(array $data, ?string $id = null): SendData
     {
         return new SendData(
-            userId: auth()->id(),
+            userId: (int) auth()->id(),
             message: $data['message'],
             name: $data['name'] ?? 'Send-'.time().'-'.Str::random(5),
             validTo: $this->calculateExpiration($data['expire_after'] ?? '1_day'),

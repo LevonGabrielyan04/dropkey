@@ -7,8 +7,10 @@ use App\Models\Send;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
 use App\Services\Interfaces\SendServiceInterface;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\View\View;
 
 class SendController extends Controller implements HasMiddleware
 {
@@ -27,7 +29,7 @@ class SendController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index()
+    public function index(): View
     {
         $sends = $this->sendReadService->findAll();
 
@@ -37,7 +39,7 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         return view('sends.create');
     }
@@ -45,7 +47,7 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreSendRequest $request)
+    public function store(StoreSendRequest $request): RedirectResponse
     {
         $this->sendService->createSend($request->validated());
 
@@ -56,7 +58,7 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Display the specified resource.
      */
-    public function show(Send $send)
+    public function show(Send $send): View
     {
         $send = $this->sendReadService->findOne($send);
 
@@ -85,7 +87,7 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Send $send)
+    public function destroy(Send $send): RedirectResponse
     {
         $this->sendRepository->delete($send->getKey());
 

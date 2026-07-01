@@ -48,6 +48,6 @@ class VerifyEmailRequest extends FormRequest
      */
     protected function resolveUser(): User
     {
-        return User::query()->findOrFail($this->route('id'));
+        return User::query()->findOrFail((string) $this->route('id'));
     }
 }

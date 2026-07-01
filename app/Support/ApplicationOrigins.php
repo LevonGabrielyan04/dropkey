@@ -24,7 +24,11 @@ class ApplicationOrigins
         }
 
         $allowedHosts = array_values(array_filter(array_map(
-            static fn (string $origin): ?string => parse_url($origin, PHP_URL_HOST),
+            static function (string $origin): ?string {
+                $host = parse_url($origin, PHP_URL_HOST);
+
+                return is_string($host) ? $host : null;
+            },
             self::webAuthn(),
         )));
 
