@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSendRequest;
+use App\Http\Requests\SendRequest;
 use App\Models\Send;
 use App\Services\Interfaces\SendReadServiceInterface;
 use App\Services\Interfaces\SendWriteServiceInterface;
@@ -15,7 +15,7 @@ class SendController extends Controller implements HasMiddleware
 {
     public function __construct(
         private readonly SendWriteServiceInterface $sendService,
-        private readonly SendReadServiceInterface  $sendReadService
+        private readonly SendReadServiceInterface $sendReadService
     ) {}
 
     public static function middleware(): array
@@ -47,7 +47,7 @@ class SendController extends Controller implements HasMiddleware
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreSendRequest $request): RedirectResponse
+    public function store(SendRequest $request): RedirectResponse
     {
         $this->sendService->createSend($request->validated());
 
@@ -64,25 +64,6 @@ class SendController extends Controller implements HasMiddleware
 
         return view('sends.show', compact('send'));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    //    public function edit(Send $send)
-    //    {
-    //        return view('sends.edit', compact('send'));
-    //    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    //    public function update(UpdateSendRequest $request, Send $send)
-    //    {
-    //        $this->sendService->updateSend($send->getKey(), $request->validated());
-    //
-    //        return redirect()->route('dashboard')
-    //            ->with('success', 'Send updated successfully.');
-    //    }
 
     /**
      * Remove the specified resource from storage.

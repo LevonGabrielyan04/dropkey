@@ -30,16 +30,6 @@ class SendWriteService implements SendWriteServiceInterface
         return $this->sendRepository->create($sendData, $pivotData);
     }
 
-    public function updateSend(string $id, array $data): Send|bool
-    {
-        $sendData = $this->buildSendData($data);
-
-        $viewerIds = $this->resolveViewerIds($data['viewers'] ?? []);
-        $pivotData = $this->prepareSendPivotData->execute($id, $viewerIds->values()->all());
-
-        return $this->sendRepository->update($id, $sendData, $pivotData);
-    }
-
     public function deleteSend(string $id): bool
     {
         return $this->sendRepository->delete($id);

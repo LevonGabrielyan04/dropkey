@@ -52,14 +52,6 @@ class SendPolicy
     }
 
     /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Send $send): Response
-    {
-        return $this->sendResponse($this->isOwner($user, $send));
-    }
-
-    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Send $send): Response
