@@ -7,22 +7,20 @@ use App\Services\Interfaces\SendReadServiceInterface;
 use App\Support\SendIndexColumns;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Cache;
+use Tests\Factories\SendFactory;
 
 it('deletes expired sends when the command is run', function () {
     $user = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'expired secret',
         'name' => 'Expired Send',
         'valid_to' => now()->subMinute(),
     ]);
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'active secret',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->artisan('sends:delete-expired')
@@ -47,11 +45,9 @@ it('schedules expired send deletion every thirty minutes', function () {
 it('clears cached send lists when expired sends are deleted', function () {
     $user = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'active secret',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->actingAs($user);
@@ -60,8 +56,7 @@ it('clears cached send lists when expired sends are deleted', function () {
     $cacheKey = 'sends_'.$user->id.'_'.hash('xxh128', json_encode(array_values(SendIndexColumns::COLUMNS)));
     expect(Cache::get($cacheKey))->toHaveCount(1);
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'expired secret',
         'name' => 'Expired Send',
         'valid_to' => now()->subMinute(),

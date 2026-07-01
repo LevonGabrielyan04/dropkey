@@ -10,6 +10,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Tests\Factories\SendFactory;
 use Tests\TestCase;
 
 uses(TestCase::class);
@@ -29,20 +30,6 @@ function indexColumns(): array
 function sendsListCacheKey(string $userId, array $columns): string
 {
     return 'sends_'.$userId.'_'.hash('xxh128', json_encode(array_values($columns)));
-}
-
-function makeSend(?string $id = null, int $userId = 1, string $name = 'Test Send'): Send
-{
-    $id ??= (string) Str::ulid();
-
-    return (new Send)->forceFill([
-        'id' => $id,
-        'user_id' => $userId,
-        'message' => 'secret',
-        'name' => $name,
-        'valid_to' => now()->addDay(),
-        'public_id' => (string) Str::uuid(),
-    ]);
 }
 
 function serializeSend(Send $send): array
@@ -81,7 +68,7 @@ function makeCachedRepository(
 }
 
 it('find caches only index columns for send attributes', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
@@ -112,7 +99,7 @@ it('find caches only index columns for send attributes', function () {
 });
 
 it('find returns a hydrated send from cache without querying the inner repository', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
     $payload = serializeSend($send);
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
@@ -128,11 +115,11 @@ it('find returns a hydrated send from cache without querying the inner repositor
 
     expect($result)->toBeInstanceOf(Send::class)
         ->and($result->id)->toBe($send->id)
-        ->and($result->name)->toBe('Test Send');
+        ->and($result->name)->toBe($send->name);
 });
 
 it('find hydrates authorized users from cache', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
     $viewer = (new User)->forceFill([
         'id' => 5,
         'name' => 'Viewer',
@@ -157,7 +144,7 @@ it('find hydrates authorized users from cache', function () {
 });
 
 it('find caches the send when the inner repository returns a result', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
@@ -205,7 +192,7 @@ it('find returns null without caching when the inner repository has no send', fu
 });
 
 it('find forgets invalid cache values before querying the inner repository', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
@@ -235,7 +222,7 @@ it('find forgets invalid cache values before querying the inner repository', fun
 });
 
 it('findAll returns a hydrated collection from cache without querying the inner repository', function () {
-    $send = makeSend(name: 'Cached Send');
+    $send = SendFactory::make(1, ['name' => 'Cached Send']);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
     $cacheKey = sendsListCacheKey($userId, $columns);
@@ -257,7 +244,7 @@ it('findAll returns a hydrated collection from cache without querying the inner 
 });
 
 it('findAll caches the collection when the inner repository is queried', function () {
-    $send = makeSend(name: 'Fresh Send');
+    $send = SendFactory::make(1, ['name' => 'Fresh Send']);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
     $cacheKey = sendsListCacheKey($userId, $columns);
@@ -289,7 +276,7 @@ it('findAll caches the collection when the inner repository is queried', functio
 });
 
 it('findAll forgets invalid cache values before querying the inner repository', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
     $userId = (string) $send->user_id;
     $columns = indexColumns();
     $cacheKey = sendsListCacheKey($userId, $columns);
@@ -323,7 +310,7 @@ it('findAll forgets invalid cache values before querying the inner repository', 
 });
 
 it('create stores the send in cache and invalidates the user send list cache', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
     $userId = (string) $send->user_id;
     $columns = indexColumns();
     $sendData = new SendData(
@@ -367,7 +354,7 @@ it('create stores the send in cache and invalidates the user send list cache', f
 });
 
 it('update refreshes the send cache and invalidates the user send list cache', function () {
-    $send = makeSend(name: 'Updated Send');
+    $send = SendFactory::make(1, ['name' => 'Updated Send']);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
     $sendData = new SendData(
@@ -415,7 +402,7 @@ it('update refreshes the send cache and invalidates the user send list cache', f
 });
 
 it('delete invalidates send and user list caches before deleting from the inner repository', function () {
-    $send = makeSend();
+    $send = SendFactory::make();
     $userId = (string) $send->user_id;
     $columns = indexColumns();
 
@@ -473,9 +460,9 @@ it('delete forgets only the send cache when the send cannot be found', function 
 });
 
 it('deleteExpired invalidates send and user list caches before deleting expired sends', function () {
-    $expiredSend = makeSend(name: 'Expired Send');
+    $expiredSend = SendFactory::make(1, ['name' => 'Expired Send']);
     $expiredSend->valid_to = now()->subMinute();
-    $otherExpiredSend = makeSend(name: 'Other Expired Send', userId: 2);
+    $otherExpiredSend = SendFactory::make(2, ['name' => 'Other Expired Send']);
     $otherExpiredSend->valid_to = now()->subHour();
     $expired = new Collection([$expiredSend, $otherExpiredSend]);
     $columns = indexColumns();
@@ -545,7 +532,7 @@ it('find uses valid_to as cache expiration when it is sooner than the configured
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60]);
 
-    $send = makeSend();
+    $send = SendFactory::make();
     $send->valid_to = now()->addMinutes(30);
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
@@ -575,9 +562,9 @@ it('findAll uses the earliest valid_to as cache expiration when it is sooner tha
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60]);
 
-    $send = makeSend(name: 'Sooner Send');
+    $send = SendFactory::make(1, ['name' => 'Sooner Send']);
     $send->valid_to = now()->addMinutes(45);
-    $otherSend = makeSend(name: 'Later Send', userId: $send->user_id);
+    $otherSend = SendFactory::make($send->user_id, ['name' => 'Later Send']);
     $otherSend->valid_to = now()->addMinutes(90);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
@@ -611,7 +598,7 @@ it('find does not cache sends when valid_to is in the past', function () {
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60]);
 
-    $send = makeSend();
+    $send = SendFactory::make();
     $send->valid_to = now()->subMinute();
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
@@ -641,9 +628,9 @@ it('findAll expires list cache immediately when any send valid_to is in the past
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60]);
 
-    $expiredSend = makeSend(name: 'Expired Send');
+    $expiredSend = SendFactory::make(1, ['name' => 'Expired Send']);
     $expiredSend->valid_to = now()->subMinute();
-    $activeSend = makeSend(name: 'Active Send', userId: $expiredSend->user_id);
+    $activeSend = SendFactory::make($expiredSend->user_id, ['name' => 'Active Send']);
     $activeSend->valid_to = now()->addDay();
     $userId = (string) $expiredSend->user_id;
     $columns = indexColumns();
@@ -676,7 +663,7 @@ it('findAll expires list cache immediately when any send valid_to is in the past
 it('countActiveForUser caches the count from the inner repository', function () {
     $userId = '42';
     $cacheKey = "active_sends_count_{$userId}";
-    $send = makeSend(userId: (int) $userId);
+    $send = SendFactory::make((int) $userId);
     $send->valid_to = now()->addDay();
     $collection = new Collection([$send]);
 
@@ -741,7 +728,7 @@ it('userHasActiveAuthorizedAccess caches the result from the inner repository', 
     $userId = '42';
     $sendId = (string) Str::ulid();
     $cacheKey = "active_authorized_access_{$userId}_{$sendId}";
-    $send = makeSend(id: $sendId, userId: (int) $userId);
+    $send = SendFactory::make((int) $userId, ['id' => $sendId]);
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 

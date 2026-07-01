@@ -3,22 +3,20 @@
 use App\Actions\DeleteExpiredSendsAction;
 use App\Models\Send;
 use App\Models\User;
+use Tests\Factories\SendFactory;
 
 it('permanently deletes sends with an expired valid_to value', function () {
     $user = User::factory()->create();
 
-    $expiredSend = Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'expired secret',
         'name' => 'Expired Send',
         'valid_to' => now()->subMinute(),
     ]);
 
-    $activeSend = Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'active secret',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $deletedCount = app(DeleteExpiredSendsAction::class)->execute();
@@ -32,11 +30,9 @@ it('permanently deletes sends with an expired valid_to value', function () {
 it('returns zero when no sends have expired', function () {
     $user = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'still valid',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $deletedCount = app(DeleteExpiredSendsAction::class)->execute();

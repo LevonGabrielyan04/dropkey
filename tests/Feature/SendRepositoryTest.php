@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Tests\Factories\SendFactory;
 
 uses(RefreshDatabase::class);
 
@@ -22,23 +23,17 @@ it('returns all sends created by the given user', function () {
     $author = User::factory()->create();
     $otherUser = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'First Send',
-        'valid_to' => now()->addDay(),
     ]);
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret two',
         'name' => 'Second Send',
-        'valid_to' => now()->addDay(),
     ]);
-    Send::forceCreate([
-        'user_id' => $otherUser->id,
+    SendFactory::create($otherUser, [
         'message' => 'not mine',
         'name' => 'Other User Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $sends = $this->repository->findAll((string) $author->id, SendIndexColumns::COLUMNS);
@@ -93,11 +88,9 @@ it('caches findAll results by user id', function () {
     $author = User::factory()->create();
     $columns = SendIndexColumns::COLUMNS;
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'First Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $repository = app(SendRepositoryInterface::class);
@@ -115,11 +108,9 @@ it('returns hydrated sends from cache without incomplete class errors', function
     $author = User::factory()->create();
     $columns = SendIndexColumns::COLUMNS;
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'Cached Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $repository = app(SendRepositoryInterface::class);
@@ -160,11 +151,9 @@ it('invalidates findAll cache after creating a send', function () {
 it('deletes a send by its ulid', function () {
     $author = User::factory()->create();
 
-    $send = Send::forceCreate([
-        'user_id' => $author->id,
+    $send = SendFactory::create($author, [
         'message' => 'secret',
         'name' => 'Delete Me',
-        'valid_to' => now()->addDay(),
     ]);
 
     expect($this->repository->delete($send->id))->toBeTrue()
@@ -175,23 +164,18 @@ it('counts only active sends for the given user', function () {
     $author = User::factory()->create();
     $otherUser = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'active one',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'expired',
         'name' => 'Expired Send',
         'valid_to' => now()->subMinute(),
     ]);
-    Send::forceCreate([
-        'user_id' => $otherUser->id,
+    SendFactory::create($otherUser, [
         'message' => 'other user',
         'name' => 'Other User Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     expect($this->repository->countActiveForUser((string) $author->id))->toBe(1);
@@ -200,11 +184,9 @@ it('counts only active sends for the given user', function () {
 it('caches active send counts by user id', function () {
     $author = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'Active Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $repository = app(SendRepositoryInterface::class);

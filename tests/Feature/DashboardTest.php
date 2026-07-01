@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Send;
 use App\Models\User;
 use App\Services\Interfaces\SendWriteServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Factories\SendFactory;
 
 uses(RefreshDatabase::class);
 
@@ -33,11 +33,9 @@ it('lists sends belonging to the authenticated user', function () {
         'viewers' => [$viewer->name],
     ]);
 
-    Send::forceCreate([
-        'user_id' => $otherUser->id,
+    SendFactory::create($otherUser, [
         'message' => 'not mine',
         'name' => 'Other User Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->actingAs($author)

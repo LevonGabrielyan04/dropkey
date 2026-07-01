@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Services\Interfaces\SendReadServiceInterface;
 use App\Services\Interfaces\SendWriteServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Factories\SendFactory;
 
 uses(RefreshDatabase::class);
 
@@ -16,23 +17,17 @@ it('returns sends for the authenticated user with index columns', function () {
     $author = User::factory()->create();
     $otherUser = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'First Send',
-        'valid_to' => now()->addDay(),
     ]);
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret two',
         'name' => 'Second Send',
-        'valid_to' => now()->addDay(),
     ]);
-    Send::forceCreate([
-        'user_id' => $otherUser->id,
+    SendFactory::create($otherUser, [
         'message' => 'not mine',
         'name' => 'Other User Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->actingAs($author);
@@ -47,11 +42,9 @@ it('returns sends for the authenticated user with index columns', function () {
 it('does not include the message column in findAll results', function () {
     $user = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $user->id,
+    SendFactory::create($user, [
         'message' => 'secret message',
         'name' => 'Named Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->actingAs($user);
@@ -66,11 +59,9 @@ it('does not include the message column in findAll results', function () {
 it('returns sends for the authenticated user', function () {
     $author = User::factory()->create();
 
-    Send::forceCreate([
-        'user_id' => $author->id,
+    SendFactory::create($author, [
         'message' => 'secret one',
         'name' => 'First Send',
-        'valid_to' => now()->addDay(),
     ]);
 
     $this->actingAs($author);
