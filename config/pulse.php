@@ -157,6 +157,7 @@ return [
             ],
             'groups' => [
                 '/^job-exceptions:.*/' => 'job-exceptions:*',
+                '/^send_.*/' => 'send:*',
                 // '/:\d+/' => ':*',
             ],
         ],
