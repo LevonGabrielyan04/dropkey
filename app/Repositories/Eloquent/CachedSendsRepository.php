@@ -32,6 +32,15 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $expiresAt = now()->addMinutes($this->cacheTtl);
         $send = $this->cache->remember($cacheKey, $expiresAt, fn (): ?Send => $this->repository->find($id));
 
+        if (! $send instanceof Send && $send !== null) {
+            $this->cache->forget($cacheKey);
+            $send = $this->repository->find($id);
+
+            if ($send !== null) {
+                $this->cache->put($cacheKey, $send, $this->cacheExpiresAt($send));
+            }
+        }
+
         if ($send === null) {
             $this->cache->forget($cacheKey);
 
@@ -59,7 +68,20 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             fn (): Collection => $this->repository->findAll($userId, $columns),
         );
 
+        if (! $collection instanceof Collection) {
+            $this->cache->forget($cacheKey);
+            $collection = $this->repository->findAll($userId, $columns);
+            $this->cache->put($cacheKey, $collection, $ttl);
+        }
+
         foreach ($collection as $send) {
+            if (! $send instanceof Send) {
+                $this->cache->forget($cacheKey);
+                $collection = $this->repository->findAll($userId, $columns);
+                $this->cache->put($cacheKey, $collection, $ttl);
+                break;
+            }
+
             if (Carbon::parse($send->valid_to)->isPast()) {
                 $this->cache->forget($cacheKey);
                 break;

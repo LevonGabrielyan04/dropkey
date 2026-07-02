@@ -202,6 +202,51 @@ it('findAll forgets list cache when any send valid_to is in the past', function 
     $repository->findAll($userId, $columns);
 });
 
+it('findAll recovers when the cached value is not a collection', function () {
+    $send = SendFactory::make(1, ['name' => 'Recovered Send']);
+    $userId = (string) $send->user_id;
+    $columns = indexColumns();
+    $cacheKey = sendsListCacheKey($userId, $columns);
+    $collection = new Collection([$send]);
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->shouldReceive('remember')
+        ->once()
+        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
+        ->andReturn('not-a-collection');
+
+    $cache->shouldReceive('forget')->once()->with($cacheKey);
+    $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
+    $cache->shouldReceive('put')->once()->with($cacheKey, $collection, Mockery::type(DateTimeInterface::class));
+
+    expect($repository->findAll($userId, $columns))->toBe($collection);
+});
+
+it('findAll recovers when the cached collection contains non-send items', function () {
+    $send = SendFactory::make(1, ['name' => 'Recovered Send']);
+    $userId = (string) $send->user_id;
+    $columns = indexColumns();
+    $cacheKey = sendsListCacheKey($userId, $columns);
+    $collection = new Collection([$send]);
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->shouldReceive('remember')
+        ->once()
+        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
+        ->andReturn(new Collection(['oops']));
+
+    $cache->shouldReceive('forget')->once()->with($cacheKey);
+    $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
+    $cache->shouldReceive('put')->once()->with($cacheKey, $collection, Mockery::type(DateTimeInterface::class));
+
+    $result = $repository->findAll($userId, $columns);
+
+    expect($result)->toBe($collection)
+        ->and($result->first())->toBe($send);
+});
+
 it('create stores the send in cache and invalidates the user send list cache', function () {
     $send = SendFactory::make();
     $userId = (string) $send->user_id;
