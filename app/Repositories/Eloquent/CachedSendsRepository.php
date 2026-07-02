@@ -30,16 +30,11 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = "send_{$id}";
 
         $expiresAt = now()->addMinutes($this->cacheTtl);
-        $send = $this->cache->remember($cacheKey, $expiresAt, fn (): ?Send => $this->repository->find($id));
-
-        if (! $send instanceof Send && $send !== null) {
-            $this->cache->forget($cacheKey);
-            $send = $this->repository->find($id);
-
-            if ($send !== null) {
-                $this->cache->put($cacheKey, $send, $this->cacheExpiresAt($send));
-            }
-        }
+        $send = $this->resolveCachedSend(
+            $this->cache->remember($cacheKey, $expiresAt, fn () => $this->repository->find($id)),
+            $cacheKey,
+            $id,
+        );
 
         if ($send === null) {
             $this->cache->forget($cacheKey);
@@ -62,33 +57,13 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = $this->sendsCacheKey($userId, $columns);
         $ttl = now()->addMinutes($this->cacheTtl);
 
-        $collection = $this->cache->remember(
+        return $this->resolveCachedSendCollection(
+            $this->cache->remember($cacheKey, $ttl, fn () => $this->repository->findAll($userId, $columns)),
             $cacheKey,
+            $userId,
+            $columns,
             $ttl,
-            fn (): Collection => $this->repository->findAll($userId, $columns),
         );
-
-        if (! $collection instanceof Collection) {
-            $this->cache->forget($cacheKey);
-            $collection = $this->repository->findAll($userId, $columns);
-            $this->cache->put($cacheKey, $collection, $ttl);
-        }
-
-        foreach ($collection as $send) {
-            if (! $send instanceof Send) {
-                $this->cache->forget($cacheKey);
-                $collection = $this->repository->findAll($userId, $columns);
-                $this->cache->put($cacheKey, $collection, $ttl);
-                break;
-            }
-
-            if (Carbon::parse($send->valid_to)->isPast()) {
-                $this->cache->forget($cacheKey);
-                break;
-            }
-        }
-
-        return $collection;
     }
 
     /**
@@ -198,6 +173,68 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         );
 
         return $hasAccess;
+    }
+
+    private function resolveCachedSend(mixed $cached, string $cacheKey, string $id): ?Send
+    {
+        if ($cached instanceof Send || $cached === null) {
+            return $cached;
+        }
+
+        $this->cache->forget($cacheKey);
+        $send = $this->repository->find($id);
+
+        if ($send !== null) {
+            $this->cache->put($cacheKey, $send, $this->cacheExpiresAt($send));
+        }
+
+        return $send;
+    }
+
+    /**
+     * @param  array<int, string>  $columns
+     * @return Collection<int, Send>
+     */
+    private function resolveCachedSendCollection(
+        mixed $cached,
+        string $cacheKey,
+        string $userId,
+        array $columns,
+        CarbonInterface $ttl,
+    ): Collection {
+        if (! $cached instanceof Collection) {
+            return $this->refreshSendCollectionCache($cacheKey, $userId, $columns, $ttl);
+        }
+
+        foreach ($cached as $send) {
+            if (! $send instanceof Send) {
+                return $this->refreshSendCollectionCache($cacheKey, $userId, $columns, $ttl);
+            }
+
+            if (Carbon::parse($send->valid_to)->isPast()) {
+                $this->cache->forget($cacheKey);
+                break;
+            }
+        }
+
+        return $cached;
+    }
+
+    /**
+     * @param  array<int, string>  $columns
+     * @return Collection<int, Send>
+     */
+    private function refreshSendCollectionCache(
+        string $cacheKey,
+        string $userId,
+        array $columns,
+        CarbonInterface $ttl,
+    ): Collection {
+        $this->cache->forget($cacheKey);
+        $collection = $this->repository->findAll($userId, $columns);
+        $this->cache->put($cacheKey, $collection, $ttl);
+
+        return $collection;
     }
 
     private function cacheExpiresAt(Send $send): CarbonInterface
