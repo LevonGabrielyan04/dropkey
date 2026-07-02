@@ -29,9 +29,10 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $cacheKey = "send_{$id}";
 
-        $send = $this->cache->remember($cacheKey, $this->cacheTtl, fn (): ?Send => $this->repository->find($id));
+        $expiresAt = now()->addMinutes($this->cacheTtl);
+        $send = $this->cache->remember($cacheKey, $expiresAt, fn (): ?Send => $this->repository->find($id));
 
-        if (! $send instanceof Send) {
+        if ($send === null) {
             $this->cache->forget($cacheKey);
 
             return null;
@@ -58,19 +59,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             fn (): Collection => $this->repository->findAll($userId, $columns),
         );
 
-        if (! $collection instanceof Collection) {
-            $this->cache->forget($cacheKey);
-
-            return new Collection;
-        }
-
         foreach ($collection as $send) {
-            if (! $send instanceof Send) {
-                $this->cache->forget($cacheKey);
-
-                return $this->repository->findAll($userId, $columns);
-            }
-
             if (Carbon::parse($send->valid_to)->isPast()) {
                 $this->cache->forget($cacheKey);
                 break;
@@ -166,7 +155,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             fn (): int => $this->repository->countActiveForUser($userId),
         );
 
-        return is_int($count) ? $count : 0;
+        return $count;
     }
 
     /**
@@ -186,7 +175,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             fn (): bool => $this->repository->userHasActiveAuthorizedAccess($userId, $sendId),
         );
 
-        return is_bool($hasAccess) ? $hasAccess : false;
+        return $hasAccess;
     }
 
     private function cacheExpiresAt(Send $send): CarbonInterface
@@ -201,33 +190,11 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $validTo->min($ttlLimit);
     }
 
-    /**
-     * @param  Collection<int, Send>  $collection
-     */
-    private function cacheExpiresAtForCollection(Collection $collection): CarbonInterface
-    {
-        $expiresAt = now()->addMinutes($this->cacheTtl);
-
-        foreach ($collection as $send) {
-            if (! $send instanceof Send) {
-                continue;
-            }
-
-            $expiresAt = $this->cacheExpiresAt($send)->min($expiresAt);
-        }
-
-        return $expiresAt;
-    }
-
     private function cacheExpiresAtForActiveCount(string $userId): CarbonInterface
     {
         $expiresAt = now()->addMinutes($this->cacheTtl);
 
         foreach ($this->findAll($userId, ['valid_to']) as $send) {
-            if (! $send instanceof Send) {
-                continue;
-            }
-
             if (Carbon::parse($send->valid_to)->isPast()) {
                 continue;
             }
