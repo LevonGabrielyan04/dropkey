@@ -15,10 +15,12 @@ test('registration screen includes turnstile when enabled', function () {
 
     $response
         ->assertOk()
-        ->assertSee('cf-turnstile', false)
+        ->assertSee('mountTurnstile', false)
+        ->assertSee('turnstile-verified', false)
         ->assertSee('1x00000000000000000AA', false)
         ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
-        ->assertSee('nonce="', false);
+        ->assertSee('nonce="', false)
+        ->assertSee('x-bind:disabled="turnstileRequired && ! turnstileVerified"', false);
 });
 
 test('registration rejects submissions without a turnstile token when enabled', function () {
@@ -83,10 +85,12 @@ test('login screen includes turnstile when enabled', function () {
 
     $response
         ->assertOk()
-        ->assertSee('cf-turnstile', false)
+        ->assertSee('mountTurnstile', false)
+        ->assertSee('turnstile-verified', false)
         ->assertSee('1x00000000000000000AA', false)
         ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
-        ->assertSee('nonce="', false);
+        ->assertSee('nonce="', false)
+        ->assertSee('x-bind:disabled="turnstileRequired && ! turnstileVerified"', false);
 });
 
 test('login rejects submissions without a turnstile token when enabled', function () {
@@ -144,10 +148,12 @@ test('forgot password screen includes turnstile when enabled', function () {
 
     $response
         ->assertOk()
-        ->assertSee('cf-turnstile', false)
+        ->assertSee('mountTurnstile', false)
+        ->assertSee('turnstile-verified', false)
         ->assertSee('1x00000000000000000AA', false)
         ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
-        ->assertSee('nonce="', false);
+        ->assertSee('nonce="', false)
+        ->assertSee('x-bind:disabled="turnstileRequired && ! turnstileVerified"', false);
 });
 
 test('forgot password rejects submissions without a turnstile token when enabled', function () {

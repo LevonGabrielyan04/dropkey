@@ -5,7 +5,18 @@
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 
-        <form method="POST" action="{{ route('password.email') }}" class="flex flex-col gap-6">
+        <form
+            method="POST"
+            action="{{ route('password.email') }}"
+            class="flex flex-col gap-6"
+            x-data="{
+                turnstileRequired: @json(config('turnstile.enabled')),
+                turnstileVerified: false,
+            }"
+            x-on:turnstile-verified="turnstileVerified = true"
+            x-on:turnstile-expired="turnstileVerified = false"
+            x-on:turnstile-error="turnstileVerified = false"
+        >
             @csrf
 
             <!-- Email Address -->
@@ -20,7 +31,13 @@
 
             <x-turnstile />
 
-            <flux:button variant="primary" type="submit" class="w-full" data-test="email-password-reset-link-button">
+            <flux:button
+                variant="primary"
+                type="submit"
+                class="w-full"
+                data-test="email-password-reset-link-button"
+                x-bind:disabled="turnstileRequired && ! turnstileVerified"
+            >
                 {{ __('Email password reset link') }}
             </flux:button>
         </form>
