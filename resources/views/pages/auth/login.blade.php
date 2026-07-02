@@ -7,18 +7,7 @@
 
         <x-passkey-verify />
 
-        <form
-            method="POST"
-            action="{{ route('login.store') }}"
-            class="flex flex-col gap-6"
-            x-data="{
-                turnstileRequired: @json(config('turnstile.enabled')),
-                turnstileVerified: false,
-            }"
-            x-on:turnstile-verified="turnstileVerified = true"
-            x-on:turnstile-expired="turnstileVerified = false"
-            x-on:turnstile-error="turnstileVerified = false"
-        >
+        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
             @csrf
 
             <!-- Email or Nickname -->
@@ -58,13 +47,7 @@
             <x-turnstile />
 
             <div class="flex items-center justify-end">
-                <flux:button
-                    variant="primary"
-                    type="submit"
-                    class="w-full"
-                    data-test="login-button"
-                    x-bind:disabled="turnstileRequired && ! turnstileVerified"
-                >
+                <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
                     {{ __('Log in') }}
                 </flux:button>
             </div>
