@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Services\Interfaces\SendWriteServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\Factories\SendFactory;
 
 uses(RefreshDatabase::class);
@@ -45,7 +46,11 @@ it('lists sends belonging to the authenticated user', function () {
         ->assertSee('My Secret')
         ->assertDontSee('Other User Send')
         ->assertSee(route('sends.show', $send), false)
-        ->assertViewHas('sends', fn ($sends) => $sends->count() === 1 && $sends->first()->is($send));
+        ->assertViewHas('sends', fn ($sends) => $sends->count() === 1 && $sends->first()->is($send))
+        ->assertSee(
+            'data-utc-datetime="'.Carbon::parse($send->valid_to)->utc()->toIso8601String().'"',
+            false,
+        );
 });
 
 it('shows a success message after creating a send', function () {

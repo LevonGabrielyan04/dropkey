@@ -49,7 +49,11 @@
                                         </flux:link>
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-4 text-sm text-zinc-600 dark:text-zinc-400">
-                                        {{ \Illuminate\Support\Carbon::parse($send->valid_to)->timezone(config('app.timezone'))->format('M j, Y g:i A') }}
+                                        <span
+                                            x-data="localDatetime"
+                                            data-utc-datetime="{{ \Illuminate\Support\Carbon::parse($send->valid_to)->utc()->toIso8601String() }}"
+                                            x-text="formatted"
+                                        ></span>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-zinc-600 dark:text-zinc-400">
                                         {{ $send->authorizedUsers->pluck('name')->join(', ') ?: __('None') }}
@@ -96,7 +100,7 @@
 
             @foreach ($sends as $send)
                 @can('forceDelete', $send)
-                    <flux:modal name="delete-send-{{ $send->id }}" class="max-w-md">
+                    <flux:modal name="delete-send-{{ $send->id }}" :closable="false" class="max-w-md">
                         <form method="POST" action="{{ route('sends.destroy', $send) }}" class="space-y-6">
                             @csrf
                             @method('DELETE')

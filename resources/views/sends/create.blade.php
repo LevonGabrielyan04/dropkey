@@ -46,6 +46,7 @@
                         placeholder="{{ __('Enter a user name and press Enter') }}"
                         class="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 @error('viewers') border-red-500 @enderror"
                         :required="isViewerInputRequired"
+                        autocomplete="username"
                     />
 
                     <template x-for="(name, index) in viewers" :key="index">
