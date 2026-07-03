@@ -45,7 +45,7 @@ return [
     |
     */
 
-    'username' => 'email',
+    'username' => 'login',
 
     'email' => 'email',
 
@@ -118,6 +118,7 @@ return [
         'login' => 'login',
         'two-factor' => 'two-factor',
         'passkeys' => 'passkeys',
+        'registration' => 'registration',
     ],
 
     /*

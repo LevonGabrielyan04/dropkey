@@ -1,3 +1,5 @@
+import { formatLocalDatetime } from './formatLocalDatetime.js';
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('navigation', () => ({
         open: false,
@@ -175,6 +177,16 @@ document.addEventListener('alpine:init', () => {
                     this.focusOtp();
                 }
             });
+        },
+    }));
+
+    Alpine.data('localDatetime', () => ({
+        formatted: '',
+
+        init() {
+            const utcDatetime = this.$el.dataset.utcDatetime ?? '';
+
+            this.formatted = formatLocalDatetime(utcDatetime);
         },
     }));
 
