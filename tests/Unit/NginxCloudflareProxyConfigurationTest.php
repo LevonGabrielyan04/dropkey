@@ -117,8 +117,10 @@ test('docker nginx rate limit config defines auth zones by real client ip', func
     $rateLimitConfig = file_get_contents(base_path('docker/nginx/rate-limit.conf'));
 
     expect($rateLimitConfig)
-        ->toContain('limit_req_zone $binary_remote_addr zone=auth_login:10m rate=5r/m;')
-        ->toContain('limit_req_zone $binary_remote_addr zone=auth_register:10m rate=5r/m;')
+        ->toContain('map $request_method $auth_login_limit_key')
+        ->toContain('map $request_method $auth_register_limit_key')
+        ->toContain('limit_req_zone $auth_login_limit_key zone=auth_login:10m rate=5r/m;')
+        ->toContain('limit_req_zone $auth_register_limit_key zone=auth_register:10m rate=5r/m;')
         ->toContain('limit_req_status 429;');
 });
 
@@ -137,13 +139,18 @@ test('docker nginx http block loads rate limit configuration after cloudflare', 
 
 test('docker nginx default config rate limits post login and register only', function () {
     $defaultConfig = file_get_contents(base_path('docker/nginx/default.conf'));
+    $rateLimitConfig = file_get_contents(base_path('docker/nginx/rate-limit.conf'));
 
     expect($defaultConfig)
         ->toContain('location = /login {')
         ->toContain('location = /register {')
-        ->toContain('limit_except GET HEAD {')
         ->toContain('limit_req zone=auth_login burst=2 nodelay;')
-        ->toContain('limit_req zone=auth_register burst=2 nodelay;');
+        ->toContain('limit_req zone=auth_register burst=2 nodelay;')
+        ->not->toContain('limit_except');
+
+    expect($rateLimitConfig)
+        ->toContain('GET     "";')
+        ->toContain('HEAD    "";');
 });
 
 test('dockerfile copies nginx rate limit configuration', function () {
