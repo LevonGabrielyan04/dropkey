@@ -246,6 +246,20 @@ it('create stores the send in cache and invalidates the user send list cache', f
         ->and($cache->has("active_sends_count_{$userId}"))->toBeFalse();
 });
 
+it('countActiveForUser casts cached scalar values to int', function () {
+    $userId = '42';
+
+    [$repository, $innerRepository, $cache] = makeCachedRepository();
+
+    $cache->put(sendsListCacheKey($userId, ['valid_to']), new Collection([]), now()->addMinutes(60));
+    $cache->put("active_sends_count_{$userId}", '3', now()->addMinutes(60));
+
+    $innerRepository->shouldNotReceive('countActiveForUser');
+    $innerRepository->shouldNotReceive('findAll');
+
+    expect($repository->countActiveForUser($userId))->toBe(3);
+});
+
 it('countActiveForUser uses remember with an expiration derived from send valid_to', function () {
     Carbon::setTestNow(now());
     config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);

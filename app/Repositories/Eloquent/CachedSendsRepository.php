@@ -149,7 +149,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = $this->activeSendsCountCacheKey($userId);
         $expiresAt = $this->cacheExpiresAtForActiveCount($userId);
 
-        return $this->rememberLocked(
+        return (int) $this->rememberLocked(
             $cacheKey,
             fn (): int => $this->repository->countActiveForUser($userId),
             fn (): CarbonInterface => $expiresAt,
@@ -167,7 +167,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             ? $this->cacheExpiresAt($send)
             : now()->addMinutes($this->negativeCacheTtl);
 
-        return $this->rememberLocked(
+        return (bool) $this->rememberLocked(
             $cacheKey,
             fn (): bool => $this->repository->userHasActiveAuthorizedAccess($userId, $sendId),
             fn (): CarbonInterface => $expiresAt,
