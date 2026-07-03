@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories\Eloquent;
 
 use App\DTOs\SendData;
@@ -21,7 +23,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         private SendRepositoryInterface $repository,
         private CacheRepository $cache
     ) {
-        $this->cacheTtl = config('send.cache_ttl');
+        $this->cacheTtl = (int) config('send.cache_ttl');
     }
 
     /**
