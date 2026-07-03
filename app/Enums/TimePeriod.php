@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-use Carbon\CarbonInterface;
+use Carbon\CarbonImmutable;
 
 enum TimePeriod: string
 {
@@ -27,14 +27,14 @@ enum TimePeriod: string
     /**
      * Convert the enum case into a Carbon datetime instance.
      */
-    public function toCarbon(): CarbonInterface
+    public function toCarbon(): CarbonImmutable
     {
         return match ($this) {
-            self::ONE_HOUR => now()->addHour(),
-            self::SIX_HOURS => now()->addHours(6),
-            self::ONE_DAY => now()->addDay(),
-            self::FOURTEEN_DAYS => now()->addDays(14),
-            self::THIRTY_DAYS => now()->addDays(30),
+            self::ONE_HOUR => CarbonImmutable::now()->addHour(),
+            self::SIX_HOURS => CarbonImmutable::now()->addHours(6),
+            self::ONE_DAY => CarbonImmutable::now()->addDay(),
+            self::FOURTEEN_DAYS => CarbonImmutable::now()->addDays(14),
+            self::THIRTY_DAYS => CarbonImmutable::now()->addDays(30),
         };
     }
 }

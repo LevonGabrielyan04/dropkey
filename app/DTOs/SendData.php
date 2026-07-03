@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\DTOs;
 
-use Carbon\CarbonInterface;
+use Carbon\CarbonImmutable;
 
-class SendData
+readonly class SendData
 {
     public function __construct(
         public int $userId,
         public string $message,
         public string $name,
-        public CarbonInterface $validTo,
+        public CarbonImmutable $validTo,
         public ?string $id = null,
     ) {}
 
@@ -21,7 +21,7 @@ class SendData
      *
      * The `id` key is only included when present (i.e. on creation).
      *
-     * @return array{id?: string, user_id: int, message: string, name: string, valid_to: CarbonInterface}
+     * @return array{id?: string, user_id: int, message: string, name: string, valid_to: CarbonImmutable}
      */
     public function toArray(): array
     {

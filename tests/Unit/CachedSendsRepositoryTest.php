@@ -4,6 +4,7 @@ use App\DTOs\SendData;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Support\SendIndexColumns;
+use Carbon\CarbonImmutable;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -223,7 +224,7 @@ it('create stores the send in cache and invalidates the user send list cache', f
         userId: $send->user_id,
         message: 'secret',
         name: 'Test Send',
-        validTo: now()->addDay(),
+        validTo: CarbonImmutable::now()->addDay(),
         id: $send->id,
     );
 

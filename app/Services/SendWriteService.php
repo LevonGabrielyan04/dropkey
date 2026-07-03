@@ -11,7 +11,7 @@ use App\Models\Send;
 use App\Models\User;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Services\Interfaces\SendWriteServiceInterface;
-use Carbon\CarbonInterface;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -37,7 +37,7 @@ class SendWriteService implements SendWriteServiceInterface
         return $this->sendRepository->delete($id);
     }
 
-    private function calculateExpiration(string $expire_after): CarbonInterface
+    private function calculateExpiration(string $expire_after): CarbonImmutable
     {
         $period = TimePeriod::tryFrom($expire_after) ?? TimePeriod::ONE_DAY;
 
