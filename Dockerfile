@@ -5,9 +5,9 @@ ARG NODE_VERSION=24.18.0-alpine3.24
 ARG PHP_VERSION=8.5.7-fpm-alpine3.24
 ARG COMPOSER_VERSION=2.10.1
 
-FROM php:${PHP_VERSION} AS vendor
+FROM composer/composer:${COMPOSER_VERSION} AS composer
 
-ARG COMPOSER_VERSION=2.10.1
+FROM php:${PHP_VERSION} AS vendor
 
 RUN apk add --no-cache \
         $PHPIZE_DEPS \
@@ -28,7 +28,7 @@ RUN apk add --no-cache \
     && apk del --purge $PHPIZE_DEPS \
     && rm -rf /tmp/pear /var/cache/apk/*
 
-COPY --from=composer/composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
