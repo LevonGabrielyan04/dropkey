@@ -99,6 +99,7 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-app.conf
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/cloudflare.conf /etc/nginx/conf.d/cloudflare.conf
+COPY docker/nginx/rate-limit.conf /etc/nginx/conf.d/rate-limit.conf
 COPY docker/nginx/proxy-forwarded.conf /etc/nginx/conf.d/proxy-forwarded.conf
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

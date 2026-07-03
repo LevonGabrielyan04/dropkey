@@ -72,7 +72,7 @@ test('docker compose isolates tunnel network from queue and scheduler', function
     $compose = file_get_contents(base_path('docker-compose.yml'));
 
     $serviceBlock = function (string $service) use ($compose): string {
-        preg_match('/^  '.$service.':\n(.*?)(?=\n  \w|\nnetworks:|\nvolumes:)/ms', $compose, $matches);
+        preg_match('/^ {2}'.$service.':\n(.*?)(?=\n {2}\w|\nnetworks:|\nvolumes:)/ms', $compose, $matches);
 
         return $matches[1] ?? '';
     };
@@ -111,4 +111,43 @@ test('docker compose sets pulse server name for app container', function () {
     $compose = file_get_contents(base_path('docker-compose.yml'));
 
     expect($compose)->toContain('PULSE_SERVER_NAME: app');
+});
+
+test('docker nginx rate limit config defines auth zones by real client ip', function () {
+    $rateLimitConfig = file_get_contents(base_path('docker/nginx/rate-limit.conf'));
+
+    expect($rateLimitConfig)
+        ->toContain('limit_req_zone $binary_remote_addr zone=auth_login:10m rate=5r/m;')
+        ->toContain('limit_req_zone $binary_remote_addr zone=auth_register:10m rate=5r/m;')
+        ->toContain('limit_req_status 429;');
+});
+
+test('docker nginx http block loads rate limit configuration after cloudflare', function () {
+    $nginxConfig = file_get_contents(base_path('docker/nginx/nginx.conf'));
+
+    expect($nginxConfig)
+        ->toContain('include /etc/nginx/conf.d/cloudflare.conf;')
+        ->toContain('include /etc/nginx/conf.d/rate-limit.conf;');
+
+    $cloudflarePos = strpos($nginxConfig, 'include /etc/nginx/conf.d/cloudflare.conf;');
+    $rateLimitPos = strpos($nginxConfig, 'include /etc/nginx/conf.d/rate-limit.conf;');
+
+    expect($cloudflarePos)->toBeLessThan($rateLimitPos);
+});
+
+test('docker nginx default config rate limits post login and register only', function () {
+    $defaultConfig = file_get_contents(base_path('docker/nginx/default.conf'));
+
+    expect($defaultConfig)
+        ->toContain('location = /login {')
+        ->toContain('location = /register {')
+        ->toContain('limit_except GET HEAD {')
+        ->toContain('limit_req zone=auth_login burst=2 nodelay;')
+        ->toContain('limit_req zone=auth_register burst=2 nodelay;');
+});
+
+test('dockerfile copies nginx rate limit configuration', function () {
+    $dockerfile = file_get_contents(base_path('Dockerfile'));
+
+    expect($dockerfile)->toContain('COPY docker/nginx/rate-limit.conf /etc/nginx/conf.d/rate-limit.conf');
 });
