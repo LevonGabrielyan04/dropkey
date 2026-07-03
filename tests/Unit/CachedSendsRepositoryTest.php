@@ -4,9 +4,10 @@ use App\DTOs\SendData;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Support\SendIndexColumns;
-use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\Factories\SendFactory;
 use Tests\TestCase;
@@ -15,6 +16,7 @@ uses(TestCase::class);
 
 afterEach(function () {
     Mockery::close();
+    Cache::flush();
 });
 
 /**
@@ -35,7 +37,7 @@ function makeCachedRepository(
     ?CacheRepository $cache = null,
 ): array {
     $innerRepository ??= Mockery::mock(SendRepositoryInterface::class);
-    $cache ??= Mockery::mock(CacheRepository::class);
+    $cache ??= Cache::store('array');
 
     return [
         new CachedSendsRepository($innerRepository, $cache),
@@ -47,137 +49,116 @@ function makeCachedRepository(
 it('find returns a cached send without querying the inner repository', function () {
     $send = SendFactory::make();
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
+    [$repository, $innerRepository] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with("send_{$send->id}", Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn($send);
+    $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
 
-    $innerRepository->shouldNotReceive('find');
-    $cache->shouldNotReceive('forget');
-
-    expect($repository->find($send->id))->toBe($send);
+    expect($repository->find($send->id))->toBe($send)
+        ->and($repository->find($send->id))->toBe($send);
 });
 
 it('find queries the inner repository on a cache miss', function () {
     $send = SendFactory::make();
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
-
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with("send_{$send->id}", Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
+    [$repository, $innerRepository] = makeCachedRepository();
 
     $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
 
     expect($repository->find($send->id))->toBe($send);
 });
 
-it('find returns null and forgets the cache key when the inner repository has no send', function () {
+it('find caches a missing send and does not query the inner repository again', function () {
     $sendId = (string) Str::ulid();
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
-
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with("send_{$sendId}", Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
+    [$repository, $innerRepository] = makeCachedRepository();
 
     $innerRepository->shouldReceive('find')->once()->with($sendId)->andReturnNull();
-    $cache->shouldReceive('forget')->once()->with("send_{$sendId}");
 
+    expect($repository->find($sendId))->toBeNull();
     expect($repository->find($sendId))->toBeNull();
 });
 
-it('find forgets the cache key when the send is expired', function () {
+it('find returns an expired send and caches it with the negative ttl', function () {
     Carbon::setTestNow(now());
-    config(['send.cache_ttl' => 60]);
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
 
     $send = SendFactory::make();
     $send->valid_to = now()->subMinute();
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with("send_{$send->id}", Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn($send);
+    $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
 
-    $cache->shouldReceive('forget')->once()->with("send_{$send->id}");
-    $innerRepository->shouldNotReceive('find');
-
-    expect($repository->find($send->id))->toBe($send);
+    expect($repository->find($send->id))->toBe($send)
+        ->and($repository->find($send->id))->toBe($send)
+        ->and($cache->get("send_{$send->id}"))->toBe($send);
 });
 
-it('find uses the configured ttl for remember()', function () {
+it('find uses the configured ttl for active sends', function () {
     Carbon::setTestNow(now());
-    config(['send.cache_ttl' => 60]);
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
 
     $send = SendFactory::make();
     $send->valid_to = now()->addMinutes(30);
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
+    [$repository, $innerRepository] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with(
-            "send_{$send->id}",
-            Mockery::on(fn (DateTimeInterface $expiresAt): bool => Carbon::parse($expiresAt)->equalTo(now()->addMinutes(60))),
-            Mockery::type(Closure::class),
-        )
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
-
-    $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
+    $innerRepository->shouldReceive('find')->twice()->with($send->id)->andReturn($send);
 
     $repository->find($send->id);
+
+    Carbon::setTestNow(now()->addMinutes(30)->addSecond());
+
+    $repository->find($send->id);
+});
+
+it('find uses the negative cache ttl for missing sends', function () {
+    Carbon::setTestNow(now());
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
+
+    $sendId = (string) Str::ulid();
+
+    [$repository, $innerRepository] = makeCachedRepository();
+
+    $innerRepository->shouldReceive('find')->twice()->with($sendId)->andReturnNull();
+
+    $repository->find($sendId);
+
+    Carbon::setTestNow(now()->addMinutes(5)->addSecond());
+
+    $repository->find($sendId);
 });
 
 it('findAll returns a cached collection without querying the inner repository', function () {
     $send = SendFactory::make(1, ['name' => 'Cached Send']);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
-    $cacheKey = sendsListCacheKey($userId, $columns);
+    $collection = new Collection([$send]);
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
+    [$repository, $innerRepository] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn(new Collection([$send]));
+    $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
 
-    $innerRepository->shouldNotReceive('findAll');
-    $cache->shouldNotReceive('forget');
-
-    $result = $repository->findAll($userId, $columns);
-
-    expect($result)->toHaveCount(1)
-        ->and($result->first())->toBe($send);
+    expect($repository->findAll($userId, $columns))->toHaveCount(1)
+        ->and($repository->findAll($userId, $columns)->first())->toBe($send);
 });
 
 it('findAll queries the inner repository on a cache miss', function () {
     $send = SendFactory::make(1, ['name' => 'Fresh Send']);
     $userId = (string) $send->user_id;
     $columns = indexColumns();
-    $cacheKey = sendsListCacheKey($userId, $columns);
     $collection = new Collection([$send]);
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
-
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
+    [$repository, $innerRepository] = makeCachedRepository();
 
     $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
 
     expect($repository->findAll($userId, $columns))->toBe($collection);
 });
 
-it('findAll forgets list cache when any send valid_to is in the past', function () {
+it('findAll refreshes list cache when any send valid_to is in the past', function () {
     Carbon::setTestNow(now());
-    config(['send.cache_ttl' => 60]);
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
 
     $expiredSend = SendFactory::make(1, ['name' => 'Expired Send']);
     $expiredSend->valid_to = now()->subMinute();
@@ -186,20 +167,17 @@ it('findAll forgets list cache when any send valid_to is in the past', function 
 
     $userId = (string) $expiredSend->user_id;
     $columns = indexColumns();
-    $cacheKey = sendsListCacheKey($userId, $columns);
-    $collection = new Collection([$expiredSend, $activeSend]);
+    $staleCollection = new Collection([$expiredSend, $activeSend]);
+    $freshCollection = new Collection([$activeSend]);
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
+    $cacheKey = sendsListCacheKey($userId, $columns);
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn($collection);
+    $cache->put($cacheKey, $staleCollection, now()->addMinutes(60));
 
-    $cache->shouldReceive('forget')->once()->with($cacheKey);
-    $innerRepository->shouldNotReceive('findAll');
+    $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($freshCollection);
 
-    $repository->findAll($userId, $columns);
+    expect($repository->findAll($userId, $columns))->toBe($freshCollection);
 });
 
 it('findAll recovers when the cached value is not a collection', function () {
@@ -211,14 +189,9 @@ it('findAll recovers when the cached value is not a collection', function () {
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn('not-a-collection');
+    $cache->put($cacheKey, 'not-a-collection', now()->addMinutes(60));
 
-    $cache->shouldReceive('forget')->once()->with($cacheKey);
     $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
-    $cache->shouldReceive('put')->once()->with($cacheKey, $collection, Mockery::type(DateTimeInterface::class));
 
     expect($repository->findAll($userId, $columns))->toBe($collection);
 });
@@ -232,14 +205,9 @@ it('findAll recovers when the cached collection contains non-send items', functi
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with($cacheKey, Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn(new Collection(['oops']));
+    $cache->put($cacheKey, new Collection(['oops']), now()->addMinutes(60));
 
-    $cache->shouldReceive('forget')->once()->with($cacheKey);
     $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
-    $cache->shouldReceive('put')->once()->with($cacheKey, $collection, Mockery::type(DateTimeInterface::class));
 
     $result = $repository->findAll($userId, $columns);
 
@@ -266,23 +234,22 @@ it('create stores the send in cache and invalidates the user send list cache', f
         ->with($sendData, [])
         ->andReturn($send);
 
-    $cache->shouldReceive('put')
-        ->once()
-        ->with("send_{$send->id}", $send, Mockery::type(DateTimeInterface::class));
+    $cache->put("sends_{$userId}", new Collection, now()->addMinutes(60));
+    $cache->put(sendsListCacheKey($userId, $columns), new Collection, now()->addMinutes(60));
+    $cache->put("active_sends_count_{$userId}", 1, now()->addMinutes(60));
 
-    $cache->shouldReceive('forget')->once()->with("sends_{$userId}");
-    $cache->shouldReceive('forget')->once()->with(sendsListCacheKey($userId, $columns));
-    $cache->shouldReceive('forget')->once()->with("active_sends_count_{$userId}");
-
-    expect($repository->create($sendData))->toBe($send);
+    expect($repository->create($sendData))->toBe($send)
+        ->and($cache->get("send_{$send->id}"))->toBe($send)
+        ->and($cache->has("sends_{$userId}"))->toBeFalse()
+        ->and($cache->has(sendsListCacheKey($userId, $columns)))->toBeFalse()
+        ->and($cache->has("active_sends_count_{$userId}"))->toBeFalse();
 });
 
-it('countActiveForUser uses remember() with an expiration derived from send valid_to', function () {
+it('countActiveForUser uses remember with an expiration derived from send valid_to', function () {
     Carbon::setTestNow(now());
-    config(['send.cache_ttl' => 60]);
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
 
     $userId = '42';
-    $cacheKey = "active_sends_count_{$userId}";
 
     $send = SendFactory::make((int) $userId);
     $send->valid_to = now()->addMinutes(30);
@@ -290,55 +257,47 @@ it('countActiveForUser uses remember() with an expiration derived from send vali
 
     [$repository, $innerRepository, $cache] = makeCachedRepository();
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with(sendsListCacheKey($userId, ['valid_to']), Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturn($collection);
+    $cache->put(sendsListCacheKey($userId, ['valid_to']), $collection, now()->addMinutes(60));
 
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with(
-            $cacheKey,
-            Mockery::on(fn (DateTimeInterface $expiresAt): bool => Carbon::parse($expiresAt)->equalTo(now()->addMinutes(30))),
-            Mockery::type(Closure::class),
-        )
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
+    $innerRepository->shouldReceive('findAll')->once()->with($userId, ['valid_to'])->andReturn($collection);
+    $innerRepository->shouldReceive('countActiveForUser')->twice()->with($userId)->andReturn(1);
 
-    $innerRepository->shouldReceive('countActiveForUser')->once()->with($userId)->andReturn(1);
+    expect($repository->countActiveForUser($userId))->toBe(1);
+
+    Carbon::setTestNow(now()->addMinutes(30)->addSecond());
 
     expect($repository->countActiveForUser($userId))->toBe(1);
 });
 
 it('userHasActiveAuthorizedAccess caches the result from the inner repository', function () {
     Carbon::setTestNow(now());
-    config(['send.cache_ttl' => 60]);
+    config(['send.cache_ttl' => 60, 'send.negative_cache_ttl' => 5]);
 
     $userId = '42';
     $sendId = (string) Str::ulid();
-    $cacheKey = "active_authorized_access_{$userId}_{$sendId}";
 
     $send = SendFactory::make((int) $userId, ['id' => $sendId]);
     $send->valid_to = now()->addMinutes(30);
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
-
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with("send_{$sendId}", Mockery::type(DateTimeInterface::class), Mockery::type(Closure::class))
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
+    [$repository, $innerRepository] = makeCachedRepository();
 
     $innerRepository->shouldReceive('find')->once()->with($sendId)->andReturn($send);
-
-    $cache->shouldReceive('remember')
-        ->once()
-        ->with(
-            $cacheKey,
-            Mockery::on(fn (DateTimeInterface $expiresAt): bool => Carbon::parse($expiresAt)->equalTo(now()->addMinutes(30))),
-            Mockery::type(Closure::class),
-        )
-        ->andReturnUsing(fn (string $key, DateTimeInterface $ttl, Closure $callback) => $callback());
-
     $innerRepository->shouldReceive('userHasActiveAuthorizedAccess')->once()->with($userId, $sendId)->andReturnTrue();
 
-    expect($repository->userHasActiveAuthorizedAccess($userId, $sendId))->toBeTrue();
+    expect($repository->userHasActiveAuthorizedAccess($userId, $sendId))->toBeTrue()
+        ->and($repository->userHasActiveAuthorizedAccess($userId, $sendId))->toBeTrue();
+});
+
+it('rememberLocked prevents duplicate inner repository calls for concurrent misses', function () {
+    $sendId = (string) Str::ulid();
+
+    [$repository, $innerRepository] = makeCachedRepository();
+
+    $innerRepository->shouldReceive('find')->once()->with($sendId)->andReturnNull();
+
+    $results = collect(range(1, 5))->map(
+        fn (): ?object => $repository->find($sendId),
+    );
+
+    expect($results->unique()->all())->toBe([null]);
 });

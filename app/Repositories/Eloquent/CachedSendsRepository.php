@@ -9,19 +9,25 @@ use App\Models\Send;
 use App\Repositories\Interfaces\SendRepositoryInterface;
 use App\Support\SendIndexColumns;
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Closure;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
 readonly class CachedSendsRepository implements SendRepositoryInterface
 {
+    private const string SEND_NOT_FOUND = '__send_not_found__';
+
     private readonly int $cacheTtl;
+
+    private readonly int $negativeCacheTtl;
 
     public function __construct(
         private SendRepositoryInterface $repository,
         private CacheRepository $cache
     ) {
         $this->cacheTtl = (int) config('send.cache_ttl');
+        $this->negativeCacheTtl = (int) config('send.negative_cache_ttl');
     }
 
     /**
@@ -31,24 +37,13 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $cacheKey = "send_{$id}";
 
-        $expiresAt = now()->addMinutes($this->cacheTtl);
-        $send = $this->resolveCachedSend(
-            $this->cache->remember($cacheKey, $expiresAt, fn () => $this->repository->find($id)),
+        $cached = $this->rememberLocked(
             $cacheKey,
-            $id,
+            fn () => $this->loadSendForCache($id),
+            fn (mixed $value): CarbonInterface => $this->cacheExpiresAtForCachedSend($value),
         );
 
-        if ($send === null) {
-            $this->cache->forget($cacheKey);
-
-            return null;
-        }
-
-        if (Carbon::parse($send->valid_to)->isPast()) {
-            $this->cache->forget($cacheKey);
-        }
-
-        return $send;
+        return $this->resolveCachedSend($cached, $cacheKey, $id);
     }
 
     /**
@@ -60,7 +55,11 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $ttl = now()->addMinutes($this->cacheTtl);
 
         return $this->resolveCachedSendCollection(
-            $this->cache->remember($cacheKey, $ttl, fn () => $this->repository->findAll($userId, $columns)),
+            $this->rememberLocked(
+                $cacheKey,
+                fn (): Collection => $this->repository->findAll($userId, $columns),
+                fn (): CarbonInterface => $ttl,
+            ),
             $cacheKey,
             $userId,
             $columns,
@@ -148,13 +147,11 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $cacheKey = $this->activeSendsCountCacheKey($userId);
         $expiresAt = $this->cacheExpiresAtForActiveCount($userId);
 
-        $count = $this->cache->remember(
+        return $this->rememberLocked(
             $cacheKey,
-            $expiresAt,
             fn (): int => $this->repository->countActiveForUser($userId),
+            fn (): CarbonInterface => $expiresAt,
         );
-
-        return $count;
     }
 
     /**
@@ -166,29 +163,54 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $send = $this->find($sendId);
         $expiresAt = $send !== null
             ? $this->cacheExpiresAt($send)
-            : now()->addMinutes($this->cacheTtl);
+            : now()->addMinutes($this->negativeCacheTtl);
 
-        $hasAccess = $this->cache->remember(
+        return $this->rememberLocked(
             $cacheKey,
-            $expiresAt,
             fn (): bool => $this->repository->userHasActiveAuthorizedAccess($userId, $sendId),
+            fn (): CarbonInterface => $expiresAt,
         );
+    }
 
-        return $hasAccess;
+    private function loadSendForCache(string $id): Send|string
+    {
+        $send = $this->repository->find($id);
+
+        if ($send === null) {
+            return self::SEND_NOT_FOUND;
+        }
+
+        return $send;
     }
 
     private function resolveCachedSend(mixed $cached, string $cacheKey, string $id): ?Send
     {
-        if ($cached instanceof Send || $cached === null) {
+        if ($cached === self::SEND_NOT_FOUND) {
+            return null;
+        }
+
+        if ($cached instanceof Send) {
+            if (Carbon::parse($cached->valid_to)->isPast()) {
+                $this->cache->put(
+                    $cacheKey,
+                    $cached,
+                    now()->addMinutes($this->negativeCacheTtl),
+                );
+            }
+
             return $cached;
         }
 
         $this->cache->forget($cacheKey);
         $send = $this->repository->find($id);
 
-        if ($send !== null) {
-            $this->cache->put($cacheKey, $send, $this->cacheExpiresAt($send));
+        if ($send === null) {
+            $this->cache->put($cacheKey, self::SEND_NOT_FOUND, now()->addMinutes($this->negativeCacheTtl));
+
+            return null;
         }
+
+        $this->cache->put($cacheKey, $send, $this->cacheExpiresAt($send));
 
         return $send;
     }
@@ -214,8 +236,7 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
             }
 
             if (Carbon::parse($send->valid_to)->isPast()) {
-                $this->cache->forget($cacheKey);
-                break;
+                return $this->refreshSendCollectionCache($cacheKey, $userId, $columns, $ttl);
             }
         }
 
@@ -239,13 +260,53 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         return $collection;
     }
 
+    /**
+     * @param  Closure(): mixed  $callback
+     * @param  Closure(mixed): CarbonInterface  $ttlResolver
+     */
+    private function rememberLocked(string $key, Closure $callback, Closure $ttlResolver): mixed
+    {
+        if ($this->cache->has($key)) {
+            return $this->cache->get($key);
+        }
+
+        return $this->cache->withoutOverlapping(
+            "lock:{$key}",
+            function () use ($key, $callback, $ttlResolver): mixed {
+                if ($this->cache->has($key)) {
+                    return $this->cache->get($key);
+                }
+
+                $value = $callback();
+                $this->cache->put($key, $value, $ttlResolver($value));
+
+                return $value;
+            },
+            lockFor: 10,
+            waitFor: 5,
+        );
+    }
+
+    private function cacheExpiresAtForCachedSend(mixed $value): CarbonInterface
+    {
+        if ($value === self::SEND_NOT_FOUND) {
+            return now()->addMinutes($this->negativeCacheTtl);
+        }
+
+        if ($value instanceof Send) {
+            return $this->cacheExpiresAt($value);
+        }
+
+        return now()->addMinutes($this->cacheTtl);
+    }
+
     private function cacheExpiresAt(Send $send): CarbonInterface
     {
         $validTo = Carbon::parse($send->valid_to);
         $ttlLimit = now()->addMinutes($this->cacheTtl);
 
         if ($validTo->isPast()) {
-            return now();
+            return now()->addMinutes($this->negativeCacheTtl);
         }
 
         return $validTo->min($ttlLimit);
