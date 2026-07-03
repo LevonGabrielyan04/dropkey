@@ -2,12 +2,12 @@
 
 # Pinned hardened base images (Alpine 3.24 / LTS patch releases).
 ARG NODE_VERSION=24.18.0-alpine3.24
-ARG PHP_VERSION=8.4.22-fpm-alpine3.24
-ARG COMPOSER_VERSION=2.8.11
+ARG PHP_VERSION=8.5.7-fpm-alpine3.24
+ARG COMPOSER_VERSION=2.10.1
 
 FROM php:${PHP_VERSION} AS vendor
 
-ARG COMPOSER_VERSION=2.8.11
+ARG COMPOSER_VERSION=2.10.1
 
 RUN apk add --no-cache \
         $PHPIZE_DEPS \
@@ -23,12 +23,12 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis-6.2.0 \
+    && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && apk del --purge $PHPIZE_DEPS \
     && rm -rf /tmp/pear /var/cache/apk/*
 
-COPY --from=composer/composer:2.8.11 /usr/bin/composer /usr/bin/composer
+COPY --from=composer/composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
@@ -86,7 +86,7 @@ RUN apk add --no-cache \
         opcache \
         pdo_mysql \
         zip \
-    && pecl install redis-6.2.0 \
+    && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && addgroup -g "${GID}" -S app \
     && adduser -u "${UID}" -S -G app app \

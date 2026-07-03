@@ -33,11 +33,11 @@ DropKey is a **free, open-source, and non-profit** end-to-end encrypted applicat
 
 ## Requirements
 
-* PHP 8.4+
+* PHP 8.5+
 * [Composer](https://getcomposer.org/)
-* Node.js 20+ and npm
-* MariaDB 11+
-* Redis 7+
+* Node.js 24+ (LTS) and npm
+* MariaDB 12+ (LTS)
+* Redis 8+
 
 ---
 
