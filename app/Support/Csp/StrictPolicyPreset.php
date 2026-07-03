@@ -48,16 +48,16 @@ class StrictPolicyPreset implements Preset
     {
         $origins = ApplicationOrigins::webAuthn();
 
-        if (in_array(config('app.env'), ['local', 'testing'])) {
-            $origins = [
-                ...$origins,
-                ...$this->localDevAppOrigins(),
-                ...$this->viteDevOrigins(),
-                ...$this->loopbackViteDevOrigins(),
-            ];
+        if (! in_array(config('app.env'), ['local', 'testing'], true)) {
+            return array_values(array_unique($origins));
         }
 
-        return array_values(array_unique($origins));
+        return array_values(array_unique([
+            ...$origins,
+            ...$this->localDevAppOrigins(),
+            ...$this->viteDevOrigins(),
+            ...$this->loopbackViteDevOrigins(),
+        ]));
     }
 
     /**
@@ -97,7 +97,7 @@ class StrictPolicyPreset implements Preset
             'https://api.pwnedpasswords.com',
         ];
 
-        if (in_array(config('app.env'), ['local', 'testing'])) {
+        if (in_array(config('app.env'), ['local', 'testing'], true)) {
             $sources = [
                 ...$sources,
                 ...$this->viteDevWebSocketOrigins(),
@@ -105,9 +105,11 @@ class StrictPolicyPreset implements Preset
             ];
         }
 
-        if (config('turnstile.enabled')) {
-            $sources[] = 'https://challenges.cloudflare.com';
+        if (! config('turnstile.enabled')) {
+            return array_values(array_unique($sources));
         }
+
+        $sources[] = 'https://challenges.cloudflare.com';
 
         return array_values(array_unique($sources));
     }

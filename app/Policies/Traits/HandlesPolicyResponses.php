@@ -14,10 +14,12 @@ trait HandlesPolicyResponses
      */
     protected function sendResponse(bool $allow): Response
     {
-        if (! $allow) {
-            app(PolicyDenialLogger::class)->log();
+        if ($allow) {
+            return Response::allow();
         }
 
-        return $allow ? Response::allow() : Response::denyAsNotFound();
+        app(PolicyDenialLogger::class)->log();
+
+        return Response::denyAsNotFound();
     }
 }

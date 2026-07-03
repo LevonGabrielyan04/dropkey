@@ -41,9 +41,11 @@ class SendRepository implements SendRepositoryInterface
             $send = $this->fillSend($data);
             $send->save();
 
-            if (! empty($pivotData)) {
-                DB::table($send->authorizedUsers()->getTable())->insert($pivotData);
+            if (empty($pivotData)) {
+                return $send->load('authorizedUsers');
             }
+
+            DB::table($send->authorizedUsers()->getTable())->insert($pivotData);
 
             return $send->load('authorizedUsers');
         });
@@ -64,10 +66,12 @@ class SendRepository implements SendRepositoryInterface
             $record = $this->fillSend($data, $record);
             $record->save();
 
-            if (! empty($pivotData)) {
-                $record->authorizedUsers()->detach();
-                DB::table($record->authorizedUsers()->getTable())->insert($pivotData);
+            if (empty($pivotData)) {
+                return $record->load('authorizedUsers');
             }
+
+            $record->authorizedUsers()->detach();
+            DB::table($record->authorizedUsers()->getTable())->insert($pivotData);
 
             return $record->load('authorizedUsers');
         });

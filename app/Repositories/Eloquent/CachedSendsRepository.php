@@ -104,11 +104,13 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
         $send = $this->repository->find($id);
         $this->cache->forget("send_{$id}");
 
-        if ($send !== null) {
-            $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
-            $this->forgetActiveSendsCount((string) $send->user_id);
-            $this->forgetActiveAuthorizedAccessForSend($send);
+        if ($send === null) {
+            return $this->repository->delete($id);
         }
+
+        $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
+        $this->forgetActiveSendsCount((string) $send->user_id);
+        $this->forgetActiveAuthorizedAccessForSend($send);
 
         return $this->repository->delete($id);
     }
@@ -125,15 +127,15 @@ readonly class CachedSendsRepository implements SendRepositoryInterface
     {
         $expired = $this->repository->findExpired();
 
+        if ($expired->isEmpty()) {
+            return 0;
+        }
+
         foreach ($expired as $send) {
             $this->cache->forget("send_{$send->id}");
             $this->forgetUserSends((string) $send->user_id, SendIndexColumns::COLUMNS);
             $this->forgetActiveSendsCount((string) $send->user_id);
             $this->forgetActiveAuthorizedAccessForSend($this->repository->find($send->id));
-        }
-
-        if ($expired->isEmpty()) {
-            return 0;
         }
 
         return $this->repository->deleteExpired();

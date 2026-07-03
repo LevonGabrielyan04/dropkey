@@ -44,11 +44,17 @@ class SendPolicy
     public function view(User $user, Send $send): Response
     {
         if ($user->relationLoaded('authorizedSends')) {
-            return $this->sendResponse($user->authorizedSends->contains('id', $send->id));
+            return $this->sendResponse(
+                $this->isOwner($user, $send)
+                || $user->authorizedSends->contains('id', $send->id)
+            );
+        }
+
+        if ($this->isOwner($user, $send)) {
+            return $this->sendResponse(true);
         }
 
         return $this->sendResponse(
-            $this->isOwner($user, $send) ||
             $this->sendReadService->userHasActiveAuthorizedAccess($user->id, $send->id)
         );
     }

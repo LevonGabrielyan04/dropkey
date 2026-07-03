@@ -88,9 +88,11 @@ class AppServiceProvider extends ServiceProvider
                     ->first();
             }
 
-            $minLength = $user?->hasEnabledTwoFactorAuthentication() ? 8 : 15;
+            if ($user?->hasEnabledTwoFactorAuthentication()) {
+                return Password::min(8)->uncompromised();
+            }
 
-            return Password::min($minLength)->uncompromised();
+            return Password::min(15)->uncompromised();
         });
     }
 }

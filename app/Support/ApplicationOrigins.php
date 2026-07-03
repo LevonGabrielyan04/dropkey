@@ -48,12 +48,14 @@ class ApplicationOrigins
     {
         $origins = [rtrim(config('app.url'), '/')];
 
-        if (in_array(config('app.env'), ['local', 'testing'], true)) {
-            $alternateOrigin = self::localHostAlternateOrigin(config('app.url'));
+        if (! in_array(config('app.env'), ['local', 'testing'], true)) {
+            return array_values(array_unique($origins));
+        }
 
-            if ($alternateOrigin !== null) {
-                $origins[] = $alternateOrigin;
-            }
+        $alternateOrigin = self::localHostAlternateOrigin(config('app.url'));
+
+        if ($alternateOrigin !== null) {
+            $origins[] = $alternateOrigin;
         }
 
         return array_values(array_unique($origins));
