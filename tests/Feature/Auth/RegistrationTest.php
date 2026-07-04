@@ -31,6 +31,11 @@ test('new users can register', function () {
         ->assertRedirect(route('dashboard', absolute: false));
 
     $this->assertAuthenticated();
+
+    $user = User::query()->where('email', 'test@example.com')->first();
+
+    expect($user)->not->toBeNull()
+        ->and($user->hasVerifiedEmail())->toBeFalse();
 });
 
 test('new users can register without an email address', function () {

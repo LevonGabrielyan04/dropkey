@@ -49,26 +49,6 @@ test('email can be verified', function () {
     $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
 });
 
-test('email can be verified without being authenticated', function () {
-    $user = User::factory()->unverified()->create();
-
-    Event::fake();
-
-    $verificationUrl = URL::temporarySignedRoute(
-        'verification.verify',
-        now()->addMinutes(60),
-        ['id' => $user->id, 'hash' => sha1($user->email)],
-    );
-
-    $response = $this->get($verificationUrl);
-
-    Event::assertDispatched(Verified::class);
-
-    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $this->assertAuthenticatedAs($user);
-    $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
-});
-
 test('email is not verified with invalid hash', function () {
     $user = User::factory()->unverified()->create();
 
@@ -78,7 +58,7 @@ test('email is not verified with invalid hash', function () {
         ['id' => $user->id, 'hash' => sha1('wrong-email')],
     );
 
-    $this->get($verificationUrl)->assertForbidden();
+    $this->actingAs($user)->get($verificationUrl)->assertForbidden();
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });

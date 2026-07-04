@@ -5,14 +5,12 @@ namespace App\Providers;
 use App\Actions\Fortify\AuthenticateUser;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
-use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -35,7 +33,6 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureRegistrationRateLimiting();
         $this->configureTurnstileProtectedRoutes();
-        $this->configureEmailVerificationRoute();
     }
 
     /**
@@ -60,44 +57,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::registerView(fn () => view('pages::auth.register'));
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
         Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
-    }
-
-    /**
-     * Use a guest-accessible controller for signed email verification links.
-     */
-    private function configureEmailVerificationRoute(): void
-    {
-        if (! Features::enabled(Features::emailVerification())) {
-            return;
-        }
-
-        $this->app->booted(function (): void {
-            $this->app->booted(function (): void {
-                $route = Route::getRoutes()->getByName('verification.verify');
-
-                if ($route === null) {
-                    return;
-                }
-
-                $authMiddleware = config('fortify.auth_middleware', 'auth');
-
-                $action = $route->getAction();
-                $middleware = $action['middleware'] ?? [];
-
-                if (! is_array($middleware)) {
-                    $middleware = [$middleware];
-                }
-
-                $action['middleware'] = collect($middleware)
-                    ->reject(fn (mixed $middleware): bool => is_string($middleware) && str_starts_with($middleware, $authMiddleware))
-                    ->values()
-                    ->all();
-                $action['uses'] = VerifyEmailController::class.'@__invoke';
-                $action['controller'] = VerifyEmailController::class.'@__invoke';
-
-                $route->setAction($action);
-            });
-        });
     }
 
     /**

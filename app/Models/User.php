@@ -51,18 +51,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Determine if the user has verified their email address.
-     */
-    public function hasVerifiedEmail(): bool
-    {
-        if ($this->email === null) {
-            return true;
-        }
-
-        return $this->email_verified_at !== null;
-    }
-
-    /**
      * The sends this user is authorized to view.
      *
      * @return BelongsToMany<Send, $this, SendUser, 'pivot'>

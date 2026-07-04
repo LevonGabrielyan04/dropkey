@@ -28,10 +28,16 @@ class CreateNewUser implements CreatesNewUsers
 
         $email = filled($input['email'] ?? null) ? $input['email'] : null;
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             'email' => $email,
             'password' => $input['password'],
         ]);
+
+        if ($email === null) {
+            $user->markEmailAsVerified();
+        }
+
+        return $user;
     }
 }
