@@ -64,11 +64,11 @@ return [
             'after_commit' => false,
         ],
 
-        'redis' => [
+        'valkey' => [
             'driver' => 'redis',
-            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
-            'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 90),
+            'connection' => env('VALKEY_QUEUE_CONNECTION', 'default'),
+            'queue' => env('VALKEY_QUEUE', 'default'),
+            'retry_after' => (int) env('VALKEY_QUEUE_RETRY_AFTER', 90),
             'block_for' => null,
             'after_commit' => false,
         ],

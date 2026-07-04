@@ -26,12 +26,12 @@ x-app-env: &app-env
   DB_CONNECTION: mariadb
   DB_HOST: mariadb
   DB_PORT: 3306
-  SESSION_DRIVER: redis
-  CACHE_STORE: redis
-  QUEUE_CONNECTION: redis
-  REDIS_CLIENT: phpredis
-  REDIS_HOST: redis
-  REDIS_PORT: 6379
+  SESSION_DRIVER: valkey
+  CACHE_STORE: valkey
+  QUEUE_CONNECTION: valkey
+  VALKEY_CLIENT: phpredis
+  VALKEY_HOST: valkey
+  VALKEY_PORT: 6379
   PULSE_SERVER_NAME: app
 
 services:
@@ -44,7 +44,7 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-      redis:
+      valkey:
         condition: service_healthy
     networks:
       backend: {}
@@ -159,8 +159,8 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  redis:
-    image: redis:8.8.0-alpine3.23
+  valkey:
+    image: valkey/valkey:8.1.8-alpine3.23
     restart: unless-stopped
     env_file: .env
     networks:
@@ -169,23 +169,23 @@ services:
       - sh
       - -c
       - |
-        if [ -n "$$REDIS_PASSWORD" ]; then
-          exec redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass "$$REDIS_PASSWORD"
+        if [ -n "$$VALKEY_PASSWORD" ]; then
+          exec valkey-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass "$$VALKEY_PASSWORD"
         else
-          exec redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+          exec valkey-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
         fi
     volumes:
-      - redis-data:/data
+      - valkey-data:/data
     healthcheck:
       test:
         - CMD
         - sh
         - -c
         - |
-          if [ -n "$$REDIS_PASSWORD" ]; then
-            redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG
+          if [ -n "$$VALKEY_PASSWORD" ]; then
+            valkey-cli -a "$$VALKEY_PASSWORD" ping | grep -q PONG
           else
-            redis-cli ping | grep -q PONG
+            valkey-cli ping | grep -q PONG
           fi
       interval: 10s
       timeout: 3s
@@ -209,7 +209,7 @@ volumes:
   app-storage:
   app-bootstrap-cache:
   mariadb-data:
-  redis-data:
+  valkey-data:
 
 secrets:
   flux_username:

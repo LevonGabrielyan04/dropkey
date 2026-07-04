@@ -17,10 +17,14 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Session\CacheBasedSessionHandler;
+use Illuminate\Session\EncryptedStore;
+use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -43,6 +47,18 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(PreparesSendPivotData::class, PrepareSendPivotDataAction::class);
+
+        $this->app->booting(function (): void {
+            $config = $this->app->make('config');
+
+            if ($config->has('database.valkey')) {
+                $config->set('database.redis', $config->get('database.valkey'));
+            }
+
+            if ($config->has('pulse.ingest.valkey')) {
+                $config->set('pulse.ingest.redis', $config->get('pulse.ingest.valkey'));
+            }
+        });
     }
 
     /**
@@ -50,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureValkeyDrivers();
         $this->configureDefaults();
 
         RateLimiter::for('sends-write', function (Request $request) {
@@ -75,6 +92,42 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPulse', function (User $user) {
             return ! is_null($user->email_verified_at)
                 && $user->email === config('pulse.admin_email');
+        });
+    }
+
+    /**
+     * Register Valkey-backed drivers and Laravel compatibility aliases.
+     */
+    protected function configureValkeyDrivers(): void
+    {
+        Session::extend('valkey', function ($app) {
+            $config = $app['config'];
+
+            $handler = new CacheBasedSessionHandler(
+                clone $app['cache']->store('valkey'),
+                $config->get('session.lifetime')
+            );
+
+            if ($connection = $config->get('session.connection')) {
+                $handler->getCache()->getStore()->setConnection($connection);
+            }
+
+            if ($config->get('session.encrypt')) {
+                return new EncryptedStore(
+                    $config->get('session.cookie'),
+                    $handler,
+                    $app['encrypter'],
+                    id: null,
+                    serialization: $config->get('session.serialization', 'php'),
+                );
+            }
+
+            return new Store(
+                $config->get('session.cookie'),
+                $handler,
+                id: null,
+                serialization: $config->get('session.serialization', 'php'),
+            );
         });
     }
 
