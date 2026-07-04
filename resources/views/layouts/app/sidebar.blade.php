@@ -59,6 +59,22 @@
                         />
                         {{ __('New Send') }}
                     </a>
+
+                    <a
+                        href="{{ route('chat.index') }}"
+                        wire:navigate
+                        @class([
+                            'group flex items-center gap-3 px-4 py-4 text-xs font-bold uppercase tracking-[0.18em] transition-colors',
+                            'border-s-4 border-emerald-500 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400' => request()->routeIs('chat.*'),
+                            'border-s-4 border-transparent text-zinc-700 hover:border-zinc-950 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:border-zinc-100 dark:hover:bg-zinc-800' => ! request()->routeIs('chat.*'),
+                        ])
+                    >
+                        <flux:icon.chat-bubble-left-right
+                            variant="outline"
+                            class="size-4 shrink-0 {{ request()->routeIs('chat.*') ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-950 dark:text-zinc-400 dark:group-hover:text-zinc-100' }}"
+                        />
+                        {{ __('Messages') }}
+                    </a>
                 </nav>
             </flux:sidebar.nav>
 
