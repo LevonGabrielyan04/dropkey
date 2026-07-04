@@ -40,6 +40,38 @@ export async function ensureIdentityKeyPair() {
 }
 
 /**
+ * Ensure the server has a registered public key for the current user.
+ * Creates a local key pair and registers it only when the server has none.
+ *
+ * @param {object} options
+ * @param {string} options.registerUrl
+ * @param {string} options.mineUrl
+ * @param {string} options.csrfToken
+ */
+export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken }) {
+    const mineResponse = await fetch(mineUrl, {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+
+    if (! mineResponse.ok) {
+        throw new Error('Failed to check identity key registration status.');
+    }
+
+    const mine = await mineResponse.json();
+
+    if (mine.registered) {
+        await ensureIdentityKeyPair();
+
+        return { registered: true };
+    }
+
+    await registerPublicKey(registerUrl, csrfToken);
+
+    return { registered: false };
+}
+
+/**
  * Register the public key with the server.
  *
  * @param {string} registerUrl

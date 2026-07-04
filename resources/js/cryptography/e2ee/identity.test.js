@@ -15,7 +15,7 @@ vi.mock('./keyStore.js', () => ({
 }));
 
 import { clearIdentity, loadIdentity, saveIdentity } from './keyStore.js';
-import { ensureIdentityKeyPair, registerPublicKey } from './identity.js';
+import { ensureIdentityKeyPair, ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
 describe('keyStore integration via identity', () => {
     beforeEach(async () => {
@@ -81,5 +81,62 @@ describe('keyStore integration via identity', () => {
 
         expect(loaded.fingerprint).toBe(generated.fingerprint);
         expect(saveIdentity).toHaveBeenCalledTimes(1);
+    });
+
+    it('registers a public key when the server has none', async () => {
+        const fetchMock = vi.fn(async (url, init) => {
+            if (! init?.method || init.method === 'GET') {
+                return { ok: true, json: async () => ({ registered: false }) };
+            }
+
+            return { ok: true };
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const result = await ensureServerIdentityKey({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+
+        expect(result).toEqual({ registered: false });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/public-key/mine');
+        expect(fetchMock.mock.calls[1][0]).toBe('/api/identity/public-key');
+        expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('does not register when the server already has a public key', async () => {
+        const fetchMock = vi.fn(async () => ({
+            ok: true,
+            json: async () => ({ registered: true }),
+        }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const result = await ensureServerIdentityKey({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+
+        expect(result).toEqual({ registered: true });
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/public-key/mine');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('throws when the server registration status check fails', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false })));
+
+        await expect(ensureServerIdentityKey({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        })).rejects.toThrow('Failed to check identity key registration status.');
+
+        vi.unstubAllGlobals();
     });
 });

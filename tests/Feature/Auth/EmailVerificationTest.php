@@ -28,6 +28,23 @@ test('unverified users cannot access verified routes', function () {
     $this->actingAs($user)
         ->get(route('sends.create'))
         ->assertRedirect(route('verification.notice'));
+
+    $partner = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('chat.index'))
+        ->assertRedirect(route('verification.notice'));
+
+    $this->actingAs($user)
+        ->get(route('chat.show', $partner))
+        ->assertRedirect(route('verification.notice'));
+
+    $this->actingAs($user)
+        ->postJson(route('messages.store'), [
+            'recipient_id' => $partner->id,
+            'payload' => fakeChatPayload(),
+        ])
+        ->assertForbidden();
 });
 
 test('email can be verified', function () {
