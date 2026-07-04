@@ -1,5 +1,6 @@
 # Docker Compose stack for DropKey (PassShare).
 # Pinned service images use Alpine or LTS patch releases.
+# The `redis` service runs Valkey (Redis-compatible); Laravel config keeps REDIS_* names.
 #
 # Production: no host ports — traffic enters via Cloudflare Tunnel only.
 #   ./docker/bin/compose.sh up --tunnel   (requires TUNNEL_TOKEN in .env)
@@ -160,7 +161,7 @@ services:
       - no-new-privileges:true
 
   redis:
-    image: redis:8.8.0-alpine3.23
+    image: valkey/valkey:8.1.8-alpine3.23
     restart: unless-stopped
     env_file: .env
     networks:
@@ -170,9 +171,9 @@ services:
       - -c
       - |
         if [ -n "$$REDIS_PASSWORD" ]; then
-          exec redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass "$$REDIS_PASSWORD"
+          exec valkey-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass "$$REDIS_PASSWORD"
         else
-          exec redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+          exec valkey-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
         fi
     volumes:
       - redis-data:/data
@@ -183,9 +184,9 @@ services:
         - -c
         - |
           if [ -n "$$REDIS_PASSWORD" ]; then
-            redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG
+            valkey-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG
           else
-            redis-cli ping | grep -q PONG
+            valkey-cli ping | grep -q PONG
           fi
       interval: 10s
       timeout: 3s
