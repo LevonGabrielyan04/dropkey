@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 test('profile page is displayed', function () {
@@ -13,6 +15,8 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
+    Notification::fake();
+
     $user = User::factory()->create();
 
     $this->actingAs($user);
@@ -29,6 +33,34 @@ test('profile information can be updated', function () {
     expect($user->name)->toEqual('Test User');
     expect($user->email)->toEqual('test@example.com');
     expect($user->email_verified_at)->toBeNull();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
+});
+
+test('adding an email to a user registered without one sends a verification notification', function () {
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'name' => 'No Email User',
+        'email' => null,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')
+        ->set('name', 'No Email User')
+        ->set('email', 'new@example.com')
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors()
+        ->assertSee(__('A new verification link has been sent to your email address.'), false);
+
+    $user->refresh();
+
+    expect($user->email)->toEqual('new@example.com');
+    expect($user->hasVerifiedEmail())->toBeFalse();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('email verification status is unchanged when email address is unchanged', function () {

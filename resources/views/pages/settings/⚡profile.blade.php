@@ -33,13 +33,25 @@ new #[Title('Profile settings')] class extends Component {
 
         $validated = $this->validate($this->profileRules($user->id));
 
+        if (blank($validated['email'] ?? null)) {
+            $validated['email'] = null;
+        }
+
         $user->fill($validated);
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+        $emailChanged = $user->isDirty('email');
+
+        if ($emailChanged) {
+            $user->email_verified_at = filled($user->email) ? null : now();
         }
 
         $user->save();
+
+        if ($emailChanged && filled($user->email)) {
+            $user->sendEmailVerificationNotification();
+
+            Session::flash('status', 'verification-link-sent');
+        }
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
@@ -65,7 +77,11 @@ new #[Title('Profile settings')] class extends Component {
     #[Computed]
     public function hasUnverifiedEmail(): bool
     {
-        return Auth::user() instanceof MustVerifyEmail && ! Auth::user()->hasVerifiedEmail();
+        $user = Auth::user();
+
+        return $user instanceof MustVerifyEmail
+            && filled($user->email)
+            && ! $user->hasVerifiedEmail();
     }
 
     #[Computed]
