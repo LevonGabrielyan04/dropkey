@@ -12,9 +12,9 @@
 
             <!-- Email or Nickname -->
             <flux:input
-                name="login"
+                name="email"
                 :label="__('Email or nickname')"
-                :value="old('login')"
+                :value="old('email')"
                 type="text"
                 required
                 autofocus
