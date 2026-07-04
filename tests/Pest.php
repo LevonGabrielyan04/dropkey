@@ -98,3 +98,19 @@ function fakeChatPayload(int $ciphertextBytes = 32): string
         'iv' => base64_encode(random_bytes(12)),
     ], JSON_THROW_ON_ERROR);
 }
+
+/**
+ * @return array<string, mixed>
+ */
+function validPublicKeyPayload(): array
+{
+    return [
+        'public_key_jwk' => [
+            'kty' => 'EC',
+            'crv' => 'P-256',
+            'x' => 'test-public-x',
+            'y' => 'test-public-y',
+        ],
+        'fingerprint' => str_repeat('a', 64),
+    ];
+}

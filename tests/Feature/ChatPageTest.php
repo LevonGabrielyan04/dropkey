@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\ChatMessage;
+use App\Models\Conversation;
 use App\Models\User;
 
 it('requires authentication to view the chat inbox', function () {
@@ -44,4 +46,22 @@ it('includes the messages navigation link in the sidebar', function () {
         ->assertSuccessful()
         ->assertSee(route('chat.index'), false)
         ->assertSee(__('Messages'));
+});
+
+it('lists existing conversations on the inbox page', function () {
+    $alice = User::factory()->create(['name' => 'Alice Chat']);
+    $bob = User::factory()->create(['name' => 'Bob Chat']);
+    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $this->actingAs($alice)
+        ->get(route('chat.index'))
+        ->assertSuccessful()
+        ->assertSee('Bob Chat')
+        ->assertSee(route('chat.show', $bob), false);
 });

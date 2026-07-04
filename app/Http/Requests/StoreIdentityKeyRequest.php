@@ -47,6 +47,9 @@ class StoreIdentityKeyRequest extends FormRequest
                 'required',
                 'string',
             ],
+            'public_key_jwk.d' => [
+                'prohibited',
+            ],
             'fingerprint' => [
                 'required',
                 'string',

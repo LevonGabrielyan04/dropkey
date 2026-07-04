@@ -110,3 +110,65 @@ it('requires authentication for message relay endpoints', function () {
     $this->getJson(route('messages.index', $recipient))
         ->assertUnauthorized();
 });
+
+it('creates a conversation when the first encrypted message is sent', function () {
+    $sender = User::factory()->create();
+    $recipient = User::factory()->create();
+
+    expect(Conversation::query()->count())->toBe(0);
+
+    $this->actingAs($sender)
+        ->postJson(route('messages.store'), [
+            'recipient_id' => $recipient->id,
+            'payload' => fakeChatPayload(),
+        ])
+        ->assertCreated();
+
+    $conversation = Conversation::query()->first();
+
+    expect($conversation)->not->toBeNull()
+        ->and($conversation->user_one_id)->toBe(min($sender->id, $recipient->id))
+        ->and($conversation->user_two_id)->toBe(max($sender->id, $recipient->id));
+});
+
+it('rejects chat payloads that exceed the configured max length', function () {
+    $sender = User::factory()->create();
+    $recipient = User::factory()->create();
+    $maxLength = config('chat.payload.max_length');
+    $payload = fakeChatPayload(7_000);
+
+    expect(strlen($payload))->toBeGreaterThan($maxLength);
+
+    $this->actingAs($sender)
+        ->postJson(route('messages.store'), [
+            'recipient_id' => $recipient->id,
+            'payload' => $payload,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('payload');
+});
+
+it('rejects send-style encrypted payloads for chat messages', function () {
+    $sender = User::factory()->create();
+    $recipient = User::factory()->create();
+
+    $this->actingAs($sender)
+        ->postJson(route('messages.store'), [
+            'recipient_id' => $recipient->id,
+            'payload' => fakeEncryptedMessage(),
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('payload');
+});
+
+it('rejects unknown recipients', function () {
+    $sender = User::factory()->create();
+
+    $this->actingAs($sender)
+        ->postJson(route('messages.store'), [
+            'recipient_id' => 999_999,
+            'payload' => fakeChatPayload(),
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('recipient_id');
+});
