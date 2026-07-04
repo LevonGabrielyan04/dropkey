@@ -1,61 +1,185 @@
 <x-layouts::auth :title="__('Log in')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email or nickname and password below to log in')" />
-
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
-
-        <x-passkey-verify />
-
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
-            @csrf
-
-            <!-- Email or Nickname -->
-            <flux:input
-                name="email"
-                :label="__('Email or nickname')"
-                :value="old('email')"
-                type="text"
-                required
-                autofocus
-                autocomplete="username"
-                :placeholder="__('Email or nickname')"
-            />
-
-            <!-- Password -->
-            <div class="relative">
-                <flux:input
-                    name="password"
-                    :label="__('Password')"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                    :placeholder="__('Password')"
-                    viewable
-                />
-
-                @if (Route::has('password.request'))
-                    <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
-                        {{ __('Forgot your password?') }}
-                    </flux:link>
-                @endif
+    <div class="flex w-full flex-col font-mono">
+        <header class="border-2 border-zinc-950 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950">
+            <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                {{ __('Operator authentication') }}
             </div>
 
-            <!-- Remember Me -->
-            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+            <div class="p-6">
+                <flux:heading size="xl" class="!font-mono !text-2xl !font-black !uppercase !tracking-tight !text-zinc-950 dark:!text-zinc-50">
+                    {{ __('Log in to your account') }}
+                </flux:heading>
 
-            <x-turnstile />
+                <p class="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {{ __('Enter your email or nickname and password below to log in') }}
+                </p>
+            </div>
+        </header>
 
-            <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
+        @if (session('status'))
+            <div
+                class="border-x-2 border-b-2 border-zinc-950 bg-emerald-500/10 px-6 py-4 dark:border-zinc-100"
+                role="status"
+            >
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                    {{ __('Status') }}
+                </p>
+                <p class="mt-1 text-sm text-zinc-900 dark:text-zinc-100">
+                    {{ session('status') }}
+                </p>
+            </div>
+        @endif
+
+        <section class="border-x-2 border-b-2 border-zinc-950 dark:border-zinc-100">
+            <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
+                    {{ __('Passkey') }}
+                </p>
+            </div>
+
+            <div class="bg-white p-6 dark:bg-zinc-950">
+                <x-passkey-verify />
+            </div>
+        </section>
+
+        <form method="POST" action="{{ route('login.store') }}" class="border-x-2 border-b-2 border-zinc-950 dark:border-zinc-100">
+            @csrf
+
+            <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
+                    {{ __('Identity') }}
+                </p>
+            </div>
+
+            <div class="border-b-2 border-zinc-950 bg-white p-6 dark:border-zinc-100 dark:bg-zinc-950">
+                <label for="email" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                    {{ __('Email or nickname') }}
+                </label>
+
+                <input
+                    type="text"
+                    id="email"
+                    name="email"
+                    value="{{ old('email') }}"
+                    placeholder="{{ __('Email or nickname') }}"
+                    required
+                    autofocus
+                    autocomplete="username"
+                    class="mt-2 block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50 @error('email') border-red-600 @enderror"
+                />
+
+                @error('email')
+                    <span class="mt-2 block text-sm text-red-600">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
+                        {{ __('Credentials') }}
+                    </p>
+
+                    @if (Route::has('password.request'))
+                        <flux:link
+                            :href="route('password.request')"
+                            wire:navigate
+                            class="!font-mono !text-[10px] !font-bold !uppercase !tracking-[0.16em] !text-zinc-600 hover:!text-emerald-700 dark:!text-zinc-400 dark:hover:!text-emerald-400"
+                        >
+                            {{ __('Forgot your password?') }}
+                        </flux:link>
+                    @endif
+                </div>
+            </div>
+
+            <div class="border-b-2 border-zinc-950 bg-white p-6 dark:border-zinc-100 dark:bg-zinc-950">
+                <label for="password" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                    {{ __('Password') }}
+                </label>
+
+                <div class="relative mt-2" x-data="{ showPassword: false }">
+                    <input
+                        :type="showPassword ? 'text' : 'password'"
+                        id="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                        placeholder="{{ __('Password') }}"
+                        class="block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 pr-12 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50 @error('password') border-red-600 @enderror"
+                    />
+
+                    <button
+                        type="button"
+                        @click="showPassword = !showPassword"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 border-2 border-transparent p-1 text-zinc-600 transition-colors hover:border-zinc-950 hover:text-zinc-950 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
+                        :aria-label="showPassword ? '{{ __('Hide password') }}' : '{{ __('Show password') }}'"
+                    >
+                        <flux:icon.eye x-show="!showPassword" x-cloak variant="outline" class="size-4" />
+                        <flux:icon.eye-slash x-show="showPassword" x-cloak variant="outline" class="size-4" />
+                    </button>
+                </div>
+
+                @error('password')
+                    <span class="mt-2 block text-sm text-red-600">{{ $message }}</span>
+                @enderror
+
+                <label class="mt-4 flex cursor-pointer items-center gap-3">
+                    <input
+                        type="checkbox"
+                        name="remember"
+                        value="1"
+                        @checked(old('remember'))
+                        class="size-4 !rounded-none border-2 border-zinc-950 bg-white text-emerald-600 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900"
+                    />
+
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
+                        {{ __('Remember me') }}
+                    </span>
+                </label>
+            </div>
+
+            @if (config('turnstile.enabled'))
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
+                        {{ __('Verification') }}
+                    </p>
+                </div>
+
+                <div class="border-b-2 border-zinc-950 bg-white p-6 dark:border-zinc-100 dark:bg-zinc-950">
+                    <x-turnstile />
+                </div>
+            @endif
+
+            <div class="border-b-2 border-emerald-500 bg-emerald-500/10 px-6 py-4 dark:border-emerald-400">
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                    {{ __('Session policy') }}
+                </p>
+                <p class="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                    {{ __('Select remember me only on devices you trust. Shared terminals should use a fresh session each time.') }}
+                </p>
+            </div>
+
+            <div class="bg-zinc-50 p-6 dark:bg-zinc-900">
+                <button
+                    type="submit"
+                    data-test="login-button"
+                    class="inline-flex w-full cursor-pointer items-center justify-center !rounded-none border-2 border-zinc-950 bg-emerald-500 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-950 transition-colors hover:bg-emerald-400 dark:border-zinc-100"
+                >
                     {{ __('Log in') }}
-                </flux:button>
+                </button>
             </div>
         </form>
 
-        <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
-            <span>{{ __('Don\'t have an account?') }}</span>
-            <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+        <div class="border-x-2 border-b-2 border-zinc-950 bg-zinc-100 px-6 py-4 text-center dark:border-zinc-100 dark:bg-zinc-900">
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                <span>{{ __('Don\'t have an account?') }}</span>
+                <flux:link
+                    :href="route('register')"
+                    wire:navigate
+                    class="!font-mono !text-xs !font-bold !uppercase !tracking-[0.16em] !text-zinc-700 hover:!text-emerald-700 dark:!text-zinc-300 dark:hover:!text-emerald-400"
+                >
+                    {{ __('Sign up') }}
+                </flux:link>
+            </p>
         </div>
     </div>
 </x-layouts::auth>

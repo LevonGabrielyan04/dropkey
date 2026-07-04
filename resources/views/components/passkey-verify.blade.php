@@ -17,7 +17,7 @@
                 <flux:button
                     variant="outline"
                     icon="finger-print"
-                    class="w-full"
+                    class="w-full !rounded-none !border-2 !border-zinc-950 !px-4 !py-3 !text-xs !font-bold !uppercase !tracking-[0.18em] !text-zinc-950 hover:!bg-zinc-200 dark:!border-zinc-100 dark:!text-zinc-50 dark:hover:!bg-zinc-800"
                     x-on:click="verify"
                     x-bind:disabled="loading"
                 >
@@ -25,15 +25,13 @@
                     <span x-show="loading" x-cloak>{{ $loadingLabel }}</span>
                 </flux:button>
                 <p x-show="error" x-text="error" x-cloak
-                   class="text-sm text-center text-red-600 dark:text-red-400"></p>
+                   class="text-center text-sm text-red-600 dark:text-red-400"></p>
             </div>
 
             <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
-                </div>
-                <div class="relative flex justify-center text-xs uppercase">
-                    <span class="px-2 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900">
+                <div class="border-t-2 border-zinc-950 dark:border-zinc-100"></div>
+                <div class="relative -mt-3 flex justify-center">
+                    <span class="bg-white px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:bg-zinc-950 dark:text-zinc-400">
                         {{ $separator }}
                     </span>
                 </div>
