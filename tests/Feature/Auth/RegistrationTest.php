@@ -16,7 +16,8 @@ test('registration screen can be rendered', function () {
         ->assertOk()
         ->assertSee(__('Nickname'), false)
         ->assertSee(__('Email address (optional)'), false)
-        ->assertSee(__('Optional. Add an email if you want password recovery and email-based features.'), false);
+        ->assertSee(__('Optional. Add an email if you want password recovery and email-based features.'), false)
+        ->assertDontSee(__('Confirm password'), false);
 });
 
 test('new users can register', function () {
@@ -24,7 +25,6 @@ test('new users can register', function () {
         'name' => 'John Doe',
         'email' => 'test@example.com',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
     ]);
 
     $response->assertSessionHasNoErrors()
@@ -37,7 +37,6 @@ test('new users can register without an email address', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'No Email User',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
     ]);
 
     $response->assertSessionHasNoErrors()
@@ -57,14 +56,12 @@ test('registration is throttled to five requests per minute', function () {
         $this->post(route('register.store'), [
             'name' => "User {$attempt}",
             'password' => 'ValidPassword-15',
-            'password_confirmation' => 'ValidPassword-15',
         ])->assertStatus(302);
     }
 
     $response = $this->post(route('register.store'), [
         'name' => 'Throttled User',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
     ]);
 
     $response->assertStatus(429);
@@ -77,7 +74,6 @@ test('registration rejects duplicate nicknames', function () {
         'name' => 'Taken Nickname',
         'email' => 'another@example.com',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
     ]);
 
     $response->assertSessionHasErrors('name');

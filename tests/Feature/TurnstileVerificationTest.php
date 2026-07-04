@@ -31,7 +31,6 @@ test('registration rejects submissions without a turnstile token when enabled', 
     $response = $this->post(route('register.store'), [
         'name' => 'Turnstile User',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
     ]);
 
     $response->assertSessionHasErrors('cf-turnstile-response');
@@ -48,7 +47,6 @@ test('registration rejects submissions when turnstile verification fails', funct
     $response = $this->post(route('register.store'), [
         'name' => 'Turnstile User',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
         'cf-turnstile-response' => 'invalid-token',
     ]);
 
@@ -66,7 +64,6 @@ test('registration succeeds when turnstile verification passes', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'Turnstile User',
         'password' => 'ValidPassword-15',
-        'password_confirmation' => 'ValidPassword-15',
         'cf-turnstile-response' => 'valid-token',
     ]);
 
