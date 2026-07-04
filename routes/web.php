@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\IdentityKeyController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SendController;
 use Illuminate\Support\Facades\Route;
 
@@ -7,6 +10,27 @@ Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
     Route::resource('sends', SendController::class)->except(['index']);
+
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/{user:name}', [ChatController::class, 'show'])->name('chat.show');
+
+    Route::prefix('api')->group(function () {
+        Route::post('/identity/public-key', [IdentityKeyController::class, 'store'])
+            ->middleware('throttle:chat-identity')
+            ->name('api.identity.public-key.store');
+        Route::get('/identity/public-key', [IdentityKeyController::class, 'mine'])
+            ->middleware('throttle:chat-poll')
+            ->name('api.identity.public-key.mine');
+        Route::get('/users/{user}/public-key', [IdentityKeyController::class, 'show'])
+            ->middleware('throttle:chat-poll')
+            ->name('api.users.public-key.show');
+        Route::get('/messages/{user}', [MessageController::class, 'index'])
+            ->middleware('throttle:chat-poll')
+            ->name('messages.index');
+        Route::post('/messages', [MessageController::class, 'store'])
+            ->middleware('throttle:chat-write')
+            ->name('messages.store');
+    });
 });
 
 Route::get('/dashboard', [SendController::class, 'index'])

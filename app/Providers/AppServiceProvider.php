@@ -60,6 +60,18 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(15)->by($request->user()->id);
         });
 
+        RateLimiter::for('chat-write', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()->id);
+        });
+
+        RateLimiter::for('chat-poll', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()->id);
+        });
+
+        RateLimiter::for('chat-identity', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()->id);
+        });
+
         Gate::define('viewPulse', function (User $user) {
             return ! is_null($user->email_verified_at)
                 && $user->email === config('pulse.admin_email');
