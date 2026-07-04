@@ -46,7 +46,7 @@ class MessageController extends Controller
     {
         $validated = $request->validated();
 
-        $recipient = User::query()->findOrFail($validated['recipient_id']);
+        $recipient = User::query()->findOrFail($request->integer('recipient_id'));
         $conversation = Conversation::findOrCreateForUsers($request->user(), $recipient);
 
         $this->authorize('view', $conversation);
