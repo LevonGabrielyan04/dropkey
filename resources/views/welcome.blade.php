@@ -222,7 +222,7 @@
                             ['icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'title' => 'Automatic expiry', 'desc' => 'Set a lifetime from 1 hour to 30 days. Expired Sends are permanently deleted — no lingering secrets.'],
                             ['icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'title' => 'Hardened accounts', 'desc' => 'Passkeys, two-factor authentication, and email verification protect who can access your Sends.'],
                             ['icon' => 'M13 10V3L4 14h7v7l9-11h-7z', 'title' => 'Off-thread crypto', 'desc' => 'Encryption and decryption run in Web Workers so your UI stays responsive during heavy Argon2id operations.'],
-                            ['icon' => 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z', 'title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Valkey sessions, and Laravel encrypted casts at rest.'],
+                            ['icon' => 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z', 'title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Redis sessions, and Laravel encrypted casts at rest.'],
                         ] as $feature)
                             <div class="group h-full rounded-2xl border border-white/10 bg-[var(--landing-surface)] p-6 transition hover:border-emerald-500/30 hover:bg-[var(--landing-surface-elevated)]">
                                 <div class="mb-4 flex size-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25 transition group-hover:bg-emerald-500/25">
@@ -304,7 +304,7 @@
                                         ['Laravel encrypted cast', 'Stored payload at rest'],
                                         ['Passkeys + 2FA', 'Account access'],
                                         ['Per-Send viewer ACL', 'Who can open a Send'],
-                                        ['Valkey sessions', 'Session hijacking surface'],
+                                        ['Redis sessions', 'Session hijacking surface'],
                                         ['Content Security Policy', 'XSS and injection'],
                                     ] as [$layer, $protection])
                                         <tr class="transition hover:bg-white/[0.02]">
@@ -334,7 +334,7 @@
                             ['q' => 'What encryption is used?', 'a' => 'Password protection uses AES-256-GCM for encryption. Keys are derived with Argon2id in a Web Worker. At rest, Laravel\'s encrypted cast adds another layer of server-side protection.'],
                             ['q' => 'How long do Sends last?', 'a' => 'You choose an expiry between 1 hour and 30 days when creating a Send. Expired Sends are permanently deleted by a scheduled task that runs every 30 minutes.'],
                             ['q' => 'How many Sends can I have?', 'a' => 'Each user can have up to 15 active Sends at a time, with up to 100 viewer emails per Send and a 1,000-character plaintext message limit before encryption.'],
-                            ['q' => 'What protects my account?', 'a' => 'Accounts support passkeys, two-factor authentication (TOTP), and email verification. Sessions are short-lived and stored in Valkey to minimize hijacking risk.'],
+                            ['q' => 'What protects my account?', 'a' => 'Accounts support passkeys, two-factor authentication (TOTP), and email verification. Sessions are short-lived and stored in Redis to minimize hijacking risk.'],
                             ['q' => 'Is this better than sharing via chat or email?', 'a' => 'Yes. Chat and email leave plaintext copies in message history, logs, and backups. '.config('app.name').' encrypts before transmission, limits access to named viewers, and auto-deletes on expiry.'],
                             ['q' => 'What happens if I forget the Send password?', 'a' => 'The secret cannot be recovered. This is intentional — it proves we never had access to the decryption key. Only share passwords through a separate secure channel.'],
                         ] as $faq)

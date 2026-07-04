@@ -102,8 +102,8 @@ return [
             'keep' => env('PULSE_INGEST_KEEP', '7 days'),
         ],
 
-        'valkey' => [
-            'connection' => env('PULSE_VALKEY_CONNECTION'),
+        'redis' => [
+            'connection' => env('PULSE_REDIS_CONNECTION'),
             'chunk' => 1000,
         ],
     ],

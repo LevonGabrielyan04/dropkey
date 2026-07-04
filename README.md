@@ -24,7 +24,7 @@ DropKey is a **free, open-source, and non-profit** end-to-end encrypted applicat
 | **Laravel `encrypted` cast** | Stored payload at rest on the server |
 | **Passkeys + 2FA + email verification** | Account access |
 | **Per-Send viewer ACL** | Who can open a given Send |
-| **Short-lived Valkey sessions** | Session hijacking surface |
+| **Short-lived Redis sessions** | Session hijacking surface |
 | **Strict Content Security Policy** | XSS and injection |
 
 > **Note:** The application cannot decrypt password-protected messages. If you lose the password, the secret cannot be recovered.
@@ -37,7 +37,7 @@ DropKey is a **free, open-source, and non-profit** end-to-end encrypted applicat
 * [Composer](https://getcomposer.org/)
 * Node.js 24+ (LTS) and npm
 * MariaDB 12+ (LTS)
-* Valkey 8+ (Redis-compatible)
+* Redis 8+
 
 ---
 
@@ -71,7 +71,7 @@ php artisan tinker --execute 'echo "base64:".base64_encode(random_bytes(32));'
 
 Set the output as `PASSKEYS_USER_HANDLE_SECRET` in `.env`.
 
-Configure database and Valkey credentials in `.env`. The app expects MariaDB and Valkey for sessions, cache, and queues.
+Configure database and Redis credentials in `.env`. The app expects MariaDB and Redis for sessions, cache, and queues.
 
 ### 3. Database
 
@@ -153,7 +153,7 @@ Password-protected Sends require a password of at least **15 characters** (`conf
 
 ## Docker deployment
 
-The repository includes a production-oriented Docker Compose stack (app, queue worker, scheduler, MariaDB, Valkey, optional Cloudflare Tunnel).
+The repository includes a production-oriented Docker Compose stack (app, queue worker, scheduler, MariaDB, Redis, optional Cloudflare Tunnel).
 
 ```bash
 cp .env.docker.example .env

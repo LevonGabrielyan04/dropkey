@@ -134,48 +134,49 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Valkey Databases
+    | Redis Databases
     |--------------------------------------------------------------------------
     |
-    | Valkey is a Redis-compatible, open source key-value store. Connection
-    | settings are defined here for cache, queue, and session backends.
+    | Redis is an open source, fast, and advanced key-value store that also
+    | provides a richer body of commands than a typical key-value system
+    | such as Memcached. You may define your connection settings here.
     |
     */
 
-    'valkey' => [
+    'redis' => [
 
-        'client' => env('VALKEY_CLIENT', 'phpredis'),
+        'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
-            'cluster' => env('VALKEY_CLUSTER', 'redis'),
-            'prefix' => env('VALKEY_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
-            'persistent' => env('VALKEY_PERSISTENT', false),
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
         'default' => [
-            'url' => env('VALKEY_URL'),
-            'host' => env('VALKEY_HOST', '127.0.0.1'),
-            'username' => env('VALKEY_USERNAME'),
-            'password' => env('VALKEY_PASSWORD'),
-            'port' => env('VALKEY_PORT', '6379'),
-            'database' => env('VALKEY_DB', '0'),
-            'max_retries' => env('VALKEY_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('VALKEY_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
-            'backoff_base' => env('VALKEY_BACKOFF_BASE', 100),
-            'backoff_cap' => env('VALKEY_BACKOFF_CAP', 1000),
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '0'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
 
         'cache' => [
-            'url' => env('VALKEY_URL'),
-            'host' => env('VALKEY_HOST', '127.0.0.1'),
-            'username' => env('VALKEY_USERNAME'),
-            'password' => env('VALKEY_PASSWORD'),
-            'port' => env('VALKEY_PORT', '6379'),
-            'database' => env('VALKEY_CACHE_DB', '1'),
-            'max_retries' => env('VALKEY_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('VALKEY_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
-            'backoff_base' => env('VALKEY_BACKOFF_BASE', 100),
-            'backoff_cap' => env('VALKEY_BACKOFF_CAP', 1000),
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_CACHE_DB', '1'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
 
     ],

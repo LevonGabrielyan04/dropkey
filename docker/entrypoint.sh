@@ -36,7 +36,7 @@ prepare_runtime() {
     fi
 
     wait_for_tcp "${DB_HOST:-mariadb}" "${DB_PORT:-3306}" "MariaDB"
-    wait_for_tcp "${VALKEY_HOST:-valkey}" "${VALKEY_PORT:-6379}" "Valkey"
+    wait_for_tcp "${REDIS_HOST:-redis}" "${REDIS_PORT:-6379}" "Redis"
 
     mkdir -p \
         storage/framework/cache/data \
@@ -71,7 +71,7 @@ case "$ROLE" in
         ;;
     queue)
         prepare_runtime
-        exec php artisan queue:work valkey --sleep=3 --tries=3 --max-time=3600
+        exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
         ;;
     scheduler)
         prepare_runtime
