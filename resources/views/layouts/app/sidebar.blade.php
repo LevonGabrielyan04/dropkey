@@ -91,7 +91,7 @@
                         </span>
 
                         <span class="min-w-0 flex-1">
-                            <span class="block truncate text-xs font-bold uppercase tracking-tight text-zinc-950 dark:text-zinc-50">
+                            <span class="block truncate text-xs font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
                                 {{ auth()->user()->name }}
                             </span>
                             <span class="mt-0.5 block truncate text-[10px] text-zinc-500">
@@ -107,7 +107,7 @@
                             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
                                 {{ __('Operator') }}
                             </p>
-                            <p class="mt-1 truncate text-xs font-bold uppercase text-zinc-950 dark:text-zinc-50">
+                            <p class="mt-1 truncate text-xs font-bold text-zinc-950 dark:text-zinc-50">
                                 {{ auth()->user()->name }}
                             </p>
                             <p class="mt-0.5 truncate text-[10px] text-zinc-500">
@@ -177,7 +177,7 @@
                         <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
                             {{ __('Operator') }}
                         </p>
-                        <p class="mt-1 truncate text-xs font-bold uppercase text-zinc-950 dark:text-zinc-50">
+                        <p class="mt-1 truncate text-xs font-bold text-zinc-950 dark:text-zinc-50">
                             {{ auth()->user()->name }}
                         </p>
                         <p class="mt-0.5 truncate text-[10px] text-zinc-500">

@@ -130,7 +130,7 @@
 
                 <div class="mt-4 flex flex-wrap gap-2" x-show="hasViewers" x-cloak>
                     <template x-for="(name, index) in viewers" :key="index">
-                        <span class="inline-flex items-center gap-2 border-2 border-zinc-950 bg-zinc-100 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-zinc-900 dark:border-zinc-100 dark:bg-zinc-800 dark:text-zinc-100">
+                        <span class="inline-flex items-center gap-2 border-2 border-zinc-950 bg-zinc-100 px-3 py-1.5 text-xs font-bold tracking-[0.12em] text-zinc-900 dark:border-zinc-100 dark:bg-zinc-800 dark:text-zinc-100">
                             <span x-text="name"></span>
                             <button
                                 type="button"
