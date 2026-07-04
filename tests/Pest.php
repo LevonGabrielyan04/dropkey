@@ -86,3 +86,15 @@ function fakeEncryptedMessage(int $ciphertextBytes = 32): string
         'iv' => base64_encode(random_bytes(12)),
     ], JSON_THROW_ON_ERROR);
 }
+
+/**
+ * Build a client-side encrypted chat payload for HTTP tests.
+ */
+function fakeChatPayload(int $ciphertextBytes = 32): string
+{
+    return json_encode([
+        'v' => 1,
+        'ciphertext' => base64_encode(random_bytes($ciphertextBytes)),
+        'iv' => base64_encode(random_bytes(12)),
+    ], JSON_THROW_ON_ERROR);
+}
