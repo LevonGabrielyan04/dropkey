@@ -8,7 +8,13 @@ vi.mock('./cryptography/e2ee/session.js', () => ({
     establishSession: vi.fn(),
 }));
 
-import { resolveChatMessageContent } from './e2eeChatSession.js';
+import { DEFAULT_AUTO_DELETE, resolveChatMessageContent } from './e2eeChatSession.js';
+
+describe('DEFAULT_AUTO_DELETE', () => {
+    it('defaults to seven days', () => {
+        expect(DEFAULT_AUTO_DELETE).toBe('7 days');
+    });
+});
 
 describe('resolveChatMessageContent', () => {
     beforeEach(() => {

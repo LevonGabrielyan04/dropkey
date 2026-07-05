@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\TimePeriod;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
@@ -66,9 +67,17 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
 
     public function deleteExpired(): int
     {
-        return $this->model->query()
-            ->where('created_at', '<', now()->subHours((int) config('chat.retention_hours')))
-            ->delete();
+        $deleted = 0;
+
+        foreach (TimePeriod::cases() as $period) {
+            $deleted += $this->model->query()
+                ->join('conversations', 'chat_messages.conversation_id', '=', 'conversations.id')
+                ->where('conversations.auto_delete', $period->value)
+                ->where('chat_messages.created_at', '<', $period->retentionCutoff())
+                ->delete();
+        }
+
+        return $deleted;
     }
 
     /**

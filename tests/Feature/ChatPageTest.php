@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TimePeriod;
 use App\Models\ChatMessage;
 use App\Models\User;
 
@@ -38,6 +39,8 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee(':disabled="!canSendMessage"', false)
         ->assertSee('data-decryption-failed-message', false)
         ->assertSee(__('Unable to decrypt this message.'), false)
+        ->assertSee('id="auto-delete"', false)
+        ->assertSee('data-auto-delete="'.TimePeriod::SEVEN_DAYS->value.'"', false)
         ->assertSee('message.decryptionError', false)
         ->assertDontSee('${partnerFingerprint}', false);
 });

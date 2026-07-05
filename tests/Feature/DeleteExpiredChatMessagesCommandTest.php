@@ -17,7 +17,7 @@ it('deletes expired chat messages when the command is run', function () {
 
     ChatMessage::query()
         ->whereKey($expiredMessage->id)
-        ->update(['created_at' => now()->subHours(25)]);
+        ->update(['created_at' => now()->subDays(8)]);
 
     ChatMessage::query()->create([
         'conversation_id' => $conversation->id,

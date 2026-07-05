@@ -11,7 +11,7 @@ enum TimePeriod: string
     case ONE_HOUR = '1 hour';
     case SIX_HOURS = '6 hours';
     case ONE_DAY = '1 day';
-    case FOURTEEN_DAYS = '14 days';
+    case SEVEN_DAYS = '7 days';
     case THIRTY_DAYS = '30 days';
 
     /**
@@ -33,8 +33,22 @@ enum TimePeriod: string
             self::ONE_HOUR => CarbonImmutable::now()->addHour(),
             self::SIX_HOURS => CarbonImmutable::now()->addHours(6),
             self::ONE_DAY => CarbonImmutable::now()->addDay(),
-            self::FOURTEEN_DAYS => CarbonImmutable::now()->addDays(14),
+            self::SEVEN_DAYS => CarbonImmutable::now()->addDays(7),
             self::THIRTY_DAYS => CarbonImmutable::now()->addDays(30),
+        };
+    }
+
+    /**
+     * Get the cutoff datetime before which messages should be deleted.
+     */
+    public function retentionCutoff(): CarbonImmutable
+    {
+        return match ($this) {
+            self::ONE_HOUR => CarbonImmutable::now()->subHour(),
+            self::SIX_HOURS => CarbonImmutable::now()->subHours(6),
+            self::ONE_DAY => CarbonImmutable::now()->subDay(),
+            self::SEVEN_DAYS => CarbonImmutable::now()->subDays(7),
+            self::THIRTY_DAYS => CarbonImmutable::now()->subDays(30),
         };
     }
 }

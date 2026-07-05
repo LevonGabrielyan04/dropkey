@@ -11,6 +11,8 @@
         data-send-url="{{ route('messages.store') }}"
         data-poll-interval-ms="{{ config('chat.poll_interval_ms') }}"
         data-decryption-failed-message="{{ __('Unable to decrypt this message.') }}"
+        data-auto-delete="{{ $autoDelete->value }}"
+        data-auto-delete-url="{{ route('conversations.auto-delete.update', $recipient) }}"
     >
         <header class="border-2 border-zinc-950 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950">
             <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
@@ -33,6 +35,26 @@
                         x-cloak
                         class="mt-2 break-all text-[10px] uppercase tracking-[0.14em] text-zinc-500"
                     ></p>
+
+                    <div class="mt-4 max-w-xs">
+                        <label for="auto-delete" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                            {{ __('Auto-delete messages after') }}
+                        </label>
+
+                        <select
+                            id="auto-delete"
+                            x-model="autoDelete"
+                            @change="updateAutoDelete"
+                            :disabled="autoDeleteSaving"
+                            class="mt-2 block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2 font-mono text-xs text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50"
+                        >
+                            @foreach ($timePeriods as $period)
+                                <option value="{{ $period->value }}">{{ $period->value }}</option>
+                            @endforeach
+                        </select>
+
+                        <span x-show="autoDeleteError" x-text="autoDeleteError" x-cloak class="mt-2 block text-xs text-red-600"></span>
+                    </div>
                 </div>
 
                 <flux:button

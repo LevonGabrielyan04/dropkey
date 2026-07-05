@@ -20,4 +20,12 @@ class ConversationPolicy
     {
         return $this->sendResponse($conversation->includesUser($user));
     }
+
+    /**
+     * Determine whether the user can update the conversation.
+     */
+    public function update(User $user, Conversation $conversation): Response
+    {
+        return $this->sendResponse($conversation->includesUser($user));
+    }
 }

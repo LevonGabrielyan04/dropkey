@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TimePeriod;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +15,10 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $user_one_id
  * @property int $user_two_id
+ * @property TimePeriod $auto_delete
  * @property Carbon $created_at
  */
-#[Fillable(['user_one_id', 'user_two_id'])]
+#[Fillable(['user_one_id', 'user_two_id', 'auto_delete'])]
 class Conversation extends Model
 {
     public const UPDATED_AT = null;
@@ -27,6 +29,7 @@ class Conversation extends Model
     protected function casts(): array
     {
         return [
+            'auto_delete' => TimePeriod::class,
             'created_at' => 'datetime',
         ];
     }

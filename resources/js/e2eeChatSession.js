@@ -4,6 +4,8 @@ import {
     establishSession,
 } from './cryptography/e2ee/session.js';
 
+export const DEFAULT_AUTO_DELETE = '7 days';
+
 /**
  * @param {string} payload
  * @param {CryptoKey} conversationKey
@@ -47,6 +49,10 @@ document.addEventListener('alpine:init', () => {
         publicKeyUrl: '',
         pollIntervalMs: 3000,
         decryptionFailedMessage: 'Unable to decrypt this message.',
+        autoDelete: DEFAULT_AUTO_DELETE,
+        autoDeleteUrl: '',
+        autoDeleteSaving: false,
+        autoDeleteError: '',
 
         get canSendMessage() {
             return this.ready && ! this.sending && this.messageText.trim() !== '';
@@ -63,6 +69,8 @@ document.addEventListener('alpine:init', () => {
             this.pollIntervalMs = Number(this.$el.dataset.pollIntervalMs) || 3000;
             this.decryptionFailedMessage = this.$el.dataset.decryptionFailedMessage
                 ?? 'Unable to decrypt this message.';
+            this.autoDelete = this.$el.dataset.autoDelete || DEFAULT_AUTO_DELETE;
+            this.autoDeleteUrl = this.$el.dataset.autoDeleteUrl ?? '';
 
             this._visibilityHandler = () => {
                 if (document.visibilityState === 'hidden') {
@@ -193,6 +201,46 @@ document.addEventListener('alpine:init', () => {
             if (this.pollTimer !== null) {
                 window.clearInterval(this.pollTimer);
                 this.pollTimer = null;
+            }
+        },
+
+        async updateAutoDelete() {
+            if (! this.autoDeleteUrl || this.autoDeleteSaving) {
+                return;
+            }
+
+            const previousAutoDelete = this.$el.dataset.autoDelete || DEFAULT_AUTO_DELETE;
+            this.autoDeleteSaving = true;
+            this.autoDeleteError = '';
+
+            try {
+                const response = await fetch(this.autoDeleteUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.csrfToken,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        auto_delete: this.autoDelete,
+                    }),
+                });
+
+                if (! response.ok) {
+                    this.autoDelete = previousAutoDelete;
+                    this.autoDeleteError = 'Failed to update auto-delete setting.';
+                    return;
+                }
+
+                const data = await response.json();
+                this.autoDelete = data.auto_delete ?? this.autoDelete;
+                this.$el.dataset.autoDelete = this.autoDelete;
+            } catch {
+                this.autoDelete = previousAutoDelete;
+                this.autoDeleteError = 'Failed to update auto-delete setting.';
+            } finally {
+                this.autoDeleteSaving = false;
             }
         },
 

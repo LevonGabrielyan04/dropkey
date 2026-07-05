@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\TimePeriod;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Repositories\Interfaces\ConversationRepositoryInterface;
@@ -30,5 +31,14 @@ class ConversationRepository implements ConversationRepositoryInterface
             ])
             ->latest('id')
             ->get();
+    }
+
+    public function updateAutoDelete(Conversation $conversation, TimePeriod $autoDelete): Conversation
+    {
+        $conversation->update([
+            'auto_delete' => $autoDelete,
+        ]);
+
+        return $conversation->refresh();
     }
 }
