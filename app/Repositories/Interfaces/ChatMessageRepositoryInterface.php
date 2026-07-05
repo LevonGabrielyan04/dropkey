@@ -21,4 +21,6 @@ interface ChatMessageRepositoryInterface
     public function getMessagesForConversation(Conversation $conversation, int $afterId = 0): Collection;
 
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
+
+    public function deleteExpired(): int;
 }

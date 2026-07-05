@@ -33,5 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('sends:delete-expired')
             ->everyThirtyMinutes()
             ->withoutOverlapping();
+
+        $schedule->command('chat-messages:delete-expired')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping();
     })
     ->create();

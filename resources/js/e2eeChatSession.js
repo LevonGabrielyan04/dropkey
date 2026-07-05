@@ -132,7 +132,9 @@ document.addEventListener('alpine:init', () => {
             try {
                 plaintext = await decryptChatMessage(message.payload, this.conversationKey);
             } catch {
-                plaintext = '[Unable to decrypt message]';
+                this.lastMessageId = Math.max(this.lastMessageId, message.id);
+
+                return;
             }
 
             this.messages.push({

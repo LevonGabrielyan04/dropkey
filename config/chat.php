@@ -8,4 +8,5 @@ return [
         'batch_size' => env('CHAT_POLL_BATCH_SIZE', 100),
     ],
     'poll_interval_ms' => env('CHAT_POLL_INTERVAL_MS', 3000),
+    'retention_hours' => env('CHAT_RETENTION_HOURS', 24),
 ];

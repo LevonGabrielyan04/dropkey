@@ -64,6 +64,13 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
         ]);
     }
 
+    public function deleteExpired(): int
+    {
+        return $this->model->query()
+            ->where('created_at', '<', now()->subHours((int) config('chat.retention_hours')))
+            ->delete();
+    }
+
     /**
      * @return array{0: int, 1: int}
      */
