@@ -5,9 +5,26 @@ import {
 } from './cryptography/e2ee/session.js';
 
 /**
+ * @param {string} payload
+ * @param {CryptoKey} conversationKey
+ * @param {string} decryptionFailedMessage
+ * @returns {Promise<{ plaintext: string|null, decryptionError: string }>}
+ */
+export async function resolveChatMessageContent(payload, conversationKey, decryptionFailedMessage) {
+    try {
+        const plaintext = await decryptChatMessage(payload, conversationKey);
+
+        return { plaintext, decryptionError: '' };
+    } catch {
+        return { plaintext: null, decryptionError: decryptionFailedMessage };
+    }
+}
+
+/**
  * Alpine component for a 1v1 E2EE chat session.
  * All crypto runs in the browser via Web Crypto; the server relays ciphertext only.
  */
+if (typeof document !== 'undefined') {
 document.addEventListener('alpine:init', () => {
     Alpine.data('e2eeChatSession', () => ({
         loading: true,
@@ -29,6 +46,7 @@ document.addEventListener('alpine:init', () => {
         registerUrl: '',
         publicKeyUrl: '',
         pollIntervalMs: 3000,
+        decryptionFailedMessage: 'Unable to decrypt this message.',
 
         get canSendMessage() {
             return this.ready && ! this.sending && this.messageText.trim() !== '';
@@ -43,6 +61,8 @@ document.addEventListener('alpine:init', () => {
             this.registerUrl = this.$el.dataset.registerUrl ?? '';
             this.publicKeyUrl = this.$el.dataset.publicKeyUrl ?? '';
             this.pollIntervalMs = Number(this.$el.dataset.pollIntervalMs) || 3000;
+            this.decryptionFailedMessage = this.$el.dataset.decryptionFailedMessage
+                ?? 'Unable to decrypt this message.';
 
             this._visibilityHandler = () => {
                 if (document.visibilityState === 'hidden') {
@@ -127,20 +147,17 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            let plaintext = '';
-
-            try {
-                plaintext = await decryptChatMessage(message.payload, this.conversationKey);
-            } catch {
-                this.lastMessageId = Math.max(this.lastMessageId, message.id);
-
-                return;
-            }
+            const { plaintext, decryptionError } = await resolveChatMessageContent(
+                message.payload,
+                this.conversationKey,
+                this.decryptionFailedMessage,
+            );
 
             this.messages.push({
                 id: message.id,
                 senderId: message.sender_id,
                 plaintext,
+                decryptionError,
                 createdAt: message.created_at,
                 isMine: message.sender_id === this.localUserId,
             });
@@ -217,6 +234,7 @@ document.addEventListener('alpine:init', () => {
                     id: created.id,
                     senderId: this.localUserId,
                     plaintext: text,
+                    decryptionError: '',
                     createdAt: created.created_at,
                     isMine: true,
                 });
@@ -264,3 +282,4 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+}

@@ -36,6 +36,9 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee($bob->name)
         ->assertSee(__('Send encrypted message'))
         ->assertSee(':disabled="!canSendMessage"', false)
+        ->assertSee('data-decryption-failed-message', false)
+        ->assertSee(__('Unable to decrypt this message.'), false)
+        ->assertSee('message.decryptionError', false)
         ->assertDontSee('${partnerFingerprint}', false);
 });
 

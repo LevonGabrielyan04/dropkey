@@ -10,6 +10,7 @@
         data-messages-url="{{ route('messages.index', $recipient) }}"
         data-send-url="{{ route('messages.store') }}"
         data-poll-interval-ms="{{ config('chat.poll_interval_ms') }}"
+        data-decryption-failed-message="{{ __('Unable to decrypt this message.') }}"
     >
         <header class="border-2 border-zinc-950 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950">
             <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
@@ -69,10 +70,26 @@
 
             <template x-for="message in messages" :key="message.id">
                 <article
-                    class="max-w-[85%] border-2 border-zinc-950 px-3 py-2 text-sm dark:border-zinc-100"
-                    :class="message.isMine ? 'ms-auto bg-emerald-500/20 text-zinc-950 dark:text-zinc-50' : 'me-auto bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50'"
+                    class="max-w-[85%] border-2 px-3 py-2 text-sm"
+                    :class="message.decryptionError
+                        ? (message.isMine
+                            ? 'ms-auto border-red-600 bg-red-50 text-red-700 dark:border-red-500 dark:bg-red-950/40 dark:text-red-400'
+                            : 'me-auto border-red-600 bg-red-50 text-red-700 dark:border-red-500 dark:bg-red-950/40 dark:text-red-400')
+                        : (message.isMine
+                            ? 'ms-auto border-zinc-950 bg-emerald-500/20 text-zinc-950 dark:border-zinc-100 dark:text-zinc-50'
+                            : 'me-auto border-zinc-950 bg-white text-zinc-950 dark:border-zinc-100 dark:bg-zinc-950 dark:text-zinc-50')"
                 >
-                    <p class="whitespace-pre-wrap break-words" x-text="message.plaintext"></p>
+                    <p
+                        x-show="!message.decryptionError"
+                        class="whitespace-pre-wrap break-words"
+                        x-text="message.plaintext"
+                    ></p>
+                    <p
+                        x-show="message.decryptionError"
+                        x-cloak
+                        class="whitespace-pre-wrap break-words"
+                        x-text="message.decryptionError"
+                    ></p>
                     <p
                         class="mt-1 text-[10px] uppercase tracking-[0.14em] text-zinc-500"
                         x-text="message.isMine ? '{{ __('You') }}' : '{{ $recipient->name }}'"
