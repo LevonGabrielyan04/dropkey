@@ -69,3 +69,39 @@ export async function clearIdentity() {
         request.onsuccess = () => resolve();
     });
 }
+
+/**
+ * Delete every IndexedDB database in this browser profile.
+ *
+ * @returns {Promise<void>}
+ */
+export async function clearAllIndexedDB() {
+    if (typeof indexedDB === 'undefined') {
+        return;
+    }
+
+    const databases = typeof indexedDB.databases === 'function'
+        ? await indexedDB.databases()
+        : [{ name: DB_NAME }];
+
+    await Promise.all(
+        databases
+            .map((database) => database?.name)
+            .filter(Boolean)
+            .map((name) => deleteDatabase(name)),
+    );
+}
+
+/**
+ * @param {string} name
+ * @returns {Promise<void>}
+ */
+function deleteDatabase(name) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(name);
+
+        request.onerror = () => reject(request.error ?? new Error(`Failed to delete IndexedDB database "${name}".`));
+        request.onsuccess = () => resolve();
+        request.onblocked = () => resolve();
+    });
+}

@@ -3,4 +3,5 @@ import './viewerManager.js';
 import './sendDetailsManager.js';
 import './e2eeChatSession.js';
 import './identityRegistration.js';
+import './logoutCleanup.js';
 import './passkeys.js';
