@@ -31,7 +31,7 @@ class MessageController extends Controller
     {
         $message = $this->chatMessages->storeMessage(
             $request->user(),
-            $request->integer('recipient_id'),
+            User::query()->findOrFail($request->integer('recipient_id')),
             $request->validated('payload'),
         );
 

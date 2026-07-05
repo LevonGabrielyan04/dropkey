@@ -1,14 +1,13 @@
 <?php
 
 use App\Models\ChatMessage;
-use App\Models\Conversation;
 use App\Models\User;
 
 it('denies non-participants from viewing a conversation via policy', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
     $eve = User::factory()->create();
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
 
     expect($eve->can('view', $conversation))->toBeFalse()
         ->and($alice->can('view', $conversation))->toBeTrue()
@@ -19,7 +18,7 @@ it('does not expose another users conversation when polling an unrelated partner
     $alice = User::factory()->create();
     $bob = User::factory()->create();
     $eve = User::factory()->create();
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
 
     ChatMessage::query()->create([
         'conversation_id' => $conversation->id,

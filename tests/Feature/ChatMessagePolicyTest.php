@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Conversation;
 use App\Models\User;
 
 it('denies message polling when the authenticated user is not a conversation participant', function () {
@@ -8,7 +7,7 @@ it('denies message polling when the authenticated user is not a conversation par
     $bob = User::factory()->create();
     $eve = User::factory()->create();
 
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
 
     expect($eve->can('view', $conversation))->toBeFalse();
 

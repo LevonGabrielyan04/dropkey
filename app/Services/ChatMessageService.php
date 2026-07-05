@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\ChatMessage;
+use App\Models\Conversation;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
@@ -26,22 +27,24 @@ class ChatMessageService implements ChatMessageServiceInterface
             return new Collection;
         }
 
-        Gate::authorize('view', $conversation);
+        $this->authorizeConversation($conversation);
 
         return $this->chatMessages->getMessagesForConversation($conversation, $afterId);
     }
 
-    public function storeMessage(User $sender, int $recipientId, string $payload): ChatMessage
+    public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage
     {
-        $recipient = $this->chatMessages->findUserOrFail($recipientId);
-        $conversation = $this->chatMessages->findOrCreateConversation($sender, $recipient);
+        $conversation = $this->authorizeConversation(
+            $this->chatMessages->findOrCreateConversation($sender, $recipient),
+        );
 
+        return $this->chatMessages->createMessage($conversation, $sender, $payload);
+    }
+
+    private function authorizeConversation(Conversation $conversation): Conversation
+    {
         Gate::authorize('view', $conversation);
 
-        return $this->chatMessages->createMessage(
-            $conversation,
-            $sender->id,
-            $payload,
-        );
+        return $conversation;
     }
 }

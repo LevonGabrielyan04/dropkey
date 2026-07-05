@@ -22,10 +22,10 @@ Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
             ->middleware('throttle:chat-poll')
             ->name('api.identity.public-key.mine');
         Route::get('/users/{user}/public-key', [IdentityKeyController::class, 'show'])
-            ->middleware('throttle:chat-poll')
+            ->middleware(['throttle:chat-poll', 'not-self'])
             ->name('api.users.public-key.show');
         Route::get('/messages/{user}', [MessageController::class, 'index'])
-            ->middleware('throttle:chat-poll')
+            ->middleware(['throttle:chat-poll', 'not-self'])
             ->name('messages.index');
         Route::post('/messages', [MessageController::class, 'store'])
             ->middleware('throttle:chat-write')

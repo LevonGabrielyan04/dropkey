@@ -68,23 +68,4 @@ class Conversation extends Model
 
         return $this->userOne;
     }
-
-    /**
-     * Find or create a canonical 1v1 conversation between two users.
-     */
-    public static function findOrCreateForUsers(User $first, User $second): self
-    {
-        if ($first->id === $second->id) {
-            throw new \InvalidArgumentException('Cannot create a conversation with yourself.');
-        }
-
-        [$userOneId, $userTwoId] = $first->id < $second->id
-            ? [$first->id, $second->id]
-            : [$second->id, $first->id];
-
-        return self::query()->firstOrCreate([
-            'user_one_id' => $userOneId,
-            'user_two_id' => $userTwoId,
-        ]);
-    }
 }

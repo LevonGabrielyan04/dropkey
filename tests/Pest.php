@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Conversation;
+use App\Models\User;
+use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -97,6 +100,12 @@ function fakeChatPayload(int $ciphertextBytes = 32): string
         'ciphertext' => base64_encode(random_bytes($ciphertextBytes)),
         'iv' => base64_encode(random_bytes(12)),
     ], JSON_THROW_ON_ERROR);
+}
+
+function createConversation(User $first, User $second): Conversation
+{
+    return app(ChatMessageRepositoryInterface::class)
+        ->findOrCreateConversation($first, $second);
 }
 
 /**

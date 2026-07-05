@@ -13,14 +13,12 @@ interface ChatMessageRepositoryInterface
 {
     public function findConversationBetweenUsers(User $first, User $second): ?Conversation;
 
+    public function findOrCreateConversation(User $first, User $second): Conversation;
+
     /**
      * @return Collection<int, ChatMessage>
      */
     public function getMessagesForConversation(Conversation $conversation, int $afterId = 0): Collection;
 
-    public function findUserOrFail(int $userId): User;
-
-    public function findOrCreateConversation(User $first, User $second): Conversation;
-
-    public function createMessage(Conversation $conversation, int $senderId, string $payload): ChatMessage;
+    public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
 }

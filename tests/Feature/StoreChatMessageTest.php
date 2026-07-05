@@ -59,7 +59,7 @@ it('rejects messages sent to yourself', function () {
 it('returns encrypted messages for conversation participants', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
     $payload = fakeChatPayload();
 
     ChatMessage::query()->create([
@@ -96,7 +96,7 @@ it('rejects invalid after_id query parameters', function () {
 it('polls only messages after the provided cursor', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
 
     $first = ChatMessage::query()->create([
         'conversation_id' => $conversation->id,

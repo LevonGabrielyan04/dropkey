@@ -6,21 +6,21 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreIdentityKeyRequest;
 use App\Models\User;
-use App\Models\UserIdentityKey;
+use App\Repositories\Interfaces\UserIdentityKeyRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 
 class IdentityKeyController extends Controller
 {
+    public function __construct(protected UserIdentityKeyRepositoryInterface $identityKeys) {}
+
     public function store(StoreIdentityKeyRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        UserIdentityKey::query()->updateOrCreate(
-            ['user_id' => $request->user()->id],
-            [
-                'public_key_jwk' => $validated['public_key_jwk'],
-                'fingerprint' => $validated['fingerprint'],
-            ],
+        $this->identityKeys->updateOrCreateForUser(
+            $request->user()->id,
+            $validated['public_key_jwk'],
+            $validated['fingerprint'],
         );
 
         return response()->json(['status' => 'ok']);
@@ -28,11 +28,7 @@ class IdentityKeyController extends Controller
 
     public function show(User $user): JsonResponse
     {
-        abort_if($user->id === auth()->id(), 404);
-
-        $identityKey = UserIdentityKey::query()
-            ->where('user_id', $user->id)
-            ->first();
+        $identityKey = $this->identityKeys->findForUser($user->id);
 
         if ($identityKey === null) {
             abort(404);
@@ -47,9 +43,7 @@ class IdentityKeyController extends Controller
 
     public function mine(): JsonResponse
     {
-        $identityKey = UserIdentityKey::query()
-            ->where('user_id', auth()->id())
-            ->first();
+        $identityKey = $this->identityKeys->findForUser((int) auth()->id());
 
         if ($identityKey === null) {
             return response()->json(['registered' => false]);

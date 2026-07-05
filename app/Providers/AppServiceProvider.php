@@ -7,9 +7,13 @@ use App\Actions\PrepareSendPivotDataAction;
 use App\Models\User;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Eloquent\ChatMessageRepository;
+use App\Repositories\Eloquent\ConversationRepository;
 use App\Repositories\Eloquent\SendRepository;
+use App\Repositories\Eloquent\UserIdentityKeyRepository;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
+use App\Repositories\Interfaces\ConversationRepositoryInterface;
 use App\Repositories\Interfaces\SendRepositoryInterface;
+use App\Repositories\Interfaces\UserIdentityKeyRepositoryInterface;
 use App\Services\ChatMessageService;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use App\Services\Interfaces\SendReadServiceInterface;
@@ -36,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ChatMessageRepositoryInterface::class, ChatMessageRepository::class);
+        $this->app->bind(ConversationRepositoryInterface::class, ConversationRepository::class);
+        $this->app->bind(UserIdentityKeyRepositoryInterface::class, UserIdentityKeyRepository::class);
         $this->app->bind(ChatMessageServiceInterface::class, ChatMessageService::class);
         $this->app->bind(SendRepositoryInterface::class, SendRepository::class);
         $this->app->bind(SendWriteServiceInterface::class, SendWriteService::class);

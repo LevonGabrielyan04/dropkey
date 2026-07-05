@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\ChatMessage;
-use App\Models\Conversation;
 use App\Models\User;
 use App\Support\Csp\StrictPolicyPreset;
 use Spatie\Csp\Policy;
@@ -212,7 +211,7 @@ it('does not render csp-unsafe alpine template literals on chat pages', function
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
-    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+    $conversation = createConversation($alice, $bob);
 
     ChatMessage::query()->create([
         'conversation_id' => $conversation->id,
