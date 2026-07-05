@@ -75,6 +75,24 @@ it('returns encrypted messages for conversation participants', function () {
         ->assertJsonPath('messages.0.payload', $payload);
 });
 
+it('returns not found when polling messages with yourself', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->getJson(route('messages.index', $user))
+        ->assertNotFound();
+});
+
+it('rejects invalid after_id query parameters', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+
+    $this->actingAs($alice)
+        ->getJson(route('messages.index', $bob).'?after_id=not-a-number')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('after_id');
+});
+
 it('polls only messages after the provided cursor', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();

@@ -68,7 +68,7 @@ class SendWriteService implements SendWriteServiceInterface
             userId: (int) auth()->id(),
             message: $data['message'],
             name: $data['name'] ?? 'Send-'.time().'-'.Str::random(5),
-            validTo: $this->calculateExpiration($data['expire_after'] ?? '1_day'),
+            validTo: $this->calculateExpiration($data['expire_after'] ?? TimePeriod::ONE_DAY->value),
             id: $id,
         );
     }
