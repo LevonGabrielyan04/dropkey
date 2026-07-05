@@ -28,7 +28,7 @@
 
                     <p
                         x-show="ready && partnerFingerprint"
-                        x-text="`{{ __('Partner fingerprint') }}: ${partnerFingerprint}`"
+                        x-text="'{{ __('Partner fingerprint') }}: ' + partnerFingerprint"
                         x-cloak
                         class="mt-2 break-all text-[10px] uppercase tracking-[0.14em] text-zinc-500"
                     ></p>
@@ -112,7 +112,7 @@
                 <button
                     type="submit"
                     class="inline-flex w-full cursor-pointer items-center justify-center !rounded-none border-2 border-zinc-950 bg-emerald-500 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-100"
-                    :disabled="!ready || sending || messageText.trim() === ''"
+                    :disabled="!canSendMessage"
                 >
                     <span x-show="!sending">{{ __('Send encrypted message') }}</span>
                     <span x-show="sending" x-cloak>{{ __('Encrypting...') }}</span>

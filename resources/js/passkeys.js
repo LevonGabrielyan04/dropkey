@@ -53,6 +53,10 @@ document.addEventListener('alpine:init', () => {
         loading: false,
         error: null,
 
+        get canRegister() {
+            return ! this.loading && this.name.trim() !== '';
+        },
+
         init() {
             this.updateSupport();
 

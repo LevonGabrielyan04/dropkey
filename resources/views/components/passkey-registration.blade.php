@@ -33,7 +33,7 @@
                 <flux:button
                     variant="primary"
                     x-on:click="register"
-                    x-bind:disabled="loading || !name.trim()"
+                    x-bind:disabled="!canRegister"
                 >
                     <span x-show="!loading">{{ __('Register passkey') }}</span>
                     <span x-show="loading" x-cloak>{{ __('Registering...') }}</span>

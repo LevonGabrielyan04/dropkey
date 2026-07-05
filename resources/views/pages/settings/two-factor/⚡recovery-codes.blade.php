@@ -48,7 +48,7 @@ new class extends Component {
 <div
     class="py-6 space-y-6 border shadow-sm rounded-xl border-zinc-200 dark:border-white/10"
     wire:cloak
-    x-data="{ showRecoveryCodes: false }"
+    x-data="recoveryCodesVisibility"
 >
     <div class="px-6 space-y-2">
         <div class="flex items-center gap-2">
@@ -67,7 +67,7 @@ new class extends Component {
                 icon="eye"
                 icon:variant="outline"
                 variant="primary"
-                @click="showRecoveryCodes = true;"
+                @click="show"
                 aria-expanded="false"
                 aria-controls="recovery-codes-section"
             >
@@ -79,7 +79,7 @@ new class extends Component {
                 icon="eye-slash"
                 icon:variant="outline"
                 variant="primary"
-                @click="showRecoveryCodes = false"
+                @click="hide"
                 aria-expanded="true"
                 aria-controls="recovery-codes-section"
             >

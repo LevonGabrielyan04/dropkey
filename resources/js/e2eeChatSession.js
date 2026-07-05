@@ -30,6 +30,10 @@ document.addEventListener('alpine:init', () => {
         publicKeyUrl: '',
         pollIntervalMs: 3000,
 
+        get canSendMessage() {
+            return this.ready && ! this.sending && this.messageText.trim() !== '';
+        },
+
         init() {
             this.localUserId = Number(this.$el.dataset.localUserId);
             this.recipientId = Number(this.$el.dataset.recipientId);

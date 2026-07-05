@@ -35,7 +35,9 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee(route('messages.index', $bob), false)
         ->assertSee(route('messages.store'), false)
         ->assertSee($bob->name)
-        ->assertSee(__('Send encrypted message'));
+        ->assertSee(__('Send encrypted message'))
+        ->assertSee(':disabled="!canSendMessage"', false)
+        ->assertDontSee('${partnerFingerprint}', false);
 });
 
 it('includes the messages navigation link in the sidebar', function () {

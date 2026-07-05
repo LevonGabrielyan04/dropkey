@@ -102,7 +102,7 @@
                     {{ __('Password') }}
                 </label>
 
-                <div class="relative mt-2" x-data="{ showPassword: false }">
+                <div class="relative mt-2" x-data="passwordVisibility">
                     <input
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
@@ -116,7 +116,7 @@
 
                     <button
                         type="button"
-                        @click="showPassword = !showPassword"
+                        @click="toggle"
                         class="absolute right-3 top-1/2 -translate-y-1/2 border-2 border-transparent p-1 text-zinc-600 transition-colors hover:border-zinc-950 hover:text-zinc-950 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
                         :aria-label="showPassword ? '{{ __('Hide password') }}' : '{{ __('Show password') }}'"
                     >

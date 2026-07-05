@@ -81,7 +81,7 @@
                                 @if ($conversation->messages->isNotEmpty())
                                     <span
                                         x-data="localDatetime"
-                                        data-datetime="{{ $conversation->messages->first()->created_at->toIso8601String() }}"
+                                        data-utc-datetime="{{ $conversation->messages->first()->created_at->utc()->toIso8601String() }}"
                                         x-text="formatted"
                                         class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
                                     ></span>

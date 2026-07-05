@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\ChatMessage;
+use App\Models\Conversation;
 use App\Models\User;
 use App\Support\Csp\StrictPolicyPreset;
 use Spatie\Csp\Policy;
@@ -203,4 +205,34 @@ it('does not render inline display styles that violate the content security poli
     expect($response->getContent())
         ->not->toContain('style="display: none;"')
         ->not->toMatch('/x-bind:style/');
+});
+
+it('does not render csp-unsafe alpine template literals on chat pages', function () {
+    config(['app.url' => 'https://example.test']);
+
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = Conversation::findOrCreateForUsers($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $chatShow = $this->actingAs($alice)->get(route('chat.show', $bob));
+    $chatIndex = $this->actingAs($alice)->get(route('chat.index'));
+
+    $chatShow->assertSuccessful();
+    $chatIndex->assertSuccessful();
+
+    expect($chatShow->getContent())
+        ->not->toMatch('/x-(text|show|bind:[^=]+)="[^"]*`[^"]*"/')
+        ->toContain("x-text=\"'".__('Partner fingerprint').": ' + partnerFingerprint\"")
+        ->toContain(':disabled="!canSendMessage"');
+
+    expect($chatIndex->getContent())
+        ->not->toMatch('/x-(text|show|bind:[^=]+)="[^"]*`[^"]*"/')
+        ->toContain('data-utc-datetime="')
+        ->not->toMatch('/(?<!utc-)data-datetime="/');
 });

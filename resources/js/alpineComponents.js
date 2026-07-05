@@ -119,6 +119,18 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('recoveryCodesVisibility', () => ({
+        showRecoveryCodes: false,
+
+        show() {
+            this.showRecoveryCodes = true;
+        },
+
+        hide() {
+            this.showRecoveryCodes = false;
+        },
+    }));
+
     Alpine.data('savedMessage', () => ({
         show: true,
 
@@ -126,6 +138,14 @@ document.addEventListener('alpine:init', () => {
             setTimeout(() => {
                 this.show = false;
             }, 2000);
+        },
+    }));
+
+    Alpine.data('passwordVisibility', () => ({
+        showPassword: false,
+
+        toggle() {
+            this.showPassword = ! this.showPassword;
         },
     }));
 
