@@ -1,4 +1,5 @@
 import { clearAllIndexedDB } from './cryptography/e2ee/keyStore.js';
+import { clearSessionCredentials } from './cryptography/e2ee/identitySession.js';
 
 /**
  * @param {EventTarget|null} form
@@ -35,6 +36,7 @@ export function bindLogoutIndexedDbCleanup(doc = globalThis.document) {
         }
 
         if (form.hasAttribute('wire:submit')) {
+            clearSessionCredentials();
             clearAllIndexedDB().catch(() => {});
 
             return;
@@ -47,6 +49,8 @@ export function bindLogoutIndexedDbCleanup(doc = globalThis.document) {
         event.preventDefault();
 
         form.dataset.indexedDbCleared = 'true';
+
+        clearSessionCredentials();
 
         clearAllIndexedDB()
             .catch(() => {})

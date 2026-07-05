@@ -1,5 +1,5 @@
 import { fingerprintFromPublicJwk } from './bufferUtils.js';
-import { loadIdentity, saveIdentity } from './keyStore.js';
+import { loadIdentity, saveIdentity } from './identitySession.js';
 
 /**
  * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey, fingerprint: string }>}
@@ -19,7 +19,7 @@ export async function ensureIdentityKeyPair() {
 
     const keyPair = await globalThis.crypto.subtle.generateKey(
         { name: 'ECDH', namedCurve: 'P-256' },
-        false,
+        true,
         ['deriveBits', 'deriveKey'],
     );
 

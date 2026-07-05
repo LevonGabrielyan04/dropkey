@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const deleteDatabase = vi.hoisted(() => vi.fn());
 const listDatabases = vi.hoisted(() => vi.fn(async () => [
-    { name: 'passshare-e2ee' },
+    { name: 'passshare-alice' },
+    { name: 'passshare-bob' },
     { name: 'other-app-db' },
 ]));
 
@@ -25,35 +26,38 @@ vi.hoisted(() => {
     });
 });
 
-import { clearAllIndexedDB } from './keyStore.js';
+import { clearAllIndexedDB, databaseNameForUser } from './keyStore.js';
 
-describe('keyStore clearAllIndexedDB', () => {
+describe('keyStore', () => {
     beforeEach(() => {
         deleteDatabase.mockClear();
         listDatabases.mockClear();
         indexedDB.databases = listDatabases;
     });
 
-    it('deletes every database returned by indexedDB.databases()', async () => {
+    it('builds a per-user database name', () => {
+        expect(databaseNameForUser('alice')).toBe('passshare-alice');
+    });
+
+    it('deletes every PassShare database returned by indexedDB.databases()', async () => {
         await clearAllIndexedDB();
 
         expect(listDatabases).toHaveBeenCalledOnce();
         expect(deleteDatabase).toHaveBeenCalledTimes(2);
-        expect(deleteDatabase).toHaveBeenCalledWith('passshare-e2ee');
-        expect(deleteDatabase).toHaveBeenCalledWith('other-app-db');
+        expect(deleteDatabase).toHaveBeenCalledWith('passshare-alice');
+        expect(deleteDatabase).toHaveBeenCalledWith('passshare-bob');
     });
 
-    it('falls back to the PassShare database when indexedDB.databases is unavailable', async () => {
+    it('does nothing when indexedDB.databases is unavailable', async () => {
         indexedDB.databases = undefined;
 
         await clearAllIndexedDB();
 
-        expect(deleteDatabase).toHaveBeenCalledOnce();
-        expect(deleteDatabase).toHaveBeenCalledWith('passshare-e2ee');
+        expect(deleteDatabase).not.toHaveBeenCalled();
     });
 
     it('resolves when a database deletion is blocked', async () => {
-        deleteDatabase.mockImplementationOnce((name) => {
+        deleteDatabase.mockImplementationOnce(() => {
             const request = {
                 onsuccess: null,
                 onerror: null,

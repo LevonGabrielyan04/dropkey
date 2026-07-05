@@ -14,6 +14,13 @@ vi.mock('./keyStore.js', () => ({
     }),
 }));
 
+vi.mock('./identitySession.js', () => ({
+    loadIdentity: vi.fn(async () => identityStore.value),
+    saveIdentity: vi.fn(async (identity) => {
+        identityStore.value = identity;
+    }),
+}));
+
 vi.mock('./identity.js', async (importOriginal) => {
     const actual = await importOriginal();
 

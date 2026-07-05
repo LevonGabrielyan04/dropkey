@@ -8,6 +8,7 @@ it('includes identity registration bootstrap data on authenticated app pages', f
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
+        ->assertSee('data-username="'.e($user->name).'"', false)
         ->assertSee('data-identity-register-url="'.route('api.identity.public-key.store').'"', false)
         ->assertSee('data-identity-mine-url="'.route('api.identity.public-key.mine').'"', false)
         ->assertSee('data-csrf-token="', false);

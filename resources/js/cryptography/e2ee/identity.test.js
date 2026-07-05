@@ -4,20 +4,20 @@ const identityStore = vi.hoisted(() => ({
     value: null,
 }));
 
-vi.mock('./keyStore.js', () => ({
+vi.mock('./identitySession.js', () => ({
     loadIdentity: vi.fn(async () => identityStore.value),
     saveIdentity: vi.fn(async (identity) => {
         identityStore.value = identity;
     }),
-    clearIdentity: vi.fn(async () => {
+    clearCachedIdentity: vi.fn(async () => {
         identityStore.value = null;
     }),
 }));
 
-import { clearIdentity, loadIdentity, saveIdentity } from './keyStore.js';
+import { clearCachedIdentity, loadIdentity, saveIdentity } from './identitySession.js';
 import { ensureIdentityKeyPair, ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
-describe('keyStore integration via identity', () => {
+describe('identitySession integration via identity', () => {
     beforeEach(async () => {
         identityStore.value = null;
         vi.clearAllMocks();
@@ -71,7 +71,7 @@ describe('keyStore integration via identity', () => {
     it('reloads a stored identity without regenerating keys', async () => {
         const generated = await ensureIdentityKeyPair();
 
-        await clearIdentity();
+        await clearCachedIdentity();
         identityStore.value = {
             privateKey: generated.privateKey,
             publicJwk: generated.publicJwk,

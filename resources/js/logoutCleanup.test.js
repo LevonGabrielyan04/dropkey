@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const clearAllIndexedDB = vi.hoisted(() => vi.fn(async () => {}));
+const clearSessionCredentials = vi.hoisted(() => vi.fn());
 
 vi.mock('./cryptography/e2ee/keyStore.js', () => ({
     clearAllIndexedDB,
+}));
+
+vi.mock('./cryptography/e2ee/identitySession.js', () => ({
+    clearSessionCredentials,
 }));
 
 import { bindLogoutIndexedDbCleanup } from './logoutCleanup.js';
@@ -11,6 +16,7 @@ import { bindLogoutIndexedDbCleanup } from './logoutCleanup.js';
 describe('logout IndexedDB cleanup', () => {
     beforeEach(() => {
         clearAllIndexedDB.mockClear();
+        clearSessionCredentials.mockClear();
     });
 
     it('clears IndexedDB before submitting a logout form', async () => {
@@ -38,6 +44,7 @@ describe('logout IndexedDB cleanup', () => {
         doc.submitListener(event);
 
         expect(event.preventDefault).toHaveBeenCalledOnce();
+        expect(clearSessionCredentials).toHaveBeenCalledOnce();
         expect(clearAllIndexedDB).toHaveBeenCalledOnce();
         expect(doc.submitListenerOptions).toBe(true);
 
@@ -71,6 +78,7 @@ describe('logout IndexedDB cleanup', () => {
         doc.submitListener(event);
 
         expect(event.preventDefault).not.toHaveBeenCalled();
+        expect(clearSessionCredentials).not.toHaveBeenCalled();
         expect(clearAllIndexedDB).not.toHaveBeenCalled();
         expect(form.submit).not.toHaveBeenCalled();
     });
@@ -99,6 +107,7 @@ describe('logout IndexedDB cleanup', () => {
         doc.submitListener(event);
 
         expect(event.preventDefault).not.toHaveBeenCalled();
+        expect(clearSessionCredentials).toHaveBeenCalledOnce();
         expect(clearAllIndexedDB).toHaveBeenCalledOnce();
         expect(form.submit).not.toHaveBeenCalled();
     });
@@ -127,6 +136,7 @@ describe('logout IndexedDB cleanup', () => {
         doc.submitListener(event);
 
         expect(event.preventDefault).toHaveBeenCalledOnce();
+        expect(clearSessionCredentials).toHaveBeenCalledOnce();
         expect(clearAllIndexedDB).toHaveBeenCalledOnce();
     });
 });
