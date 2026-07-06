@@ -165,22 +165,25 @@
                         <div class="space-y-4 bg-zinc-50 p-6">
                             <div>
                                 <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Message thread</label>
-                                <div class="relative mt-2 space-y-3 border-2 border-zinc-950 bg-white p-4 text-xs leading-relaxed">
-                                    <div class="border-s-2 border-emerald-500 ps-3 text-zinc-600">
-                                        <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">deploy_svc · 14:02 UTC</span>
-                                        <span class="blur-[2px] select-none">Rotation keys are ready on staging.</span>
+                                <div class="relative mt-2 border-2 border-zinc-950 bg-white text-xs leading-relaxed">
+                                    <div class="relative z-0 space-y-3 p-4">
+                                        <div class="border-s-2 border-emerald-500 ps-3 text-zinc-600">
+                                            <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">deploy_svc · 14:02 UTC</span>
+                                            <span class="blur-[2px] select-none">Rotation keys are ready on staging.</span>
+                                        </div>
+                                        <div class="border-s-2 border-zinc-400 ps-3 text-zinc-600">
+                                            <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">you · 14:03 UTC</span>
+                                            <span class="blur-[2px] select-none">Copying creds to the vault now.</span>
+                                        </div>
                                     </div>
-                                    <div class="border-s-2 border-zinc-400 ps-3 text-zinc-600">
-                                        <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">you · 14:03 UTC</span>
-                                        <span class="blur-[2px] select-none">Copying creds to the vault now.</span>
-                                    </div>
-                                    <div class="absolute inset-0 flex items-center justify-center bg-zinc-950/5">
-                                        <span class="flex items-center gap-2 border-2 border-emerald-500 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+                                    <div class="absolute inset-0 z-10 flex items-center justify-center p-4">
+                                        <div class="absolute inset-0 bg-zinc-950/5" aria-hidden="true"></div>
+                                        <div class="relative flex items-center gap-2 border-2 border-emerald-500 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">
                                             <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                             </svg>
                                             ECDH + HKDF · AES-256-GCM
-                                        </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
