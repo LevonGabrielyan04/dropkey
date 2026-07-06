@@ -158,7 +158,7 @@ export async function saveIdentity(identity) {
 /**
  * @returns {string|null}
  */
-function resolveBrowserDbId() {
+export function resolveBrowserDbId() {
     if (typeof document !== 'undefined') {
         const datasetBrowserDbId = document.body?.dataset?.browserDbId;
 

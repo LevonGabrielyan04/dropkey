@@ -46,6 +46,7 @@ document.addEventListener('alpine:init', () => {
         messagesUrl: '',
         sendUrl: '',
         registerUrl: '',
+        mineUrl: '',
         publicKeyUrl: '',
         pollIntervalMs: 3000,
         decryptionFailedMessage: 'Unable to decrypt this message.',
@@ -65,6 +66,7 @@ document.addEventListener('alpine:init', () => {
             this.messagesUrl = this.$el.dataset.messagesUrl ?? '';
             this.sendUrl = this.$el.dataset.sendUrl ?? '';
             this.registerUrl = this.$el.dataset.registerUrl ?? '';
+            this.mineUrl = this.$el.dataset.mineUrl ?? '';
             this.publicKeyUrl = this.$el.dataset.publicKeyUrl ?? '';
             this.pollIntervalMs = Number(this.$el.dataset.pollIntervalMs) || 3000;
             this.decryptionFailedMessage = this.$el.dataset.decryptionFailedMessage
@@ -102,6 +104,7 @@ document.addEventListener('alpine:init', () => {
                     recipientId: this.recipientId,
                     publicKeyUrl: this.publicKeyUrl,
                     registerUrl: this.registerUrl,
+                    mineUrl: this.mineUrl,
                     csrfToken: this.csrfToken,
                 });
 

@@ -8,6 +8,7 @@ import { decryptMessage, encryptMessage } from './messageCrypto.js';
  * @param {number} options.recipientId
  * @param {string} options.publicKeyUrl
  * @param {string} options.registerUrl
+ * @param {string} [options.mineUrl]
  * @param {string} options.csrfToken
  */
 export async function establishSession({
@@ -15,9 +16,10 @@ export async function establishSession({
     recipientId,
     publicKeyUrl,
     registerUrl,
+    mineUrl,
     csrfToken,
 }) {
-    await registerPublicKey(registerUrl, csrfToken);
+    await registerPublicKey(registerUrl, csrfToken, { mineUrl });
 
     const { privateKey } = await ensureIdentityKeyPair();
 

@@ -9,6 +9,7 @@
         data-identity-register-url="{{ route('api.identity.public-key.store') }}"
         data-identity-mine-url="{{ route('api.identity.public-key.mine') }}"
         data-csrf-token="{{ csrf_token() }}"
+        x-data="identityKeyOverwriteModal()"
     >
         <flux:sidebar
             sticky
@@ -245,6 +246,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        @include('partials.identity-key-overwrite-modal')
 
         @include('partials.flux-scripts')
     </body>

@@ -7,6 +7,7 @@
         data-csrf-token="{{ csrf_token() }}"
         data-public-key-url="{{ route('api.users.public-key.show', $recipient) }}"
         data-register-url="{{ route('api.identity.public-key.store') }}"
+        data-mine-url="{{ route('api.identity.public-key.mine') }}"
         data-messages-url="{{ route('messages.index', $recipient) }}"
         data-send-url="{{ route('messages.store') }}"
         data-poll-interval-ms="{{ config('chat.poll_interval_ms') }}"

@@ -14,13 +14,20 @@ vi.mock('./identitySession.js', () => ({
     saveIdentity: vi.fn(async (identity) => {
         identityStore.value = identity;
     }),
+    resolveBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
     setSessionBrowserDbId: vi.fn(),
     clearCachedIdentity: vi.fn(async () => {
         identityStore.value = null;
     }),
 }));
 
+vi.mock('./identityOverwrite.js', () => ({
+    ensureIdentityOverwriteAllowed: vi.fn(async () => {}),
+    IdentityKeyOverwriteCancelledError: class IdentityKeyOverwriteCancelledError extends Error {},
+}));
+
 import { clearCachedIdentity, loadIdentity, persistIdentity } from './identitySession.js';
+import { ensureIdentityOverwriteAllowed } from './identityOverwrite.js';
 import { ensureIdentityKeyPair, ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
 describe('identitySession integration via identity', () => {
@@ -37,6 +44,7 @@ describe('identitySession integration via identity', () => {
         expect(first.publicJwk.kty).toBe('EC');
         expect(first.publicJwk.crv).toBe('P-256');
         expect(second.fingerprint).toBe(first.fingerprint);
+        expect(ensureIdentityOverwriteAllowed).toHaveBeenCalledOnce();
         expect(persistIdentity).toHaveBeenCalledTimes(1);
         expect(loadIdentity).toHaveBeenCalled();
     });
@@ -120,6 +128,10 @@ describe('identitySession integration via identity', () => {
         expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/public-key/mine');
         expect(fetchMock.mock.calls[1][0]).toBe('/api/identity/public-key');
         expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+        expect(ensureIdentityOverwriteAllowed).toHaveBeenCalledWith(expect.objectContaining({
+            checkServer: true,
+            mineUrl: '/api/identity/public-key/mine',
+        }));
 
         vi.unstubAllGlobals();
     });

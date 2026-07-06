@@ -14,10 +14,16 @@ vi.mock('./identitySession.js', () => ({
     saveIdentity: vi.fn(async (identity) => {
         identityStore.value = identity;
     }),
+    resolveBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
     setSessionBrowserDbId: vi.fn(),
     clearCachedIdentity: vi.fn(async () => {
         identityStore.value = null;
     }),
+}));
+
+vi.mock('./identityOverwrite.js', () => ({
+    ensureIdentityOverwriteAllowed: vi.fn(async () => {}),
+    IdentityKeyOverwriteCancelledError: class IdentityKeyOverwriteCancelledError extends Error {},
 }));
 
 vi.mock('./identity.js', async (importOriginal) => {

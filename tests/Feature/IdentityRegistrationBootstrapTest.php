@@ -19,7 +19,11 @@ it('includes identity registration bootstrap data on authenticated app pages', f
         ->assertSee('data-browser-db-id="'.e($identityKey->browser_db_id).'"', false)
         ->assertSee('data-identity-register-url="'.route('api.identity.public-key.store').'"', false)
         ->assertSee('data-identity-mine-url="'.route('api.identity.public-key.mine').'"', false)
-        ->assertSee('data-csrf-token="', false);
+        ->assertSee('data-csrf-token="', false)
+        ->assertSee('data-test="identity-key-overwrite-modal"', false)
+        ->assertSee(__('Replacing your encryption key will permanently remove access to your old messages. This cannot be undone.'), false)
+        ->assertSee(__('Your previous decryption key was not found on this device.'), false)
+        ->assertSee(__('To restore your messages, sign in on the same device and browser where you originally encrypted them.'), false);
 });
 
 it('does not include identity registration bootstrap data on guest pages', function () {

@@ -1,9 +1,13 @@
 import { fingerprintFromPublicJwk } from './bufferUtils.js';
 import {
+    ensureIdentityOverwriteAllowed,
+} from './identityOverwrite.js';
+import {
     getSessionBrowserDbId,
     getSessionPassword,
     loadIdentity,
     persistIdentity,
+    resolveBrowserDbId,
     setSessionBrowserDbId,
 } from './identitySession.js';
 
@@ -23,6 +27,14 @@ export async function ensureIdentityKeyPair() {
         };
     }
 
+    const browserDbId = resolveBrowserDbId();
+
+    await ensureIdentityOverwriteAllowed({
+        browserDbId,
+        checkLocal: true,
+        checkServer: false,
+    });
+
     const keyPair = await globalThis.crypto.subtle.generateKey(
         { name: 'ECDH', namedCurve: 'P-256' },
         true,
@@ -31,7 +43,6 @@ export async function ensureIdentityKeyPair() {
 
     const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
     const fingerprint = await fingerprintFromPublicJwk(publicJwk);
-    const browserDbId = getSessionBrowserDbId();
     const password = getSessionPassword();
 
     if (browserDbId && password) {
@@ -77,7 +88,7 @@ export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken 
         return { registered: true };
     }
 
-    await registerPublicKey(registerUrl, csrfToken);
+    await registerPublicKey(registerUrl, csrfToken, { mineUrl });
 
     return { registered: false };
 }
@@ -87,9 +98,20 @@ export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken 
  *
  * @param {string} registerUrl
  * @param {string} csrfToken
+ * @param {object} [options]
+ * @param {string} [options.mineUrl]
  */
-export async function registerPublicKey(registerUrl, csrfToken) {
+export async function registerPublicKey(registerUrl, csrfToken, { mineUrl } = {}) {
     const { publicJwk, fingerprint, privateKey } = await ensureIdentityKeyPair();
+
+    if (mineUrl) {
+        await ensureIdentityOverwriteAllowed({
+            checkLocal: false,
+            checkServer: true,
+            mineUrl,
+            fingerprint,
+        });
+    }
 
     const response = await fetch(registerUrl, {
         method: 'POST',

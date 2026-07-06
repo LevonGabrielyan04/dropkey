@@ -1,0 +1,40 @@
+---
+description: Enforce Content Security Policy constraints from StrictPolicyPreset when editing frontend code
+globs: resources/**/*
+alwaysApply: false
+---
+
+# Frontend CSP (StrictPolicyPreset)
+
+Before adding or changing frontend behavior, read `app/Support/Csp/StrictPolicyPreset.php`. It is the source of truth for the enforced CSP header.
+
+## Policy summary
+
+- **No `unsafe-inline` or `unsafe-eval`** for scripts/styles. Inline `<script>` and `<style>` must use a nonce (`Vite::cspNonce()` in Blade; pass nonce to `@fluxAppearance` / `@fluxScripts`).
+- **Scripts** load only from app origins plus `'wasm-unsafe-eval'` (WebAssembly). Turnstile adds `https://challenges.cloudflare.com` when `turnstile.enabled` is true.
+- **Styles** load only from app origins (nonce required for inline).
+- **Connect (fetch/XHR/WebSocket)** must target allowed origins: app origins, `https://api.pwnedpasswords.com`, Turnstile (if enabled), and Vite HMR WebSocket origins in local/testing only.
+- **Frames** are `'none'` unless Turnstile is enabled (`frame-src https://challenges.cloudflare.com`).
+- **Workers** allow app origins plus `blob:`.
+- **`object-src`** and **`frame-ancestors`** are `'none'`.
+
+## Frontend do / don't
+
+- **Do** bundle JS through Vite (`@vite`) instead of CDN `<script>` tags.
+- **Do** use Tailwind/Flux classes instead of inline `style="..."` or Alpine `x-bind:style`.
+- **Do** avoid Alpine template literals in `x-text`, `x-show`, and `x-bind:*` (backticks break CSP). Use string concatenation or bound properties instead.
+- **Do** add new external origins to `StrictPolicyPreset` (and `tests/Feature/ContentSecurityPolicyTest.php`), not only the frontend file.
+- **Don't** add third-party scripts, styles, images, fonts, iframes, or `fetch`/WebSocket targets without updating the preset.
+- **Don't** rely on `eval()`, `new Function()`, or dynamic inline script injection.
+
+## Local Vite dev
+
+In `local`/`testing`, the preset allows Vite HMR origins (`:5173`, `vite.{host}`, loopback only when the app URL is loopback). If assets fail to load in dev, check CSP before blaming Vite.
+
+## Verification
+
+After CSP-related frontend changes, run:
+
+```bash
+php artisan test --compact tests/Feature/ContentSecurityPolicyTest.php
+```

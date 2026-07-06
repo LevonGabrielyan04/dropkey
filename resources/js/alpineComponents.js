@@ -1,6 +1,29 @@
 import { formatLocalDatetime } from './formatLocalDatetime.js';
+import {
+    settleIdentityKeyOverwriteConfirmation,
+} from './cryptography/e2ee/identityOverwriteConfirmation.js';
+
+const IDENTITY_KEY_OVERWRITE_REQUEST = 'passshare:identity-key-overwrite-request';
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('identityKeyOverwriteModal', () => ({
+        init() {
+            window.addEventListener(IDENTITY_KEY_OVERWRITE_REQUEST, () => {
+                this.$flux.modal('identity-key-overwrite').show();
+            });
+        },
+
+        confirmIdentityKeyOverwrite() {
+            settleIdentityKeyOverwriteConfirmation(true);
+            this.$flux.modal('identity-key-overwrite').close();
+        },
+
+        cancelIdentityKeyOverwrite() {
+            settleIdentityKeyOverwriteConfirmation(false);
+            this.$flux.modal('identity-key-overwrite').close();
+        },
+    }));
+
     Alpine.data('navigation', () => ({
         open: false,
 
