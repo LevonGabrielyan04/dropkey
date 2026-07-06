@@ -5,7 +5,7 @@
     </head>
     <body
         class="min-h-screen bg-zinc-50 font-mono dark:bg-zinc-950"
-        data-username="{{ auth()->user()->name }}"
+        data-browser-db-id="{{ auth()->user()->identityKey?->browser_db_id }}"
         data-identity-register-url="{{ route('api.identity.public-key.store') }}"
         data-identity-mine-url="{{ route('api.identity.public-key.mine') }}"
         data-csrf-token="{{ csrf_token() }}"

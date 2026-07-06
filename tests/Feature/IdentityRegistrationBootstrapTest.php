@@ -1,14 +1,22 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserIdentityKey;
 
 it('includes identity registration bootstrap data on authenticated app pages', function () {
     $user = User::factory()->create();
 
+    UserIdentityKey::query()->create([
+        'user_id' => $user->id,
+        ...validPublicKeyPayload(),
+    ]);
+
+    $identityKey = $user->identityKey()->firstOrFail();
+
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('data-username="'.e($user->name).'"', false)
+        ->assertSee('data-browser-db-id="'.e($identityKey->browser_db_id).'"', false)
         ->assertSee('data-identity-register-url="'.route('api.identity.public-key.store').'"', false)
         ->assertSee('data-identity-mine-url="'.route('api.identity.public-key.mine').'"', false)
         ->assertSee('data-csrf-token="', false);

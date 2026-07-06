@@ -1,9 +1,5 @@
 import { ensureServerIdentityKey } from './cryptography/e2ee/identity.js';
-import {
-    getSessionPassword,
-    setSessionUsername,
-    unlockIdentity,
-} from './cryptography/e2ee/identitySession.js';
+import { setSessionBrowserDbId } from './cryptography/e2ee/identitySession.js';
 
 /**
  * Bootstrap E2EE identity registration for authenticated app pages.
@@ -16,22 +12,14 @@ export async function bootstrapIdentityRegistration(doc = globalThis.document) {
         return;
     }
 
-    const { identityRegisterUrl, identityMineUrl, csrfToken, username } = doc.body.dataset ?? {};
+    const { identityRegisterUrl, identityMineUrl, csrfToken, browserDbId } = doc.body.dataset ?? {};
 
-    if (! identityRegisterUrl || ! identityMineUrl || ! csrfToken || ! username) {
+    if (! identityRegisterUrl || ! identityMineUrl || ! csrfToken) {
         return;
     }
 
-    setSessionUsername(username);
-
-    const password = getSessionPassword();
-
-    if (password) {
-        try {
-            await unlockIdentity(username, password);
-        } catch {
-            // Chat sessions retry registration when needed.
-        }
+    if (browserDbId) {
+        setSessionBrowserDbId(browserDbId);
     }
 
     await ensureServerIdentityKey({

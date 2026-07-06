@@ -5,16 +5,22 @@ const identityStore = vi.hoisted(() => ({
 }));
 
 vi.mock('./identitySession.js', () => ({
+    getSessionBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
+    getSessionPassword: vi.fn(() => 'secret-password'),
     loadIdentity: vi.fn(async () => identityStore.value),
+    persistIdentity: vi.fn(async (_browserDbId, _password, identity) => {
+        identityStore.value = identity;
+    }),
     saveIdentity: vi.fn(async (identity) => {
         identityStore.value = identity;
     }),
+    setSessionBrowserDbId: vi.fn(),
     clearCachedIdentity: vi.fn(async () => {
         identityStore.value = null;
     }),
 }));
 
-import { clearCachedIdentity, loadIdentity, saveIdentity } from './identitySession.js';
+import { clearCachedIdentity, loadIdentity, persistIdentity } from './identitySession.js';
 import { ensureIdentityKeyPair, ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
 describe('identitySession integration via identity', () => {
@@ -31,13 +37,17 @@ describe('identitySession integration via identity', () => {
         expect(first.publicJwk.kty).toBe('EC');
         expect(first.publicJwk.crv).toBe('P-256');
         expect(second.fingerprint).toBe(first.fingerprint);
-        expect(saveIdentity).toHaveBeenCalledTimes(1);
+        expect(persistIdentity).toHaveBeenCalledTimes(1);
         expect(loadIdentity).toHaveBeenCalled();
     });
 
     it('registers the public key with the relay', async () => {
         const fetchMock = vi.fn(async () => ({
             ok: true,
+            json: async () => ({
+                status: 'ok',
+                browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+            }),
         }));
         vi.stubGlobal('fetch', fetchMock);
 
@@ -80,7 +90,7 @@ describe('identitySession integration via identity', () => {
         const loaded = await ensureIdentityKeyPair();
 
         expect(loaded.fingerprint).toBe(generated.fingerprint);
-        expect(saveIdentity).toHaveBeenCalledTimes(1);
+        expect(persistIdentity).toHaveBeenCalledTimes(1);
     });
 
     it('registers a public key when the server has none', async () => {
@@ -89,7 +99,13 @@ describe('identitySession integration via identity', () => {
                 return { ok: true, json: async () => ({ registered: false }) };
             }
 
-            return { ok: true };
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                }),
+            };
         });
         vi.stubGlobal('fetch', fetchMock);
 
@@ -111,7 +127,10 @@ describe('identitySession integration via identity', () => {
     it('does not register when the server already has a public key', async () => {
         const fetchMock = vi.fn(async () => ({
             ok: true,
-            json: async () => ({ registered: true }),
+            json: async () => ({
+                registered: true,
+                browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+            }),
         }));
         vi.stubGlobal('fetch', fetchMock);
 

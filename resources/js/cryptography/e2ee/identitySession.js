@@ -2,13 +2,13 @@ import { decryptViaWorker } from '../decrypt/decryptViaWorker.js';
 import { encryptViaWorker } from '../encrypt/encryptViaWorker.js';
 import { deserializeIdentity, serializeIdentity } from './identitySerialization.js';
 import {
-    databaseNameForUser,
+    databaseNameForBrowserDbId,
     loadEncryptedIdentity,
     saveEncryptedIdentity,
 } from './keyStore.js';
 
 const SESSION_PASSWORD_KEY = 'passshare:account-password';
-const SESSION_USERNAME_KEY = 'passshare:username';
+const SESSION_BROWSER_DB_ID_KEY = 'passshare:browser-db-id';
 
 /** @type {Map<string, string>} */
 const memorySessionStore = new Map();
@@ -57,17 +57,17 @@ export function setSessionPassword(password) {
 }
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  */
-export function setSessionUsername(username) {
-    sessionStore().setItem(SESSION_USERNAME_KEY, username);
+export function setSessionBrowserDbId(browserDbId) {
+    sessionStore().setItem(SESSION_BROWSER_DB_ID_KEY, browserDbId);
 }
 
 /**
  * @returns {string|null}
  */
-export function getSessionUsername() {
-    return sessionStore().getItem(SESSION_USERNAME_KEY);
+export function getSessionBrowserDbId() {
+    return sessionStore().getItem(SESSION_BROWSER_DB_ID_KEY);
 }
 
 export function clearCachedIdentity() {
@@ -78,16 +78,16 @@ export function clearSessionCredentials() {
     clearCachedIdentity();
 
     sessionStore().removeItem(SESSION_PASSWORD_KEY);
-    sessionStore().removeItem(SESSION_USERNAME_KEY);
+    sessionStore().removeItem(SESSION_BROWSER_DB_ID_KEY);
 }
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  * @param {string} password
  * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }|null>}
  */
-export async function unlockIdentity(username, password) {
-    const encrypted = await loadEncryptedIdentity(username);
+export async function unlockIdentity(browserDbId, password) {
+    const encrypted = await loadEncryptedIdentity(browserDbId);
 
     if (encrypted) {
         const plaintext = await decryptViaWorker(encrypted, password);
@@ -103,16 +103,16 @@ export async function unlockIdentity(username, password) {
 }
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  * @param {string} password
  * @param {{ privateKey: CryptoKey, publicJwk: JsonWebKey }} identity
  * @returns {Promise<void>}
  */
-export async function persistIdentity(username, password, identity) {
+export async function persistIdentity(browserDbId, password, identity) {
     const plaintext = await serializeIdentity(identity);
     const encrypted = await encryptViaWorker(plaintext, password);
 
-    await saveEncryptedIdentity(username, encrypted);
+    await saveEncryptedIdentity(browserDbId, encrypted);
     cachedIdentity = identity;
 }
 
@@ -124,15 +124,15 @@ export async function loadIdentity() {
         return cachedIdentity;
     }
 
-    const username = resolveUsername();
+    const browserDbId = resolveBrowserDbId();
     const password = getSessionPassword();
 
-    if (! username || ! password) {
+    if (! browserDbId || ! password) {
         return null;
     }
 
     try {
-        return await unlockIdentity(username, password);
+        return await unlockIdentity(browserDbId, password);
     } catch {
         cachedIdentity = null;
 
@@ -145,29 +145,29 @@ export async function loadIdentity() {
  * @returns {Promise<void>}
  */
 export async function saveIdentity(identity) {
-    const username = resolveUsername();
+    const browserDbId = resolveBrowserDbId();
     const password = getSessionPassword();
 
-    if (! username || ! password) {
-        throw new Error('Cannot save identity without an authenticated session password.');
+    if (! browserDbId || ! password) {
+        throw new Error('Cannot save identity without a browser database id and session password.');
     }
 
-    await persistIdentity(username, password, identity);
+    await persistIdentity(browserDbId, password, identity);
 }
 
 /**
  * @returns {string|null}
  */
-function resolveUsername() {
+function resolveBrowserDbId() {
     if (typeof document !== 'undefined') {
-        const datasetUsername = document.body?.dataset?.username;
+        const datasetBrowserDbId = document.body?.dataset?.browserDbId;
 
-        if (datasetUsername) {
-            return datasetUsername;
+        if (datasetBrowserDbId) {
+            return datasetBrowserDbId;
         }
     }
 
-    return getSessionUsername();
+    return getSessionBrowserDbId();
 }
 
-export { databaseNameForUser };
+export { databaseNameForBrowserDbId };

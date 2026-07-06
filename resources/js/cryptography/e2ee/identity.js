@@ -1,5 +1,11 @@
 import { fingerprintFromPublicJwk } from './bufferUtils.js';
-import { loadIdentity, saveIdentity } from './identitySession.js';
+import {
+    getSessionBrowserDbId,
+    getSessionPassword,
+    loadIdentity,
+    persistIdentity,
+    setSessionBrowserDbId,
+} from './identitySession.js';
 
 /**
  * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey, fingerprint: string }>}
@@ -24,13 +30,16 @@ export async function ensureIdentityKeyPair() {
     );
 
     const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
-
-    await saveIdentity({
-        privateKey: keyPair.privateKey,
-        publicJwk,
-    });
-
     const fingerprint = await fingerprintFromPublicJwk(publicJwk);
+    const browserDbId = getSessionBrowserDbId();
+    const password = getSessionPassword();
+
+    if (browserDbId && password) {
+        await persistIdentity(browserDbId, password, {
+            privateKey: keyPair.privateKey,
+            publicJwk,
+        });
+    }
 
     return {
         privateKey: keyPair.privateKey,
@@ -61,6 +70,8 @@ export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken 
     const mine = await mineResponse.json();
 
     if (mine.registered) {
+        setSessionBrowserDbId(mine.browser_db_id);
+
         await ensureIdentityKeyPair();
 
         return { registered: true };
@@ -78,7 +89,7 @@ export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken 
  * @param {string} csrfToken
  */
 export async function registerPublicKey(registerUrl, csrfToken) {
-    const { publicJwk, fingerprint } = await ensureIdentityKeyPair();
+    const { publicJwk, fingerprint, privateKey } = await ensureIdentityKeyPair();
 
     const response = await fetch(registerUrl, {
         method: 'POST',
@@ -96,6 +107,18 @@ export async function registerPublicKey(registerUrl, csrfToken) {
 
     if (! response.ok) {
         throw new Error('Failed to register public key.');
+    }
+
+    const result = await response.json();
+    const password = getSessionPassword();
+
+    setSessionBrowserDbId(result.browser_db_id);
+
+    if (password) {
+        await persistIdentity(result.browser_db_id, password, {
+            privateKey,
+            publicJwk,
+        });
     }
 
     return { publicJwk, fingerprint };

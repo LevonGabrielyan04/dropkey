@@ -6,7 +6,7 @@ use App\Models\UserIdentityKey;
 it('registers a user public key', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->postJson(route('api.identity.public-key.store'), validPublicKeyPayload())
         ->assertSuccessful()
         ->assertJson(['status' => 'ok']);
@@ -15,7 +15,10 @@ it('registers a user public key', function () {
 
     expect($identityKey)->not->toBeNull()
         ->and($identityKey->public_key_jwk['x'])->toBe('test-public-x')
-        ->and($identityKey->fingerprint)->toBe(str_repeat('a', 64));
+        ->and($identityKey->fingerprint)->toBe(str_repeat('a', 64))
+        ->and($identityKey->browser_db_id)->not->toBeEmpty();
+
+    $response->assertJsonPath('browser_db_id', $identityKey->browser_db_id);
 });
 
 it('updates an existing public key registration', function () {
@@ -24,6 +27,11 @@ it('updates an existing public key registration', function () {
     $this->actingAs($user)
         ->postJson(route('api.identity.public-key.store'), validPublicKeyPayload())
         ->assertSuccessful();
+
+    $originalBrowserDbId = UserIdentityKey::query()
+        ->where('user_id', $user->id)
+        ->firstOrFail()
+        ->browser_db_id;
 
     $this->actingAs($user)
         ->postJson(route('api.identity.public-key.store'), [
@@ -35,13 +43,15 @@ it('updates an existing public key registration', function () {
             ],
             'fingerprint' => str_repeat('b', 64),
         ])
-        ->assertSuccessful();
+        ->assertSuccessful()
+        ->assertJsonPath('browser_db_id', $originalBrowserDbId);
 
     $identityKey = UserIdentityKey::query()->where('user_id', $user->id)->first();
 
     expect($identityKey)->not->toBeNull()
         ->and($identityKey->public_key_jwk['x'])->toBe('rotated-x')
-        ->and($identityKey->fingerprint)->toBe(str_repeat('b', 64));
+        ->and($identityKey->fingerprint)->toBe(str_repeat('b', 64))
+        ->and($identityKey->browser_db_id)->toBe($originalBrowserDbId);
 });
 
 it('exposes a partner public key to authenticated users', function () {
@@ -100,11 +110,14 @@ it('reports whether the current user has registered a key', function () {
         ...validPublicKeyPayload(),
     ]);
 
+    $identityKey = UserIdentityKey::query()->where('user_id', $user->id)->firstOrFail();
+
     $this->actingAs($user)
         ->getJson(route('api.identity.public-key.mine'))
         ->assertSuccessful()
         ->assertJsonPath('registered', true)
-        ->assertJsonPath('fingerprint', str_repeat('a', 64));
+        ->assertJsonPath('fingerprint', str_repeat('a', 64))
+        ->assertJsonPath('browser_db_id', $identityKey->browser_db_id);
 });
 
 it('rejects private key material in the public key payload', function () {

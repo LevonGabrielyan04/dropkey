@@ -3,11 +3,11 @@ const STORE_NAME = 'identity';
 const DB_PREFIX = 'passshare-';
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  * @returns {string}
  */
-export function databaseNameForUser(username) {
-    return `${DB_PREFIX}${username}`;
+export function databaseNameForBrowserDbId(browserDbId) {
+    return `${DB_PREFIX}${browserDbId}`;
 }
 
 /**
@@ -31,11 +31,11 @@ function openDatabase(name) {
 }
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  * @returns {Promise<{ ciphertext: string, salt: string, iv: string }|null>}
  */
-export async function loadEncryptedIdentity(username) {
-    const database = await openDatabase(databaseNameForUser(username));
+export async function loadEncryptedIdentity(browserDbId) {
+    const database = await openDatabase(databaseNameForBrowserDbId(browserDbId));
 
     return new Promise((resolve, reject) => {
         const transaction = database.transaction(STORE_NAME, 'readonly');
@@ -48,12 +48,12 @@ export async function loadEncryptedIdentity(username) {
 }
 
 /**
- * @param {string} username
+ * @param {string} browserDbId
  * @param {{ ciphertext: string, salt: string, iv: string }} encryptedIdentity
  * @returns {Promise<void>}
  */
-export async function saveEncryptedIdentity(username, encryptedIdentity) {
-    const database = await openDatabase(databaseNameForUser(username));
+export async function saveEncryptedIdentity(browserDbId, encryptedIdentity) {
+    const database = await openDatabase(databaseNameForBrowserDbId(browserDbId));
 
     return new Promise((resolve, reject) => {
         const transaction = database.transaction(STORE_NAME, 'readwrite');

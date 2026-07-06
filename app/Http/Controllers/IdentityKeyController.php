@@ -17,13 +17,16 @@ class IdentityKeyController extends Controller
     {
         $validated = $request->validated();
 
-        $this->identityKeys->updateOrCreateForUser(
+        $identityKey = $this->identityKeys->updateOrCreateForUser(
             $request->user()->id,
             $validated['public_key_jwk'],
             $validated['fingerprint'],
         );
 
-        return response()->json(['status' => 'ok']);
+        return response()->json([
+            'status' => 'ok',
+            'browser_db_id' => $identityKey->browser_db_id,
+        ]);
     }
 
     public function show(User $user): JsonResponse
@@ -51,6 +54,7 @@ class IdentityKeyController extends Controller
 
         return response()->json([
             'registered' => true,
+            'browser_db_id' => $identityKey->browser_db_id,
             'public_key_jwk' => $identityKey->public_key_jwk,
             'fingerprint' => $identityKey->fingerprint,
         ]);

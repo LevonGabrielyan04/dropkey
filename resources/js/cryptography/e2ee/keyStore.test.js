@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { databaseNameForUser } from './keyStore.js';
+import { databaseNameForBrowserDbId } from './keyStore.js';
 
 describe('keyStore', () => {
-    it('builds a per-user database name', () => {
-        expect(databaseNameForUser('alice')).toBe('passshare-alice');
+    it('builds a per-browser database name', () => {
+        expect(databaseNameForBrowserDbId('01JABCDEF1234567890ABCDEFGH')).toBe('passshare-01JABCDEF1234567890ABCDEFGH');
     });
 });
