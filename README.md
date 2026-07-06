@@ -1,6 +1,6 @@
 # DropKey
 
-DropKey is a **free, open-source, and non-profit** end-to-end encrypted application for sharing passwords and other secrets with specific people. Secrets are encrypted in the browser before they ever reach the server. The server stores only ciphertext and never sees the decryption password.
+DropKey is a **free and open-source** end-to-end encrypted application for sharing passwords and other secrets with specific people, and for private messaging between registered users. Secrets and chat messages are encrypted in the browser before they ever reach the server. The server stores only ciphertext and never sees decryption keys or passwords.
 
 **Live:** [https://dropkey.site](https://dropkey.site)
 
@@ -8,11 +8,22 @@ DropKey is a **free, open-source, and non-profit** end-to-end encrypted applicat
 
 ## How it works
 
+### One-time secret sharing (Sends)
+
 1. **Create a Send** — Give it a name, add up to 100 registered viewer names, write the secret, and choose when it expires (1 hour to 30 days).
 2. **Password protection** — If you set a password, the message is encrypted client-side with **AES-256-GCM**. The key is derived with **Argon2id** in a Web Worker. The password is stripped from the form before submission and is never sent to the server.
 3. **Share with viewers** — Only registered users whose names you listed can open the Send. Owners can also view their own Sends.
 4. **Decrypt in the browser** — Authorized viewers enter the shared password locally. Decryption runs off the main thread in a Web Worker.
 5. **Automatic expiry** — Sends are permanently deleted after their expiry time. A scheduled task removes expired records every 30 minutes.
+
+### Encrypted messenger
+
+1. **Start a conversation** — Open **Messages**, enter a registered user's name, and open a pairwise encrypted channel.
+2. **Identity keys** — Each user gets an **ECDH (P-256)** key pair in the browser. The public key is registered with the server; the private key stays local (optionally encrypted in IndexedDB for the session).
+3. **Derived conversation keys** — Messages are encrypted with **AES-256-GCM** using a per-conversation key derived via **ECDH + HKDF**. Both parties derive the same key independently.
+4. **Server relay only** — The server stores and relays opaque ciphertext. It cannot decrypt message content.
+5. **Verify your partner** — A fingerprint of the recipient's public key is shown so you can confirm you are talking to the right person.
+6. **Auto-delete** — Each conversation can be configured to delete messages after 1 hour to 30 days. A scheduled task purges expired messages every 30 minutes.
 
 ---
 
@@ -20,14 +31,18 @@ DropKey is a **free, open-source, and non-profit** end-to-end encrypted applicat
 
 | Layer | What it protects |
 | --- | --- |
-| **Client-side E2E encryption** | Message content from the server operator and database |
-| **Laravel `encrypted` cast** | Stored payload at rest on the server |
+| **Client-side E2E encryption** | Send and chat content from the server operator and database |
+| **Laravel `encrypted` cast** | Send payloads at rest on the server |
+| **ECDH + HKDF conversation keys** | Per-conversation chat encryption between two users |
+| **Identity key fingerprints** | Wrong recipient or key substitution in chat |
+| **Opaque chat relay storage** | Chat ciphertext stored as-is; the server never decrypts it |
 | **Passkeys + 2FA + email verification** | Account access |
 | **Per-Send viewer ACL** | Who can open a given Send |
+| **Per-conversation auto-delete** | Chat message retention limits |
 | **Short-lived Valkey sessions** | Session hijacking surface |
 | **Strict Content Security Policy** | XSS and injection |
 
-> **Note:** The application cannot decrypt password-protected messages. If you lose the password, the secret cannot be recovered.
+> **Note:** The application cannot decrypt password-protected Sends or chat messages. If you lose a Send password or your local identity key, the content cannot be recovered.
 
 ---
 
@@ -106,7 +121,7 @@ npm run dev
 
 ### 5. Scheduled tasks
 
-Expired Sends are removed by the `sends:delete-expired` command, scheduled **every 30 minutes** in `bootstrap/app.php`.
+Expired Sends and chat messages are removed by `sends:delete-expired` and `chat-messages:delete-expired`, both scheduled **every 30 minutes** in `bootstrap/app.php`.
 
 * **Local development:** keep the scheduler running in a separate terminal:
 ```bash
@@ -127,6 +142,7 @@ You can also run the cleanup manually:
 
 ```bash
 php artisan sends:delete-expired
+php artisan chat-messages:delete-expired
 
 ```
 
@@ -145,6 +161,9 @@ Key environment variables (see `.env.example` for the full list):
 | `MAX_MESSAGE_LENGTH` | Plaintext message limit before encryption (default: 1000) |
 | `ENCRYPTED_MAX_MESSAGE_LENGTH` | Stored ciphertext limit (default: 5372) |
 | `SEND_CACHE_TTL` | Send list cache TTL in minutes (default: 60) |
+| `CHAT_ENCRYPTED_MAX_LENGTH` | Stored ciphertext limit per chat message (default: 8192) |
+| `CHAT_POLL_BATCH_SIZE` | Messages fetched per poll request (default: 100) |
+| `CHAT_POLL_INTERVAL_MS` | Client polling interval in milliseconds (default: 3000) |
 | `TRUSTED_PROXIES` | Proxy IPs when behind nginx or a tunnel (e.g. `127.0.0.1`) |
 
 Password-protected Sends require a password of at least **15 characters** (`config/send.php`).
@@ -238,4 +257,4 @@ composer test
 * [Livewire 4](https://livewire.laravel.com/) + [Flux UI](https://fluxui.dev/)
 * [Laravel Fortify](https://laravel.com/docs/fortify) — registration, 2FA, passkeys
 * [Spatie CSP](https://github.com/spatie/laravel-csp) — strict Content Security Policy
-* Client crypto — Web Crypto API, Argon2id (`hash-wasm`), Web Workers
+* Client crypto — Web Crypto API, ECDH (P-256) + HKDF + AES-GCM (messenger), Argon2id (`hash-wasm`) + AES-GCM (Sends), Web Workers
