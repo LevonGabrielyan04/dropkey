@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('user_identity_keys', function (Blueprint $table) {
             $table->binary('browser_db_id', length: 16, fixed: true)
-                ->unique()
+                ->nullable()
                 ->after('user_id');
         });
     }
@@ -24,7 +24,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('user_identity_keys', function (Blueprint $table) {
-            $table->dropUnique(['browser_db_id']);
             $table->dropColumn('browser_db_id');
         });
     }
