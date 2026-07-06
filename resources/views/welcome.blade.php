@@ -13,6 +13,8 @@
         @fonts
 
         @vite(['resources/css/app.css'])
+
+        <link rel="stylesheet" href="{{ asset('css/cursors.css') }}">
     </head>
     <body class="min-h-screen bg-zinc-50 font-mono antialiased">
         {{-- Sticky header --}}
