@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth scroll-pt-24">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="{{ config('app.name') }} — end-to-end encrypted password and secret sharing. Secrets are encrypted in your browser before they ever reach the server.">
+        <meta name="description" content="{{ config('app.name') }} — end-to-end encrypted messaging between registered users. Messages are encrypted in your browser before they ever reach the server.">
 
-        <title>{{ config('app.name') }} — Share secrets with zero trust</title>
+        <title>{{ config('app.name') }} — End-to-end encrypted messaging</title>
 
         <link rel="icon" href="/favicon.png" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -14,40 +14,48 @@
 
         @vite(['resources/css/app.css'])
     </head>
-    <body class="landing-gradient text-[var(--landing-dominant-foreground)] antialiased">
+    <body class="min-h-screen bg-zinc-50 font-mono antialiased">
         {{-- Sticky header --}}
-        <header
-            id="site-header"
-            class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300"
-        >
+        <header class="sticky top-0 z-50 border-b-2 border-zinc-950 bg-zinc-50">
+            <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                End-to-end encrypted messaging
+            </div>
+
             <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                 <a href="{{ route('home') }}" class="group flex items-center gap-3">
-                    <span class="flex size-9 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/30 transition group-hover:bg-emerald-500/25">
-                        <x-app-logo-icon class="size-5 fill-emerald-400" />
+                    <span class="flex size-9 items-center justify-center border-2 border-zinc-950 bg-emerald-500/10">
+                        <x-app-logo-icon class="size-5 fill-emerald-700" />
                     </span>
-                    <span class="text-lg font-semibold tracking-tight">{{ config('app.name') }}</span>
+                    <span class="text-sm font-bold uppercase tracking-tight text-zinc-950">{{ config('app.name') }}</span>
                 </a>
 
-                <nav class="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
-                    <a href="#features" class="transition hover:text-white">Features</a>
-                    <a href="#how-it-works" class="transition hover:text-white">How it works</a>
-                    <a href="#security" class="transition hover:text-white">Security</a>
-                    <a href="#faq" class="transition hover:text-white">FAQ</a>
+                <nav class="hidden items-center gap-6 text-xs font-bold uppercase tracking-[0.16em] text-zinc-600 md:flex">
+                    <a href="#messages" class="transition-colors hover:text-emerald-700">Messages</a>
+                    <a href="#sends" class="transition-colors hover:text-emerald-700">Sends</a>
+                    <a href="#features" class="transition-colors hover:text-emerald-700">Features</a>
+                    <a href="#security" class="transition-colors hover:text-emerald-700">Security</a>
+                    <a href="#faq" class="transition-colors hover:text-emerald-700">FAQ</a>
                 </nav>
 
                 <div class="hidden items-center gap-3 md:flex">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="landing-cta-secondary px-5 py-2 text-sm">
+                        <a
+                            href="{{ route('dashboard') }}"
+                            class="inline-flex items-center justify-center border-2 border-zinc-950 bg-zinc-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-950 transition-colors hover:bg-zinc-200"
+                        >
                             Dashboard
                         </a>
                     @else
                         @if (Route::has('login'))
-                            <a href="{{ route('login') }}" class="text-sm text-zinc-400 transition hover:text-white">
+                            <a href="{{ route('login') }}" class="text-xs font-bold uppercase tracking-[0.16em] text-zinc-600 transition-colors hover:text-zinc-950">
                                 Log in
                             </a>
                         @endif
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="landing-cta-primary px-5 py-2 text-sm">
+                            <a
+                                href="{{ route('register') }}"
+                                class="inline-flex items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-950 transition-colors hover:bg-emerald-400"
+                            >
                                 Get started
                             </a>
                         @endif
@@ -56,7 +64,7 @@
 
                 {{-- Mobile menu --}}
                 <details class="group relative md:hidden">
-                    <summary class="flex size-10 cursor-pointer list-none items-center justify-center rounded-lg border border-white/10 bg-white/5 [&::-webkit-details-marker]:hidden">
+                    <summary class="flex size-10 cursor-pointer list-none items-center justify-center border-2 border-zinc-950 bg-zinc-100 [&::-webkit-details-marker]:hidden">
                         <svg class="size-5 group-open:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -65,21 +73,21 @@
                         </svg>
                         <span class="sr-only">Menu</span>
                     </summary>
-                    <div class="absolute end-0 top-full mt-2 w-56 rounded-xl border border-white/10 bg-[var(--landing-surface)] p-3 shadow-xl">
-                        <nav class="flex flex-col gap-1 text-sm">
-                            <a href="#features" class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white">Features</a>
-                            <a href="#how-it-works" class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white">How it works</a>
-                            <a href="#security" class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white">Security</a>
-                            <a href="#faq" class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white">FAQ</a>
-                            <hr class="my-2 border-white/10">
+                    <div class="absolute end-0 top-full mt-2 w-56 border-2 border-zinc-950 bg-zinc-50 p-2 shadow-lg">
+                        <nav class="flex flex-col divide-y-2 divide-zinc-950 text-xs font-bold uppercase tracking-[0.16em]">
+                            <a href="#messages" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">Messages</a>
+                            <a href="#sends" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">Sends</a>
+                            <a href="#features" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">Features</a>
+                            <a href="#security" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">Security</a>
+                            <a href="#faq" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">FAQ</a>
                             @auth
-                                <a href="{{ route('dashboard') }}" class="rounded-lg px-3 py-2 font-medium text-emerald-400 hover:bg-white/5">Dashboard</a>
+                                <a href="{{ route('dashboard') }}" class="px-3 py-2 text-emerald-700 hover:bg-emerald-500/10">Dashboard</a>
                             @else
                                 @if (Route::has('login'))
-                                    <a href="{{ route('login') }}" class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white">Log in</a>
+                                    <a href="{{ route('login') }}" class="px-3 py-2 text-zinc-700 hover:bg-zinc-200">Log in</a>
                                 @endif
                                 @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="rounded-lg px-3 py-2 font-medium text-emerald-400 hover:bg-white/5">Get started</a>
+                                    <a href="{{ route('register') }}" class="px-3 py-2 text-emerald-700 hover:bg-emerald-500/10">Get started</a>
                                 @endif
                             @endauth
                         </nav>
@@ -88,291 +96,403 @@
             </div>
         </header>
 
-        <main>
+        <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {{-- Hero --}}
-            <section class="landing-grid-pattern relative overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28">
-                <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--landing-dominant)]"></div>
-                <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="mx-auto max-w-3xl text-center">
-                        <p class="landing-fade-in mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-300">
-                            <span class="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Zero-knowledge secret sharing
-                        </p>
-                        <h1 class="landing-fade-in landing-fade-in-delay-1 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                            Share passwords.<br>
-                            <span class="bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">Never share trust.</span>
+            <section class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                    Zero-knowledge relay
+                </div>
+
+                <div class="flex flex-col gap-8 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+                    <div class="max-w-2xl">
+                        <h1 class="text-3xl font-black uppercase tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+                            Private messages.<br class="hidden sm:block"> Zero server access.
                         </h1>
-                        <p class="landing-fade-in landing-fade-in-delay-2 mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-                            {{ config('app.name') }} encrypts secrets in your browser before they reach our servers.
-                            Only people you invite can decrypt them — and we can never read your message.
+                        <p class="mt-4 text-sm leading-relaxed text-zinc-600">
+                            {{ config('app.name') }} is built for end-to-end encrypted messaging between registered users.
+                            Pairwise channels use ECDH + HKDF — and we also support one-time Sends when you need to drop a secret.
                         </p>
-                        <div class="landing-fade-in landing-fade-in-delay-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="landing-cta-primary w-full sm:w-auto">
-                                    Create your first Send
-                                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                    </svg>
-                                </a>
-                            @endif
-                            <a href="#how-it-works" class="landing-cta-secondary w-full sm:w-auto">
-                                See how it works
-                            </a>
-                        </div>
                     </div>
 
-                    {{-- Product mockup --}}
-                    <div class="landing-fade-in landing-fade-in-delay-4 relative mx-auto mt-16 max-w-4xl">
-                        <div class="absolute -inset-4 rounded-3xl bg-emerald-500/10 blur-3xl"></div>
-                        <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-[var(--landing-surface)] shadow-2xl shadow-black/40">
-                            <div class="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-                                <span class="size-3 rounded-full bg-red-500/80"></span>
-                                <span class="size-3 rounded-full bg-amber-500/80"></span>
-                                <span class="size-3 rounded-full bg-emerald-500/80"></span>
-                                <span class="ms-4 text-xs text-zinc-500">New Send — encrypted client-side</span>
+                    <div class="flex flex-col gap-3 sm:items-end">
+                        @if (Route::has('register'))
+                            <a
+                                href="{{ route('register') }}"
+                                class="inline-flex w-full items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-950 transition-colors hover:bg-emerald-400 sm:w-auto"
+                            >
+                                Start messaging
+                            </a>
+                        @endif
+                        <a
+                            href="#how-messages"
+                            class="inline-flex w-full items-center justify-center border-2 border-zinc-950 bg-zinc-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-950 transition-colors hover:bg-zinc-200 sm:w-auto"
+                        >
+                            See how it works
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Product mockup --}}
+                <div class="border-t-2 border-zinc-950">
+                    <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                            Encrypted channel — dev_ops ↔ deploy_svc
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2">
+                        <div class="space-y-4 border-b-2 border-zinc-950 bg-white p-6 sm:border-b-0 sm:border-r-2">
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Recipient</label>
+                                <div class="mt-2 border-2 border-zinc-950 bg-zinc-50 px-3 py-2.5 text-sm font-bold uppercase text-zinc-950">
+                                    deploy_svc
+                                </div>
                             </div>
-                            <div class="grid gap-6 p-6 sm:grid-cols-2 sm:p-8">
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">Send name</label>
-                                        <div class="rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm">Production database credentials</div>
-                                    </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">Viewers</label>
-                                        <div class="flex flex-wrap gap-2">
-                                            <span class="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-300 ring-1 ring-emerald-500/30">dev@acme.io</span>
-                                            <span class="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-300 ring-1 ring-emerald-500/30">ops@acme.io</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">Expires in</label>
-                                        <div class="rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm">24 hours</div>
-                                    </div>
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Key fingerprint</label>
+                                <div class="mt-2 border-2 border-zinc-950 bg-zinc-50 px-3 py-2.5 font-mono text-xs tabular-nums text-emerald-800">
+                                    A3F2 · 8C91 · 4E7B · 1D05
                                 </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-zinc-500">Secret message</label>
-                                        <div class="relative rounded-lg border border-white/10 bg-white/5 p-4 font-mono text-xs leading-relaxed text-zinc-400">
-                                            <span class="blur-[3px] select-none">host: db.prod.internal<br>user: deploy_svc<br>pass: ••••••••••••</span>
-                                            <div class="absolute inset-0 flex items-center justify-center">
-                                                <span class="flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/40">
-                                                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                    </svg>
-                                                    AES-256-GCM encrypted
-                                                </span>
-                                            </div>
-                                        </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Retention</label>
+                                <div class="mt-2 border-2 border-zinc-950 bg-zinc-50 px-3 py-2.5 text-sm tabular-nums text-zinc-950">
+                                    Auto-delete after 7 days
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 bg-zinc-50 p-6">
+                            <div>
+                                <label class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Message thread</label>
+                                <div class="relative mt-2 space-y-3 border-2 border-zinc-950 bg-white p-4 text-xs leading-relaxed">
+                                    <div class="border-s-2 border-emerald-500 ps-3 text-zinc-600">
+                                        <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">deploy_svc · 14:02 UTC</span>
+                                        <span class="blur-[2px] select-none">Rotation keys are ready on staging.</span>
                                     </div>
-                                    <div class="flex items-center justify-between rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
-                                        <div class="flex items-center gap-2 text-xs text-emerald-300">
-                                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    <div class="border-s-2 border-zinc-400 ps-3 text-zinc-600">
+                                        <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">you · 14:03 UTC</span>
+                                        <span class="blur-[2px] select-none">Copying creds to the vault now.</span>
+                                    </div>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-zinc-950/5">
+                                        <span class="flex items-center gap-2 border-2 border-emerald-500 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+                                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                             </svg>
-                                            Password stripped before upload
-                                        </div>
-                                        <span class="text-xs text-zinc-500">Argon2id · Web Worker</span>
+                                            ECDH + HKDF · AES-256-GCM
+                                        </span>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="flex flex-col gap-2 border-2 border-emerald-500/40 bg-emerald-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+                                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    Server relays ciphertext only
+                                </div>
+                                <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">P-256 · Web Crypto</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {{-- Social proof --}}
-            <section class="border-y border-white/5 bg-[var(--landing-surface)]/50 py-12">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <p class="mb-8 text-center text-sm font-medium uppercase tracking-widest text-zinc-500">Built for teams who take security seriously</p>
-                    <div class="grid grid-cols-2 gap-8 sm:grid-cols-4">
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-emerald-400">AES-256</p>
-                            <p class="mt-1 text-sm text-zinc-500">GCM encryption</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-emerald-400">Argon2id</p>
-                            <p class="mt-1 text-sm text-zinc-500">Key derivation</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-emerald-400">0</p>
-                            <p class="mt-1 text-sm text-zinc-500">Plaintext on server</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-emerald-400">100</p>
-                            <p class="mt-1 text-sm text-zinc-500">Viewers per Send</p>
-                        </div>
-                    </div>
+            {{-- Stats strip --}}
+            <section class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                        Built for teams who take security seriously
+                    </p>
                 </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4">
+                    @foreach ([
+                        ['value' => 'ECDH', 'label' => 'P-256 key exchange'],
+                        ['value' => 'AES-256', 'label' => 'GCM encryption'],
+                        ['value' => '0', 'label' => 'Plaintext on server'],
+                        ['value' => 'HKDF', 'label' => 'Conversation keys'],
+                    ] as $stat)
+                        <div @class([
+                            'px-4 py-6 text-center',
+                            'border-r-2 border-b-2 border-zinc-950 sm:border-b-0' => ! $loop->last,
+                            'border-b-2 border-zinc-950 sm:border-b-0 sm:border-r-0' => $loop->last,
+                        ])>
+                            <p class="text-2xl font-black tabular-nums text-emerald-700">{{ $stat['value'] }}</p>
+                            <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{{ $stat['label'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+
+            {{-- Dual product pillars --}}
+            <section class="mt-8 grid gap-8 lg:grid-cols-2">
+                <article id="messages" class="border-2 border-zinc-950">
+                    <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                        Encrypted messenger
+                    </div>
+                    <div class="p-6">
+                        <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Messages</h2>
+                        <p class="mt-3 text-sm leading-relaxed text-zinc-600">
+                            Open pairwise encrypted channels with any registered user. Messages are encrypted with per-conversation keys
+                            derived via ECDH (P-256) and HKDF. The server relays opaque ciphertext only.
+                        </p>
+                        <ul class="mt-4 space-y-2 border-t-2 border-zinc-950 pt-4 text-sm text-zinc-700">
+                            <li>Identity key fingerprints to verify your partner</li>
+                            <li>Private keys stay local in your browser</li>
+                            <li>Auto-delete messages after 1 hour to 30 days</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="sends" class="border-2 border-zinc-950">
+                    <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-600">
+                        One-time secret sharing
+                    </div>
+                    <div class="p-6">
+                        <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Sends</h2>
+                        <p class="mt-3 text-sm leading-relaxed text-zinc-600">
+                            Share passwords and secrets with up to 100 registered viewer names. Set expiry from 1 hour to 30 days.
+                            Only listed viewers — plus you — can open a Send.
+                        </p>
+                        <ul class="mt-4 space-y-2 border-t-2 border-zinc-950 pt-4 text-sm text-zinc-700">
+                            <li>Password-protected payloads encrypted with AES-256-GCM</li>
+                            <li>Argon2id key derivation in a Web Worker</li>
+                            <li>Automatic deletion when expiry is reached</li>
+                        </ul>
+                    </div>
+                </article>
             </section>
 
             {{-- Features --}}
-            <section id="features" class="py-20 sm:py-28">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="mx-auto max-w-2xl text-center">
-                        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Security without the friction</h2>
-                        <p class="mt-4 text-lg text-zinc-400">
-                            Every layer is designed so your secrets stay yours — from creation to expiry.
-                        </p>
-                    </div>
+            <section id="features" class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Capabilities</p>
+                </div>
 
-                    <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        @foreach ([
-                            ['icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', 'title' => 'Client-side encryption', 'desc' => 'Secrets are encrypted in your browser with AES-256-GCM before submission. The server stores only ciphertext.'],
-                            ['icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'title' => 'Invite-only access', 'desc' => 'List up to 100 viewer emails per Send. Only registered users on that list — plus you — can open it.'],
-                            ['icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'title' => 'Automatic expiry', 'desc' => 'Set a lifetime from 1 hour to 30 days. Expired Sends are permanently deleted — no lingering secrets.'],
-                            ['icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'title' => 'Hardened accounts', 'desc' => 'Passkeys, two-factor authentication, and email verification protect who can access your Sends.'],
-                            ['icon' => 'M13 10V3L4 14h7v7l9-11h-7z', 'title' => 'Off-thread crypto', 'desc' => 'Encryption and decryption run in Web Workers so your UI stays responsive during heavy Argon2id operations.'],
-                            ['icon' => 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z', 'title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Redis sessions, and Laravel encrypted casts at rest.'],
-                        ] as $feature)
-                            <div class="group h-full rounded-2xl border border-white/10 bg-[var(--landing-surface)] p-6 transition hover:border-emerald-500/30 hover:bg-[var(--landing-surface-elevated)]">
-                                <div class="mb-4 flex size-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25 transition group-hover:bg-emerald-500/25">
-                                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $feature['icon'] }}" />
-                                    </svg>
-                                </div>
-                                <h3 class="text-lg font-semibold">{{ $feature['title'] }}</h3>
-                                <p class="mt-2 text-sm leading-relaxed text-zinc-400">{{ $feature['desc'] }}</p>
-                            </div>
-                        @endforeach
-                    </div>
+                <div class="border-b-2 border-zinc-950 p-6">
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Security without the friction</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600">
+                        Every layer is designed so your messages stay yours — from first handshake to auto-delete.
+                    </p>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ([
+                        ['title' => 'Pairwise E2E messaging', 'desc' => 'Per-conversation keys derived via ECDH (P-256) + HKDF. Chat messages are encrypted with AES-256-GCM before they leave your browser.'],
+                        ['title' => 'Client-side encryption', 'desc' => 'Sends and chat messages are encrypted in your browser before submission. The server stores only ciphertext.'],
+                        ['title' => 'Identity verification', 'desc' => 'Public key fingerprints let you confirm you are messaging the right person — not an impostor or MITM.'],
+                        ['title' => 'Automatic expiry', 'desc' => 'Set message retention from 1 hour to 30 days. Expired messages and Sends are permanently deleted every 30 minutes.'],
+                        ['title' => 'Hardened accounts', 'desc' => 'Passkeys, two-factor authentication, and email verification protect who can access your channels.'],
+                        ['title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Valkey sessions, and Laravel encrypted casts at rest for Sends.'],
+                    ] as $feature)
+                        <div @class([
+                            'p-6',
+                            'border-b-2 border-zinc-950' => true,
+                            'sm:border-r-2' => ! $loop->last && ($loop->index + 1) % 2 !== 0,
+                            'lg:border-r-2' => ! $loop->last && ($loop->index + 1) % 3 !== 0,
+                        ])>
+                            <h3 class="text-sm font-bold uppercase tracking-tight text-zinc-950">{{ $feature['title'] }}</h3>
+                            <p class="mt-2 text-sm leading-relaxed text-zinc-600">{{ $feature['desc'] }}</p>
+                        </div>
+                    @endforeach
                 </div>
             </section>
 
-            {{-- How it works --}}
-            <section id="how-it-works" class="border-y border-white/5 bg-[var(--landing-surface)]/30 py-20 sm:py-28">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="mx-auto max-w-2xl text-center">
-                        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Five steps. Zero exposure.</h2>
-                        <p class="mt-4 text-lg text-zinc-400">From creation to decryption, your secret never touches our servers in plaintext.</p>
-                    </div>
-
-                    <ol class="mx-auto mt-16 max-w-3xl space-y-0">
-                        @foreach ([
-                            ['step' => '01', 'title' => 'Create a Send', 'desc' => 'Name it, add viewer emails, write your secret, and pick an expiry between 1 hour and 30 days.'],
-                            ['step' => '02', 'title' => 'Encrypt locally', 'desc' => 'Optional password protection encrypts the message with AES-256-GCM. The key is derived via Argon2id in a Web Worker.'],
-                            ['step' => '03', 'title' => 'Share securely', 'desc' => 'Only registered users whose emails you listed can open the Send. You can always view your own Sends too.'],
-                            ['step' => '04', 'title' => 'Decrypt in browser', 'desc' => 'Authorized viewers enter the shared password locally. Decryption runs off the main thread — we never see it.'],
-                            ['step' => '05', 'title' => 'Auto-delete', 'desc' => 'When the timer runs out, the Send is permanently removed. No recovery, no residue.'],
-                        ] as $item)
-                            <li class="relative flex gap-6 pb-12 last:pb-0">
-                                <div class="flex flex-col items-center">
-                                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-bold text-emerald-400 ring-1 ring-emerald-500/30">{{ $item['step'] }}</span>
-                                    <span class="mt-2 w-px grow bg-gradient-to-b from-emerald-500/30 to-transparent last:hidden"></span>
-                                </div>
-                                <div class="pt-1.5">
-                                    <h3 class="text-lg font-semibold">{{ $item['title'] }}</h3>
-                                    <p class="mt-2 text-sm leading-relaxed text-zinc-400">{{ $item['desc'] }}</p>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ol>
+            {{-- How Messages work --}}
+            <section id="how-messages" class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                    Messenger protocol
                 </div>
+
+                <div class="border-b-2 border-zinc-950 p-6">
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Pairwise encrypted channels</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-zinc-600">
+                        Private messaging between registered users. The server relays ciphertext — it cannot decrypt content.
+                    </p>
+                </div>
+
+                <ol class="divide-y-2 divide-zinc-950">
+                    @foreach ([
+                        ['step' => '01', 'title' => 'Start a conversation', 'desc' => 'Open Messages, enter a registered user name, and open a pairwise encrypted channel.'],
+                        ['step' => '02', 'title' => 'Identity keys', 'desc' => 'Each user gets an ECDH (P-256) key pair in the browser. The public key is registered with the server; the private key stays local.'],
+                        ['step' => '03', 'title' => 'Derived conversation keys', 'desc' => 'Messages are encrypted with AES-256-GCM using a per-conversation key derived via ECDH + HKDF.'],
+                        ['step' => '04', 'title' => 'Server relay only', 'desc' => 'The server stores and relays opaque ciphertext. It cannot decrypt message content.'],
+                        ['step' => '05', 'title' => 'Verify your partner', 'desc' => 'A fingerprint of the recipient\'s public key is shown so you can confirm you are talking to the right person.'],
+                        ['step' => '06', 'title' => 'Auto-delete', 'desc' => 'Each conversation can be configured to delete messages after 1 hour to 30 days.'],
+                    ] as $item)
+                        <li class="flex gap-6 p-6 @if($loop->even) bg-zinc-50 @else bg-white @endif">
+                            <span class="shrink-0 text-sm font-bold tabular-nums text-emerald-700">#{{ $item['step'] }}</span>
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-tight text-zinc-950">{{ $item['title'] }}</h3>
+                                <p class="mt-2 text-sm leading-relaxed text-zinc-600">{{ $item['desc'] }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+
+            {{-- How Sends work --}}
+            <section id="how-sends" class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-600">
+                    Send protocol
+                </div>
+
+                <div class="border-b-2 border-zinc-950 p-6">
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Five steps. Zero exposure.</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-zinc-600">
+                        From creation to decryption, your secret never touches our servers in plaintext.
+                    </p>
+                </div>
+
+                <ol class="divide-y-2 divide-zinc-950">
+                    @foreach ([
+                        ['step' => '01', 'title' => 'Create a Send', 'desc' => 'Name it, add registered viewer names, write your secret, and pick an expiry between 1 hour and 30 days.'],
+                        ['step' => '02', 'title' => 'Encrypt locally', 'desc' => 'Optional password protection encrypts the message with AES-256-GCM. The key is derived via Argon2id in a Web Worker.'],
+                        ['step' => '03', 'title' => 'Share securely', 'desc' => 'Only registered users whose names you listed can open the Send. You can always view your own Sends too.'],
+                        ['step' => '04', 'title' => 'Decrypt in browser', 'desc' => 'Authorized viewers enter the shared password locally. Decryption runs off the main thread — we never see it.'],
+                        ['step' => '05', 'title' => 'Auto-delete', 'desc' => 'When the timer runs out, the Send is permanently removed. No recovery, no residue.'],
+                    ] as $item)
+                        <li class="flex gap-6 p-6 @if($loop->even) bg-zinc-50 @else bg-white @endif">
+                            <span class="shrink-0 text-sm font-bold tabular-nums text-emerald-700">#{{ $item['step'] }}</span>
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-tight text-zinc-950">{{ $item['title'] }}</h3>
+                                <p class="mt-2 text-sm leading-relaxed text-zinc-600">{{ $item['desc'] }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
             </section>
 
             {{-- Security model --}}
-            <section id="security" class="py-20 sm:py-28">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="grid items-center gap-12 lg:grid-cols-2">
-                        <div>
-                            <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">We cannot read your secrets</h2>
-                            <p class="mt-4 text-lg leading-relaxed text-zinc-400">
-                                {{ config('app.name') }} is built on a zero-knowledge model. Password-protected Sends are encrypted before they leave your browser.
-                                If you lose the password, the secret cannot be recovered — by design.
-                            </p>
-                            <ul class="mt-8 space-y-3">
-                                @foreach (['Client-side E2E encryption protects content from operators', 'Laravel encrypted cast secures data at rest', 'Per-Send viewer ACL controls who can open', 'Strict CSP blocks XSS and injection attacks'] as $point)
-                                    <li class="flex items-start gap-3 text-sm text-zinc-300">
-                                        <svg class="mt-0.5 size-5 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        {{ $point }}
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                        <div class="overflow-hidden rounded-2xl border border-white/10 bg-[var(--landing-surface)]">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="border-b border-white/10 bg-white/5">
-                                        <th class="px-5 py-3 text-start font-medium text-zinc-400">Layer</th>
-                                        <th class="px-5 py-3 text-start font-medium text-zinc-400">Protection</th>
+            <section id="security" class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Security model</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2">
+                    <div class="border-b-2 border-zinc-950 p-6 lg:border-b-0 lg:border-r-2">
+                        <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">We cannot read your messages</h2>
+                        <p class="mt-4 text-sm leading-relaxed text-zinc-600">
+                            {{ config('app.name') }} is built on a zero-knowledge model. Chat messages and password-protected Sends are encrypted before they leave your browser.
+                            If you lose your local identity key or a Send password, the content cannot be recovered — by design.
+                        </p>
+                        <ul class="mt-6 space-y-3">
+                            @foreach ([
+                                'ECDH + HKDF conversation keys for every chat',
+                                'Client-side E2E encryption protects content from operators',
+                                'Identity key fingerprints prevent wrong-recipient attacks',
+                                'Strict CSP blocks XSS and injection attacks',
+                            ] as $point)
+                                <li class="flex items-start gap-3 text-sm text-zinc-700">
+                                    <span class="mt-0.5 shrink-0 font-bold text-emerald-700">[+]</span>
+                                    {{ $point }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-zinc-950 bg-zinc-200 text-left">
+                                    <th scope="col" class="border-r-2 border-zinc-950 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                                        Layer
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                                        Protection
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ([
+                                    ['Client-side E2E', 'Send and chat content from server operator'],
+                                    ['Laravel encrypted cast', 'Send payloads at rest'],
+                                    ['ECDH + HKDF', 'Per-conversation chat encryption'],
+                                    ['Identity key fingerprints', 'Wrong recipient or key substitution'],
+                                    ['Opaque chat relay', 'Chat ciphertext stored as-is'],
+                                    ['Passkeys + 2FA', 'Account access'],
+                                    ['Per-Send viewer ACL', 'Who can open a Send'],
+                                    ['Valkey sessions', 'Session hijacking surface'],
+                                    ['Content Security Policy', 'XSS and injection'],
+                                ] as [$layer, $protection])
+                                    <tr @class([
+                                        'border-b-2 border-zinc-950',
+                                        'bg-zinc-50' => $loop->even,
+                                        'bg-white' => $loop->odd,
+                                    ])>
+                                        <td class="border-r-2 border-zinc-950 px-4 py-3.5 text-sm font-bold text-zinc-950">{{ $layer }}</td>
+                                        <td class="px-4 py-3.5 text-sm text-zinc-600">{{ $protection }}</td>
                                     </tr>
-                                </thead>
-                                <tbody class="divide-y divide-white/5">
-                                    @foreach ([
-                                        ['Client-side E2E', 'Message content from server operator'],
-                                        ['Laravel encrypted cast', 'Stored payload at rest'],
-                                        ['Passkeys + 2FA', 'Account access'],
-                                        ['Per-Send viewer ACL', 'Who can open a Send'],
-                                        ['Redis sessions', 'Session hijacking surface'],
-                                        ['Content Security Policy', 'XSS and injection'],
-                                    ] as [$layer, $protection])
-                                        <tr class="transition hover:bg-white/[0.02]">
-                                            <td class="px-5 py-3.5 font-medium text-zinc-200">{{ $layer }}</td>
-                                            <td class="px-5 py-3.5 text-zinc-400">{{ $protection }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
 
             {{-- FAQ --}}
-            <section id="faq" class="py-20 sm:py-28">
-                <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-                    <div class="text-center">
-                        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Frequently asked questions</h2>
-                        <p class="mt-4 text-lg text-zinc-400">Everything you need to know before sharing your first secret.</p>
-                    </div>
+            <section id="faq" class="mt-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Support</p>
+                </div>
 
-                    <div class="mt-12 space-y-3">
-                        @foreach ([
-                            ['q' => 'Can '.config('app.name').' staff read my secrets?', 'a' => 'No. Password-protected Sends are encrypted in your browser before upload. We store only ciphertext and never receive your decryption password. We cannot recover a lost password.'],
-                            ['q' => 'Who can view a Send?', 'a' => 'Only registered users whose email addresses you listed as viewers, plus you as the owner. There are no public links — access is strictly invite-based.'],
-                            ['q' => 'What encryption is used?', 'a' => 'Password protection uses AES-256-GCM for encryption. Keys are derived with Argon2id in a Web Worker. At rest, Laravel\'s encrypted cast adds another layer of server-side protection.'],
-                            ['q' => 'How long do Sends last?', 'a' => 'You choose an expiry between 1 hour and 30 days when creating a Send. Expired Sends are permanently deleted by a scheduled task that runs every 30 minutes.'],
-                            ['q' => 'How many Sends can I have?', 'a' => 'Each user can have up to 15 active Sends at a time, with up to 100 viewer emails per Send and a 1,000-character plaintext message limit before encryption.'],
-                            ['q' => 'What protects my account?', 'a' => 'Accounts support passkeys, two-factor authentication (TOTP), and email verification. Sessions are short-lived and stored in Redis to minimize hijacking risk.'],
-                            ['q' => 'Is this better than sharing via chat or email?', 'a' => 'Yes. Chat and email leave plaintext copies in message history, logs, and backups. '.config('app.name').' encrypts before transmission, limits access to named viewers, and auto-deletes on expiry.'],
-                            ['q' => 'What happens if I forget the Send password?', 'a' => 'The secret cannot be recovered. This is intentional — it proves we never had access to the decryption key. Only share passwords through a separate secure channel.'],
-                        ] as $faq)
-                            <details class="group rounded-xl border border-white/10 bg-[var(--landing-surface)] open:border-emerald-500/20 open:bg-[var(--landing-surface-elevated)]">
-                                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-medium [&::-webkit-details-marker]:hidden">
-                                    {{ $faq['q'] }}
-                                    <svg class="size-5 shrink-0 text-zinc-500 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </summary>
-                                <p class="border-t border-white/5 px-5 py-4 text-sm leading-relaxed text-zinc-400">{{ $faq['a'] }}</p>
-                            </details>
-                        @endforeach
-                    </div>
+                <div class="border-b-2 border-zinc-950 p-6">
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950">Frequently asked questions</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-zinc-600">
+                        Everything you need to know before opening your first encrypted channel.
+                    </p>
+                </div>
+
+                <div class="divide-y-2 divide-zinc-950">
+                    @foreach ([
+                        ['q' => 'Can '.config('app.name').' staff read my messages?', 'a' => 'No. Chat messages and password-protected Sends are encrypted in your browser before upload. We store only ciphertext and never receive your decryption keys. We cannot recover lost identity keys or Send passwords.'],
+                        ['q' => 'How does chat encryption work?', 'a' => 'Each user has an ECDH (P-256) identity key pair. Per-conversation keys are derived via ECDH + HKDF, then messages are encrypted with AES-256-GCM. Both parties derive the same key independently.'],
+                        ['q' => 'Who can view a Send?', 'a' => 'Only registered users whose names you listed as viewers, plus you as the owner. There are no public links — access is strictly invite-based.'],
+                        ['q' => 'What encryption is used?', 'a' => 'Sends use AES-256-GCM with Argon2id key derivation in a Web Worker. Chat uses ECDH (P-256) + HKDF + AES-256-GCM. At rest, Laravel\'s encrypted cast adds another layer for Send payloads.'],
+                        ['q' => 'How long do Sends last?', 'a' => 'You choose an expiry between 1 hour and 30 days when creating a Send. Expired Sends are permanently deleted by a scheduled task that runs every 30 minutes.'],
+                        ['q' => 'How many Sends can I have?', 'a' => 'Each user can have up to '.config('send.max_per_user', 15).' active Sends at a time, with up to 100 viewer names per Send and a '.number_format(config('send.message.max_length', 1000)).'-character plaintext message limit before encryption.'],
+                        ['q' => 'What protects my account?', 'a' => 'Accounts support passkeys, two-factor authentication (TOTP), and email verification. Sessions are short-lived and stored in Valkey to minimize hijacking risk.'],
+                        ['q' => 'Is this better than sharing via chat or email?', 'a' => 'Yes. Chat and email leave plaintext copies in message history, logs, and backups. '.config('app.name').' encrypts before transmission, limits access to named viewers, and auto-deletes on expiry.'],
+                        ['q' => 'What happens if I forget the Send password?', 'a' => 'The secret cannot be recovered. This is intentional — it proves we never had access to the decryption key. Only share passwords through a separate secure channel.'],
+                    ] as $faq)
+                        <details class="group bg-white open:bg-zinc-50">
+                            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 text-sm font-bold uppercase tracking-tight text-zinc-950 [&::-webkit-details-marker]:hidden">
+                                {{ $faq['q'] }}
+                                <span class="shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-open:text-emerald-700">[+]</span>
+                            </summary>
+                            <p class="border-t-2 border-zinc-950 px-6 py-4 text-sm leading-relaxed text-zinc-600">{{ $faq['a'] }}</p>
+                        </details>
+                    @endforeach
                 </div>
             </section>
 
             {{-- Final CTA --}}
-            <section class="relative overflow-hidden py-20 sm:py-28">
-                <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-teal-500/10"></div>
-                <div class="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-                    <h2 class="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                        Stop sharing secrets in plain text
+            <section class="my-8 border-2 border-zinc-950">
+                <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
+                    Ready to deploy
+                </div>
+
+                <div class="p-6 text-center sm:p-8">
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-zinc-950 sm:text-3xl">
+                        Stop chatting in plain text
                     </h2>
-                    <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
-                        Create your first Send in minutes. Encrypt locally, share with confidence, and let expiry handle the cleanup.
+                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-600">
+                        Open your first encrypted channel in minutes. Verify your partner, message with confidence, and let auto-delete handle retention.
                     </p>
-                    <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="landing-cta-primary w-full sm:w-auto">
+                            <a
+                                href="{{ route('register') }}"
+                                class="inline-flex w-full items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-950 transition-colors hover:bg-emerald-400 sm:w-auto"
+                            >
                                 Get started free
-                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
                             </a>
                         @endif
                         @if (Route::has('login'))
-                            <a href="{{ route('login') }}" class="landing-cta-secondary w-full sm:w-auto">
+                            <a
+                                href="{{ route('login') }}"
+                                class="inline-flex w-full items-center justify-center border-2 border-zinc-950 bg-zinc-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-950 transition-colors hover:bg-zinc-200 sm:w-auto"
+                            >
                                 Log in to your account
                             </a>
                         @endif
@@ -382,69 +502,59 @@
         </main>
 
         {{-- Footer --}}
-        <footer class="border-t border-white/5 bg-[var(--landing-surface)]/50">
+        <footer class="border-t-2 border-zinc-950 bg-zinc-100">
             <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="grid gap-8 border-b-2 border-zinc-950 pb-8 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="sm:col-span-2 lg:col-span-1">
                         <a href="{{ route('home') }}" class="flex items-center gap-3">
-                            <span class="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/30">
-                                <x-app-logo-icon class="size-4 fill-emerald-400" />
+                            <span class="flex size-8 items-center justify-center border-2 border-zinc-950 bg-emerald-500/10">
+                                <x-app-logo-icon class="size-4 fill-emerald-700" />
                             </span>
-                            <span class="font-semibold">{{ config('app.name') }}</span>
+                            <span class="text-sm font-bold uppercase tracking-tight text-zinc-950">{{ config('app.name') }}</span>
                         </a>
-                        <p class="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">
-                            End-to-end encrypted secret sharing for teams who refuse to compromise on security.
+                        <p class="mt-4 max-w-xs text-sm leading-relaxed text-zinc-600">
+                            Free and open-source end-to-end encrypted messaging and one-time secret sharing for teams who refuse to compromise on security.
                         </p>
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-400">Product</h3>
-                        <ul class="mt-4 space-y-2 text-sm text-zinc-500">
-                            <li><a href="#features" class="transition hover:text-white">Features</a></li>
-                            <li><a href="#how-it-works" class="transition hover:text-white">How it works</a></li>
-                            <li><a href="#security" class="transition hover:text-white">Security</a></li>
-                            <li><a href="#faq" class="transition hover:text-white">FAQ</a></li>
+                        <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Product</h3>
+                        <ul class="mt-4 space-y-2 text-sm text-zinc-600">
+                            <li><a href="#messages" class="transition-colors hover:text-emerald-700">Messages</a></li>
+                            <li><a href="#sends" class="transition-colors hover:text-emerald-700">Sends</a></li>
+                            <li><a href="#features" class="transition-colors hover:text-emerald-700">Features</a></li>
+                            <li><a href="#security" class="transition-colors hover:text-emerald-700">Security</a></li>
+                            <li><a href="#faq" class="transition-colors hover:text-emerald-700">FAQ</a></li>
                         </ul>
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-400">Account</h3>
-                        <ul class="mt-4 space-y-2 text-sm text-zinc-500">
+                        <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Account</h3>
+                        <ul class="mt-4 space-y-2 text-sm text-zinc-600">
                             @if (Route::has('login'))
-                                <li><a href="{{ route('login') }}" class="transition hover:text-white">Log in</a></li>
+                                <li><a href="{{ route('login') }}" class="transition-colors hover:text-emerald-700">Log in</a></li>
                             @endif
                             @if (Route::has('register'))
-                                <li><a href="{{ route('register') }}" class="transition hover:text-white">Register</a></li>
+                                <li><a href="{{ route('register') }}" class="transition-colors hover:text-emerald-700">Register</a></li>
                             @endif
                             @auth
-                                <li><a href="{{ route('dashboard') }}" class="transition hover:text-white">Dashboard</a></li>
+                                <li><a href="{{ route('dashboard') }}" class="transition-colors hover:text-emerald-700">Dashboard</a></li>
                             @endauth
                         </ul>
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-400">Security</h3>
-                        <ul class="mt-4 space-y-2 text-sm text-zinc-500">
+                        <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Security</h3>
+                        <ul class="mt-4 space-y-2 text-sm text-zinc-600">
                             <li>AES-256-GCM encryption</li>
                             <li>Argon2id key derivation</li>
+                            <li>ECDH + HKDF messaging</li>
                             <li>Zero-knowledge architecture</li>
-                            <li>Automatic secret expiry</li>
                         </ul>
                     </div>
                 </div>
-                <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 sm:flex-row">
-                    <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                    <p class="text-xs text-zinc-600">Secrets encrypted client-side. Server stores ciphertext only.</p>
+                <div class="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                    <p class="text-sm text-zinc-600">&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Messages encrypted client-side. Server stores ciphertext only.</p>
                 </div>
             </div>
         </footer>
-
-        <script nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">
-            const header = document.getElementById('site-header');
-            const onScroll = () => {
-                header.classList.toggle('border-white/10', window.scrollY > 16);
-                header.classList.toggle('bg-[var(--landing-dominant)]/80', window.scrollY > 16);
-                header.classList.toggle('backdrop-blur-lg', window.scrollY > 16);
-            };
-            onScroll();
-            window.addEventListener('scroll', onScroll, { passive: true });
-        </script>
     </body>
 </html>
