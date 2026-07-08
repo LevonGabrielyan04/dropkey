@@ -21,6 +21,7 @@ use App\Services\Interfaces\SendWriteServiceInterface;
 use App\Services\SendReadService;
 use App\Services\SendWriteService;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -112,11 +113,19 @@ class AppServiceProvider extends ServiceProvider
                     ->first();
             }
 
-            if ($user?->hasEnabledTwoFactorAuthentication()) {
-                return Password::min(8)->uncompromised();
-            }
+            $rule = $user?->hasEnabledTwoFactorAuthentication()
+                ? Password::min(8)->uncompromised()
+                : Password::min(15)->uncompromised();
 
-            return Password::min(15)->uncompromised();
+            return $rule->rules([
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $appName = (string) config('app.name');
+
+                    if ($appName !== '' && mb_stripos((string) $value, $appName) !== false) {
+                        $fail('The :attribute must not contain the application name.');
+                    }
+                },
+            ]);
         });
     }
 }

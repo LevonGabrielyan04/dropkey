@@ -64,3 +64,31 @@ test('password reset uses two factor status from email when guest', function () 
 
     expect($validator->fails())->toBeFalse();
 });
+
+test('password must not contain the application name case insensitively', function (callable $caseTransform) {
+    $appName = (string) config('app.name');
+    $password = str_pad($caseTransform($appName).'-extra-chars', 15, 'x');
+
+    $validator = Validator::make(
+        ['password' => $password, 'password_confirmation' => $password],
+        ['password' => ['required', 'string', Password::default(), 'confirmed']],
+    );
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('password'))->toBeTrue();
+})->with([
+    'lowercase' => [fn (string $name): string => mb_strtolower($name)],
+    'uppercase' => [fn (string $name): string => mb_strtoupper($name)],
+    'mixed case' => [fn (string $name): string => mb_convert_case($name, MB_CASE_TITLE)],
+]);
+
+test('password may omit the application name', function () {
+    $password = 'secure-password-ok';
+
+    $validator = Validator::make(
+        ['password' => $password, 'password_confirmation' => $password],
+        ['password' => ['required', 'string', Password::default(), 'confirmed']],
+    );
+
+    expect($validator->fails())->toBeFalse();
+});
