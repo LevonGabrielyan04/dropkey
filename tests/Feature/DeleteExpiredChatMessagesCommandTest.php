@@ -40,5 +40,6 @@ it('schedules expired chat message deletion every thirty minutes', function () {
         ->first(fn ($event) => str_contains($event->command ?? '', 'chat-messages:delete-expired'));
 
     expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('*/30 * * * *');
+        ->and($event->expression)->toBe('*/30 * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue();
 });

@@ -39,7 +39,8 @@ it('schedules expired send deletion every thirty minutes', function () {
         ->first(fn ($event) => str_contains($event->command ?? '', 'sends:delete-expired'));
 
     expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('*/30 * * * *');
+        ->and($event->expression)->toBe('*/30 * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue();
 });
 
 it('clears cached send lists when expired sends are deleted', function () {
