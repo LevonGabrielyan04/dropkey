@@ -7,9 +7,7 @@ vi.mock('./identityOverwriteConfirmation.js', () => ({
 }));
 
 vi.mock('./identitySession.js', () => ({
-    getSessionPassword: vi.fn(() => 'secret-password'),
     resolveBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
-    unlockIdentity: vi.fn(async () => null),
 }));
 
 vi.mock('./keyStore.js', () => ({
@@ -17,7 +15,6 @@ vi.mock('./keyStore.js', () => ({
     loadUnlockedIdentity: vi.fn(async () => null),
 }));
 
-import { unlockIdentity } from './identitySession.js';
 import { loadEncryptedIdentity, loadUnlockedIdentity } from './keyStore.js';
 import {
     ensureIdentityOverwriteAllowed,
@@ -31,7 +28,6 @@ describe('identityOverwrite', () => {
         vi.clearAllMocks();
         vi.mocked(loadEncryptedIdentity).mockResolvedValue(null);
         vi.mocked(loadUnlockedIdentity).mockResolvedValue(null);
-        vi.mocked(unlockIdentity).mockResolvedValue(null);
         confirmIdentityKeyOverwrite.mockResolvedValue(true);
     });
 
@@ -50,10 +46,9 @@ describe('identityOverwrite', () => {
         });
 
         await expect(wouldOverwriteLocalIdentity('01JABCDEF1234567890ABCDEFGH')).resolves.toBe(false);
-        expect(unlockIdentity).not.toHaveBeenCalled();
     });
 
-    it('detects local overwrite when encrypted identity cannot be unlocked', async () => {
+    it('detects local overwrite when encrypted identity exists without an unlocked key', async () => {
         vi.mocked(loadEncryptedIdentity).mockResolvedValue({
             ciphertext: 'cipher',
             salt: 'salt',
@@ -61,20 +56,6 @@ describe('identityOverwrite', () => {
         });
 
         await expect(wouldOverwriteLocalIdentity('01JABCDEF1234567890ABCDEFGH')).resolves.toBe(true);
-    });
-
-    it('does not detect local overwrite when encrypted identity unlocks', async () => {
-        vi.mocked(loadEncryptedIdentity).mockResolvedValue({
-            ciphertext: 'cipher',
-            salt: 'salt',
-            iv: 'iv',
-        });
-        vi.mocked(unlockIdentity).mockResolvedValue({
-            privateKey: {},
-            publicJwk: { kty: 'EC' },
-        });
-
-        await expect(wouldOverwriteLocalIdentity('01JABCDEF1234567890ABCDEFGH')).resolves.toBe(false);
     });
 
     it('detects server overwrite when fingerprints differ', async () => {

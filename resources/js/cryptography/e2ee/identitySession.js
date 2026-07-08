@@ -2,6 +2,7 @@ import {
     createIdentityEnvelope,
     ECDH_P256_ALGORITHM,
     IDENTITY_KEY_USAGES,
+    toNonExtractableIdentityKey,
     unlockIdentityEnvelope,
 } from '../core/cryptoUtils.js';
 import { decryptViaWorker } from '../decrypt/decryptViaWorker.js';
@@ -16,7 +17,6 @@ import {
     saveUnlockedIdentity,
 } from './keyStore.js';
 
-const SESSION_PASSWORD_KEY = 'passshare:account-password';
 const SESSION_BROWSER_DB_ID_KEY = 'passshare:browser-db-id';
 
 /** @type {Map<string, string>} */
@@ -52,20 +52,6 @@ export function getCachedIdentity() {
 }
 
 /**
- * @returns {string|null}
- */
-export function getSessionPassword() {
-    return sessionStore().getItem(SESSION_PASSWORD_KEY);
-}
-
-/**
- * @param {string} password
- */
-export function setSessionPassword(password) {
-    sessionStore().setItem(SESSION_PASSWORD_KEY, password);
-}
-
-/**
  * @param {string} browserDbId
  */
 export function setSessionBrowserDbId(browserDbId) {
@@ -86,7 +72,6 @@ export function clearCachedIdentity() {
 export function clearSessionCredentials() {
     clearCachedIdentity();
 
-    sessionStore().removeItem(SESSION_PASSWORD_KEY);
     sessionStore().removeItem(SESSION_BROWSER_DB_ID_KEY);
 }
 
@@ -100,6 +85,22 @@ async function cacheAndPersistUnlockedIdentity(browserDbId, identity) {
     cachedIdentity = identity;
 
     return identity;
+}
+
+/**
+ * Persist a non-extractable unlocked CryptoKey without a password-protected envelope.
+ *
+ * @param {string} browserDbId
+ * @param {{ privateKey: CryptoKey, publicJwk: JsonWebKey }} identity
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
+ */
+export async function persistUnlockedIdentity(browserDbId, identity) {
+    const unlockedIdentity = {
+        privateKey: await toNonExtractableIdentityKey(identity.privateKey),
+        publicJwk: identity.publicJwk,
+    };
+
+    return cacheAndPersistUnlockedIdentity(browserDbId, unlockedIdentity);
 }
 
 /**
@@ -204,37 +205,26 @@ export async function loadIdentity() {
             return unlocked;
         }
     } catch {
-        // Fall through to password unlock when structured-clone load fails.
+        // IndexedDB structured-clone load failed; no password fallback exists.
     }
 
-    const password = getSessionPassword();
-
-    if (! password) {
-        return null;
-    }
-
-    try {
-        return await unlockIdentity(browserDbId, password);
-    } catch {
-        cachedIdentity = null;
-
-        return null;
-    }
+    return null;
 }
 
 /**
+ * Persist the current identity as an unlocked CryptoKey for the active browser DB.
+ *
  * @param {{ privateKey: CryptoKey, publicJwk: JsonWebKey }} identity
  * @returns {Promise<void>}
  */
 export async function saveIdentity(identity) {
     const browserDbId = resolveBrowserDbId();
-    const password = getSessionPassword();
 
-    if (! browserDbId || ! password) {
-        throw new Error('Cannot save identity without a browser database id and session password.');
+    if (! browserDbId) {
+        throw new Error('Cannot save identity without a browser database id.');
     }
 
-    await persistIdentity(browserDbId, password, identity);
+    await persistUnlockedIdentity(browserDbId, identity);
 }
 
 /**

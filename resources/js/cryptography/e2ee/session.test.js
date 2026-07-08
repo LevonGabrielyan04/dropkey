@@ -6,9 +6,8 @@ const identityStore = vi.hoisted(() => ({
 
 vi.mock('./identitySession.js', () => ({
     getSessionBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
-    getSessionPassword: vi.fn(() => 'secret-password'),
     loadIdentity: vi.fn(async () => identityStore.value),
-    persistIdentity: vi.fn(async (_browserDbId, _password, identity) => {
+    persistUnlockedIdentity: vi.fn(async (_browserDbId, identity) => {
         identityStore.value = identity;
     }),
     saveIdentity: vi.fn(async (identity) => {

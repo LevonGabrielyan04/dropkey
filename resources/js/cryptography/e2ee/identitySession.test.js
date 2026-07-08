@@ -42,13 +42,12 @@ vi.mock('./keyStore.js', () => ({
 import {
     clearSessionCredentials,
     getCachedIdentity,
-    getSessionPassword,
     loadIdentity,
     lockIdentity,
     persistIdentity,
+    persistUnlockedIdentity,
     saveIdentity,
     setSessionBrowserDbId,
-    setSessionPassword,
     unlockIdentity,
 } from './identitySession.js';
 
@@ -79,23 +78,36 @@ describe('identitySession', () => {
         vi.clearAllMocks();
     });
 
-    it('stores and reads the session password', () => {
-        setSessionPassword('secret-password');
-
-        expect(getSessionPassword()).toBe('secret-password');
-    });
-
     it('clears cached identity and session credentials', async () => {
-        setSessionPassword('secret-password');
+        setSessionBrowserDbId(BROWSER_DB_ID);
 
         const identity = await generateIdentity();
 
-        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+        await persistUnlockedIdentity(BROWSER_DB_ID, identity);
 
         clearSessionCredentials();
 
-        expect(getSessionPassword()).toBeNull();
         expect(getCachedIdentity()).toBeNull();
+        expect(store.unlocked?.publicJwk).toEqual(identity.publicJwk);
+    });
+
+    it('persists a non-extractable unlocked CryptoKey without an envelope', async () => {
+        const identity = await generateIdentity();
+        const { saveEncryptedIdentity, saveUnlockedIdentity } = await import('./keyStore.js');
+
+        const persisted = await persistUnlockedIdentity(BROWSER_DB_ID, identity);
+
+        expect(persisted.privateKey.extractable).toBe(false);
+        expect(persisted.publicJwk).toEqual(identity.publicJwk);
+        expect(saveEncryptedIdentity).not.toHaveBeenCalled();
+        expect(saveUnlockedIdentity).toHaveBeenCalledWith(
+            BROWSER_DB_ID,
+            expect.objectContaining({
+                privateKey: expect.any(CryptoKey),
+                publicJwk: identity.publicJwk,
+            }),
+        );
+        expect(getCachedIdentity()?.publicJwk).toEqual(identity.publicJwk);
     });
 
     it('persists a v2 envelope and non-extractable unlocked CryptoKey', async () => {
@@ -151,7 +163,7 @@ describe('identitySession', () => {
     it('loads identity from the unlocked CryptoKey without a session password', async () => {
         const identity = await generateIdentity();
 
-        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+        await persistUnlockedIdentity(BROWSER_DB_ID, identity);
 
         clearSessionCredentials();
         setSessionBrowserDbId(BROWSER_DB_ID);
@@ -166,7 +178,6 @@ describe('identitySession', () => {
         const loaded = await loadIdentity();
 
         expect(loaded?.publicJwk).toEqual(identity.publicJwk);
-        expect(getSessionPassword()).toBeNull();
         expect(loadEncryptedIdentity).not.toHaveBeenCalled();
     });
 
@@ -180,7 +191,7 @@ describe('identitySession', () => {
     it('loads identity from memory cache without hitting storage again', async () => {
         const identity = await generateIdentity();
 
-        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+        await persistUnlockedIdentity(BROWSER_DB_ID, identity);
 
         const { loadEncryptedIdentity, loadUnlockedIdentity } = await import('./keyStore.js');
         vi.mocked(loadEncryptedIdentity).mockClear();
@@ -215,7 +226,7 @@ describe('identitySession', () => {
         expect(store.unlocked?.privateKey.extractable).toBe(false);
     });
 
-    it('throws when saving without session credentials', async () => {
+    it('throws when saving without a browser database id', async () => {
         const identity = await generateIdentity();
 
         vi.stubGlobal('document', {
@@ -225,15 +236,13 @@ describe('identitySession', () => {
         });
 
         await expect(saveIdentity(identity)).rejects.toThrow(
-            'Cannot save identity without a browser database id and session password.',
+            'Cannot save identity without a browser database id.',
         );
 
         vi.unstubAllGlobals();
     });
 
     it('resolves the browser database id from the document dataset', async () => {
-        setSessionPassword('secret-password');
-
         const identity = await generateIdentity();
 
         vi.stubGlobal('document', {
@@ -246,11 +255,14 @@ describe('identitySession', () => {
 
         await saveIdentity(identity);
 
-        const { saveEncryptedIdentity } = await import('./keyStore.js');
+        const { saveUnlockedIdentity } = await import('./keyStore.js');
 
-        expect(saveEncryptedIdentity).toHaveBeenCalledWith(
+        expect(saveUnlockedIdentity).toHaveBeenCalledWith(
             BROWSER_DB_ID,
-            expect.objectContaining({ v: 2 }),
+            expect.objectContaining({
+                privateKey: expect.any(CryptoKey),
+                publicJwk: identity.publicJwk,
+            }),
         );
 
         vi.unstubAllGlobals();
@@ -273,7 +285,7 @@ describe('identitySession', () => {
     it('clears the unlocked IndexedDB key when locking identity', async () => {
         const identity = await generateIdentity();
 
-        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+        await persistUnlockedIdentity(BROWSER_DB_ID, identity);
         setSessionBrowserDbId(BROWSER_DB_ID);
 
         await lockIdentity();

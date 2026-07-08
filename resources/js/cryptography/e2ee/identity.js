@@ -3,10 +3,8 @@ import {
     ensureIdentityOverwriteAllowed,
 } from './identityOverwrite.js';
 import {
-    getSessionBrowserDbId,
-    getSessionPassword,
     loadIdentity,
-    persistIdentity,
+    persistUnlockedIdentity,
     resolveBrowserDbId,
     setSessionBrowserDbId,
 } from './identitySession.js';
@@ -43,10 +41,9 @@ export async function ensureIdentityKeyPair() {
 
     const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
     const fingerprint = await fingerprintFromPublicJwk(publicJwk);
-    const password = getSessionPassword();
 
-    if (browserDbId && password) {
-        await persistIdentity(browserDbId, password, {
+    if (browserDbId) {
+        await persistUnlockedIdentity(browserDbId, {
             privateKey: keyPair.privateKey,
             publicJwk,
         });
@@ -132,16 +129,13 @@ export async function registerPublicKey(registerUrl, csrfToken, { mineUrl } = {}
     }
 
     const result = await response.json();
-    const password = getSessionPassword();
 
     setSessionBrowserDbId(result.browser_db_id);
 
-    if (password) {
-        await persistIdentity(result.browser_db_id, password, {
-            privateKey,
-            publicJwk,
-        });
-    }
+    await persistUnlockedIdentity(result.browser_db_id, {
+        privateKey,
+        publicJwk,
+    });
 
     return { publicJwk, fingerprint };
 }

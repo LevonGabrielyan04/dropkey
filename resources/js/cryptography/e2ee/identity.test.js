@@ -6,9 +6,8 @@ const identityStore = vi.hoisted(() => ({
 
 vi.mock('./identitySession.js', () => ({
     getSessionBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
-    getSessionPassword: vi.fn(() => 'secret-password'),
     loadIdentity: vi.fn(async () => identityStore.value),
-    persistIdentity: vi.fn(async (_browserDbId, _password, identity) => {
+    persistUnlockedIdentity: vi.fn(async (_browserDbId, identity) => {
         identityStore.value = identity;
     }),
     saveIdentity: vi.fn(async (identity) => {
@@ -26,7 +25,7 @@ vi.mock('./identityOverwrite.js', () => ({
     IdentityKeyOverwriteCancelledError: class IdentityKeyOverwriteCancelledError extends Error {},
 }));
 
-import { clearCachedIdentity, loadIdentity, persistIdentity } from './identitySession.js';
+import { clearCachedIdentity, loadIdentity, persistUnlockedIdentity } from './identitySession.js';
 import { ensureIdentityOverwriteAllowed } from './identityOverwrite.js';
 import { ensureIdentityKeyPair, ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
@@ -45,7 +44,7 @@ describe('identitySession integration via identity', () => {
         expect(first.publicJwk.crv).toBe('P-256');
         expect(second.fingerprint).toBe(first.fingerprint);
         expect(ensureIdentityOverwriteAllowed).toHaveBeenCalledOnce();
-        expect(persistIdentity).toHaveBeenCalledTimes(1);
+        expect(persistUnlockedIdentity).toHaveBeenCalledTimes(1);
         expect(loadIdentity).toHaveBeenCalled();
     });
 
@@ -98,7 +97,7 @@ describe('identitySession integration via identity', () => {
         const loaded = await ensureIdentityKeyPair();
 
         expect(loaded.fingerprint).toBe(generated.fingerprint);
-        expect(persistIdentity).toHaveBeenCalledTimes(1);
+        expect(persistUnlockedIdentity).toHaveBeenCalledTimes(1);
     });
 
     it('registers a public key when the server has none', async () => {
