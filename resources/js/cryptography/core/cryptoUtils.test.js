@@ -72,7 +72,8 @@ describe('deriveKey', () => {
         expect(key.algorithm.name).toBe('AES-GCM');
         expect(key.algorithm.length).toBe(256);
         expect(key.extractable).toBe(false);
-        expect(key.usages).toEqual(['encrypt', 'decrypt']);
+        expect(key.usages).toHaveLength(2);
+        expect(key.usages).toEqual(expect.arrayContaining(['encrypt', 'decrypt']));
     });
 
     it('produces deterministic, functional keys', async () => {
@@ -112,7 +113,8 @@ describe('deriveKey (mocked argon2)', () => {
         expect(key.algorithm.name).toBe('AES-GCM');
         expect(key.algorithm.length).toBe(256);
         expect(key.extractable).toBe(false);
-        expect(key.usages).toEqual(['encrypt', 'decrypt']);
+        expect(key.usages).toHaveLength(2);
+        expect(key.usages).toEqual(expect.arrayContaining(['encrypt', 'decrypt']));
     });
 });
 
@@ -121,7 +123,8 @@ describe('KEK / DEK helpers', () => {
         const kek = await deriveKek(password, testSalt);
 
         expect(kek.extractable).toBe(false);
-        expect(kek.usages).toEqual(['wrapKey', 'unwrapKey']);
+        expect(kek.usages).toHaveLength(2);
+        expect(kek.usages).toEqual(expect.arrayContaining(['wrapKey', 'unwrapKey']));
     });
 
     it('wraps and unwraps a DEK with a KEK', async () => {
@@ -134,7 +137,8 @@ describe('KEK / DEK helpers', () => {
         const unwrapped = await unwrapDek(wrapped, kek);
 
         expect(unwrapped.extractable).toBe(false);
-        expect(unwrapped.usages).toEqual(['wrapKey', 'unwrapKey']);
+        expect(unwrapped.usages).toHaveLength(2);
+        expect(unwrapped.usages).toEqual(expect.arrayContaining(['wrapKey', 'unwrapKey']));
     });
 
     it('creates and unlocks an identity envelope', async () => {
@@ -150,7 +154,10 @@ describe('KEK / DEK helpers', () => {
 
         expect(unlocked.publicJwk).toEqual(identity.publicJwk);
         expect(unlocked.privateKey.extractable).toBe(false);
-        expect(unlocked.privateKey.usages).toEqual(['deriveBits', 'deriveKey']);
+        expect(unlocked.privateKey.usages).toHaveLength(2);
+        expect(unlocked.privateKey.usages).toEqual(
+            expect.arrayContaining(['deriveBits', 'deriveKey']),
+        );
     });
 
     it('rejects non-extractable keys when creating an envelope', async () => {
