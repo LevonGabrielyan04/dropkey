@@ -9,7 +9,17 @@ vi.mock('hash-wasm', async (importOriginal) => {
 });
 
 import { argon2id } from 'hash-wasm';
-import { decryptData, deriveKey, encryptData } from './cryptoUtils.js';
+import {
+    createIdentityEnvelope,
+    decryptData,
+    deriveKey,
+    deriveKek,
+    encryptData,
+    generateDek,
+    unlockIdentityEnvelope,
+    unwrapDek,
+    wrapDek,
+} from './cryptoUtils.js';
 
 const password = 'test-password-123';
 const testSalt = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
@@ -19,6 +29,23 @@ async function expectRoundTrip(plaintext) {
     const decrypted = await decryptData(encrypted, password);
 
     expect(decrypted).toBe(plaintext);
+}
+
+/**
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
+ */
+async function generateIdentity() {
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+        { name: 'ECDH', namedCurve: 'P-256' },
+        true,
+        ['deriveBits', 'deriveKey'],
+    );
+    const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+
+    return {
+        privateKey: keyPair.privateKey,
+        publicJwk,
+    };
 }
 
 describe('encryptData / decryptData', () => {
@@ -86,5 +113,59 @@ describe('deriveKey (mocked argon2)', () => {
         expect(key.algorithm.length).toBe(256);
         expect(key.extractable).toBe(false);
         expect(key.usages).toEqual(['encrypt', 'decrypt']);
+    });
+});
+
+describe('KEK / DEK helpers', () => {
+    it('derives a non-extractable KEK with wrapKey usages', async () => {
+        const kek = await deriveKek(password, testSalt);
+
+        expect(kek.extractable).toBe(false);
+        expect(kek.usages).toEqual(['wrapKey', 'unwrapKey']);
+    });
+
+    it('wraps and unwraps a DEK with a KEK', async () => {
+        const kek = await deriveKek(password, testSalt);
+        const dek = await generateDek();
+
+        expect(dek.extractable).toBe(true);
+
+        const wrapped = await wrapDek(dek, kek);
+        const unwrapped = await unwrapDek(wrapped, kek);
+
+        expect(unwrapped.extractable).toBe(false);
+        expect(unwrapped.usages).toEqual(['wrapKey', 'unwrapKey']);
+    });
+
+    it('creates and unlocks an identity envelope', async () => {
+        const identity = await generateIdentity();
+
+        const { envelope, unlockedPrivateKey } = await createIdentityEnvelope(password, identity);
+
+        expect(envelope.v).toBe(2);
+        expect(envelope.publicJwk).toEqual(identity.publicJwk);
+        expect(unlockedPrivateKey.extractable).toBe(false);
+
+        const unlocked = await unlockIdentityEnvelope(password, envelope);
+
+        expect(unlocked.publicJwk).toEqual(identity.publicJwk);
+        expect(unlocked.privateKey.extractable).toBe(false);
+        expect(unlocked.privateKey.usages).toEqual(['deriveBits', 'deriveKey']);
+    });
+
+    it('rejects non-extractable keys when creating an envelope', async () => {
+        const identity = await generateIdentity();
+        const nonExtractable = await globalThis.crypto.subtle.importKey(
+            'jwk',
+            await globalThis.crypto.subtle.exportKey('jwk', identity.privateKey),
+            { name: 'ECDH', namedCurve: 'P-256' },
+            false,
+            ['deriveBits', 'deriveKey'],
+        );
+
+        await expect(createIdentityEnvelope(password, {
+            privateKey: nonExtractable,
+            publicJwk: identity.publicJwk,
+        })).rejects.toThrow('Identity private key must be extractable');
     });
 });

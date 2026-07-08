@@ -4,7 +4,7 @@ import {
     resolveBrowserDbId,
     unlockIdentity,
 } from './identitySession.js';
-import { loadEncryptedIdentity } from './keyStore.js';
+import { loadEncryptedIdentity, loadUnlockedIdentity } from './keyStore.js';
 
 export class IdentityKeyOverwriteCancelledError extends Error {
     constructor() {
@@ -23,6 +23,12 @@ export async function wouldOverwriteLocalIdentity(browserDbId) {
         return false;
     }
 
+    const unlocked = await loadUnlockedIdentity(browserDbId);
+
+    if (unlocked) {
+        return false;
+    }
+
     const encrypted = await loadEncryptedIdentity(browserDbId);
 
     if (! encrypted) {
@@ -36,9 +42,9 @@ export async function wouldOverwriteLocalIdentity(browserDbId) {
     }
 
     try {
-        const unlocked = await unlockIdentity(browserDbId, password);
+        const unlockedWithPassword = await unlockIdentity(browserDbId, password);
 
-        return unlocked === null;
+        return unlockedWithPassword === null;
     } catch {
         return true;
     }

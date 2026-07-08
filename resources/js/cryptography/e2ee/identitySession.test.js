@@ -1,45 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const encryptedStore = vi.hoisted(() => ({
-    value: null,
+/** @type {{ envelope: object|null, unlocked: object|null }} */
+const store = vi.hoisted(() => ({
+    envelope: null,
+    unlocked: null,
 }));
 
-const encryptViaWorker = vi.hoisted(() => vi.fn(async (plaintext, password) => ({
-    ciphertext: `encrypted:${plaintext}`,
-    salt: 'salt',
-    iv: 'iv',
-    password,
-})));
-
-const decryptViaWorker = vi.hoisted(() => vi.fn(async (encrypted, password) => {
-    if (! encrypted.ciphertext.startsWith('encrypted:')) {
-        throw new Error('Invalid ciphertext.');
-    }
-
-    return encrypted.ciphertext.slice('encrypted:'.length);
-}));
-
-vi.mock('../encrypt/encryptViaWorker.js', () => ({
-    encryptViaWorker,
-}));
+const decryptViaWorker = vi.hoisted(() => vi.fn());
 
 vi.mock('../decrypt/decryptViaWorker.js', () => ({
     decryptViaWorker,
 }));
 
-vi.mock('./identitySerialization.js', async (importOriginal) => {
-    const actual = await importOriginal();
-
-    return {
-        ...actual,
-    };
-});
-
 vi.mock('./keyStore.js', () => ({
     databaseNameForBrowserDbId: vi.fn((browserDbId) => `passshare-${browserDbId}`),
-    loadEncryptedIdentity: vi.fn(async () => encryptedStore.value),
+    isIdentityEnvelope: vi.fn((value) => value?.v === 2),
+    isLegacyEncryptedIdentity: vi.fn((value) => Boolean(
+        value
+        && ! value.v
+        && typeof value?.ciphertext === 'string'
+        && typeof value?.salt === 'string'
+        && typeof value?.iv === 'string',
+    )),
+    loadEncryptedIdentity: vi.fn(async () => store.envelope),
     saveEncryptedIdentity: vi.fn(async (_browserDbId, payload) => {
-        encryptedStore.value = payload;
+        store.envelope = payload;
+    }),
+    loadUnlockedIdentity: vi.fn(async () => store.unlocked),
+    saveUnlockedIdentity: vi.fn(async (_browserDbId, identity) => {
+        if (identity.privateKey.extractable) {
+            throw new Error('Unlocked identity private keys must be non-extractable.');
+        }
+
+        store.unlocked = identity;
+    }),
+    clearUnlockedIdentity: vi.fn(async () => {
+        store.unlocked = null;
     }),
 }));
 
@@ -48,6 +44,7 @@ import {
     getCachedIdentity,
     getSessionPassword,
     loadIdentity,
+    lockIdentity,
     persistIdentity,
     saveIdentity,
     setSessionBrowserDbId,
@@ -55,9 +52,29 @@ import {
     unlockIdentity,
 } from './identitySession.js';
 
+const BROWSER_DB_ID = '01JABCDEF1234567890ABCDEFGH';
+
+/**
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
+ */
+async function generateIdentity() {
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+        { name: 'ECDH', namedCurve: 'P-256' },
+        true,
+        ['deriveBits', 'deriveKey'],
+    );
+    const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+
+    return {
+        privateKey: keyPair.privateKey,
+        publicJwk,
+    };
+}
+
 describe('identitySession', () => {
     beforeEach(() => {
-        encryptedStore.value = null;
+        store.envelope = null;
+        store.unlocked = null;
         clearSessionCredentials();
         vi.clearAllMocks();
     });
@@ -71,17 +88,9 @@ describe('identitySession', () => {
     it('clears cached identity and session credentials', async () => {
         setSessionPassword('secret-password');
 
-        const keyPair = await globalThis.crypto.subtle.generateKey(
-            { name: 'ECDH', namedCurve: 'P-256' },
-            true,
-            ['deriveBits', 'deriveKey'],
-        );
-        const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+        const identity = await generateIdentity();
 
-        await persistIdentity('01JABCDEF1234567890ABCDEFGH', 'secret-password', {
-            privateKey: keyPair.privateKey,
-            publicJwk,
-        });
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
 
         clearSessionCredentials();
 
@@ -89,70 +98,125 @@ describe('identitySession', () => {
         expect(getCachedIdentity()).toBeNull();
     });
 
-    it('decrypts and caches identity from encrypted storage', async () => {
-        const keyPair = await globalThis.crypto.subtle.generateKey(
-            { name: 'ECDH', namedCurve: 'P-256' },
-            true,
-            ['deriveBits', 'deriveKey'],
-        );
-        const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+    it('persists a v2 envelope and non-extractable unlocked CryptoKey', async () => {
+        const identity = await generateIdentity();
+        const { saveEncryptedIdentity, saveUnlockedIdentity } = await import('./keyStore.js');
 
-        await persistIdentity('01JABCDEF1234567890ABCDEFGH', 'secret-password', {
-            privateKey: keyPair.privateKey,
-            publicJwk,
-        });
+        const persisted = await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+
+        expect(persisted.privateKey.extractable).toBe(false);
+        expect(persisted.publicJwk).toEqual(identity.publicJwk);
+        expect(saveEncryptedIdentity).toHaveBeenCalledWith(
+            BROWSER_DB_ID,
+            expect.objectContaining({
+                v: 2,
+                publicJwk: identity.publicJwk,
+                kekSalt: expect.any(String),
+                wrappedDek: expect.objectContaining({
+                    ciphertext: expect.any(String),
+                    iv: expect.any(String),
+                }),
+                wrappedIdentity: expect.objectContaining({
+                    ciphertext: expect.any(String),
+                    iv: expect.any(String),
+                }),
+            }),
+        );
+        expect(saveUnlockedIdentity).toHaveBeenCalledWith(
+            BROWSER_DB_ID,
+            expect.objectContaining({
+                privateKey: expect.any(CryptoKey),
+                publicJwk: identity.publicJwk,
+            }),
+        );
+        expect(getCachedIdentity()?.publicJwk).toEqual(identity.publicJwk);
+    });
+
+    it('unlocks a v2 envelope with the password and re-persists the unlocked key', async () => {
+        const identity = await generateIdentity();
+
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+
+        store.unlocked = null;
+        clearSessionCredentials();
+
+        const unlocked = await unlockIdentity(BROWSER_DB_ID, 'secret-password');
+
+        expect(unlocked?.publicJwk).toEqual(identity.publicJwk);
+        expect(unlocked?.privateKey.extractable).toBe(false);
+        expect(getCachedIdentity()?.publicJwk).toEqual(identity.publicJwk);
+        expect(store.unlocked?.publicJwk).toEqual(identity.publicJwk);
+    });
+
+    it('loads identity from the unlocked CryptoKey without a session password', async () => {
+        const identity = await generateIdentity();
+
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
 
         clearSessionCredentials();
-        encryptedStore.value = {
-            ciphertext: encryptedStore.value.ciphertext,
-            salt: 'salt',
-            iv: 'iv',
-        };
-
-        const unlocked = await unlockIdentity('01JABCDEF1234567890ABCDEFGH', 'secret-password');
-
-        expect(unlocked?.publicJwk).toEqual(publicJwk);
-        expect(getCachedIdentity()?.publicJwk).toEqual(publicJwk);
-        expect(decryptViaWorker).toHaveBeenCalledOnce();
-    });
-
-    it('returns null when no encrypted identity exists', async () => {
-        const unlocked = await unlockIdentity('01JABCDEF1234567890ABCDEFGH', 'secret-password');
-
-        expect(unlocked).toBeNull();
-        expect(getCachedIdentity()).toBeNull();
-        expect(decryptViaWorker).not.toHaveBeenCalled();
-    });
-
-    it('loads identity from cache without hitting storage again', async () => {
-        const keyPair = await globalThis.crypto.subtle.generateKey(
-            { name: 'ECDH', namedCurve: 'P-256' },
-            true,
-            ['deriveBits', 'deriveKey'],
-        );
-        const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
-
-        await persistIdentity('01JABCDEF1234567890ABCDEFGH', 'secret-password', {
-            privateKey: keyPair.privateKey,
-            publicJwk,
-        });
+        setSessionBrowserDbId(BROWSER_DB_ID);
 
         const { loadEncryptedIdentity } = await import('./keyStore.js');
         vi.mocked(loadEncryptedIdentity).mockClear();
 
+        // Simulate a page reload: memory cache empty, unlocked key still in IndexedDB.
+        const { clearCachedIdentity } = await import('./identitySession.js');
+        clearCachedIdentity();
+
         const loaded = await loadIdentity();
 
-        expect(loaded?.publicJwk).toEqual(publicJwk);
+        expect(loaded?.publicJwk).toEqual(identity.publicJwk);
+        expect(getSessionPassword()).toBeNull();
         expect(loadEncryptedIdentity).not.toHaveBeenCalled();
     });
 
+    it('returns null when no encrypted identity exists', async () => {
+        const unlocked = await unlockIdentity(BROWSER_DB_ID, 'secret-password');
+
+        expect(unlocked).toBeNull();
+        expect(getCachedIdentity()).toBeNull();
+    });
+
+    it('loads identity from memory cache without hitting storage again', async () => {
+        const identity = await generateIdentity();
+
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+
+        const { loadEncryptedIdentity, loadUnlockedIdentity } = await import('./keyStore.js');
+        vi.mocked(loadEncryptedIdentity).mockClear();
+        vi.mocked(loadUnlockedIdentity).mockClear();
+
+        const loaded = await loadIdentity();
+
+        expect(loaded?.publicJwk).toEqual(identity.publicJwk);
+        expect(loadEncryptedIdentity).not.toHaveBeenCalled();
+        expect(loadUnlockedIdentity).not.toHaveBeenCalled();
+    });
+
+    it('migrates a legacy identity blob to a v2 envelope on unlock', async () => {
+        const identity = await generateIdentity();
+        const privateJwk = await globalThis.crypto.subtle.exportKey('jwk', identity.privateKey);
+
+        store.envelope = {
+            ciphertext: 'legacy-cipher',
+            salt: 'legacy-salt',
+            iv: 'legacy-iv',
+        };
+        decryptViaWorker.mockResolvedValueOnce(JSON.stringify({
+            publicJwk: identity.publicJwk,
+            privateJwk,
+        }));
+
+        const unlocked = await unlockIdentity(BROWSER_DB_ID, 'secret-password');
+
+        expect(decryptViaWorker).toHaveBeenCalledOnce();
+        expect(unlocked?.publicJwk).toEqual(identity.publicJwk);
+        expect(store.envelope).toEqual(expect.objectContaining({ v: 2 }));
+        expect(store.unlocked?.privateKey.extractable).toBe(false);
+    });
+
     it('throws when saving without session credentials', async () => {
-        const keyPair = await globalThis.crypto.subtle.generateKey(
-            { name: 'ECDH', namedCurve: 'P-256' },
-            true,
-            ['deriveBits', 'deriveKey'],
-        );
-        const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+        const identity = await generateIdentity();
 
         vi.stubGlobal('document', {
             body: {
@@ -160,10 +224,9 @@ describe('identitySession', () => {
             },
         });
 
-        await expect(saveIdentity({
-            privateKey: keyPair.privateKey,
-            publicJwk,
-        })).rejects.toThrow('Cannot save identity without a browser database id and session password.');
+        await expect(saveIdentity(identity)).rejects.toThrow(
+            'Cannot save identity without a browser database id and session password.',
+        );
 
         vi.unstubAllGlobals();
     });
@@ -171,41 +234,30 @@ describe('identitySession', () => {
     it('resolves the browser database id from the document dataset', async () => {
         setSessionPassword('secret-password');
 
-        const keyPair = await globalThis.crypto.subtle.generateKey(
-            { name: 'ECDH', namedCurve: 'P-256' },
-            true,
-            ['deriveBits', 'deriveKey'],
-        );
-        const publicJwk = await globalThis.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+        const identity = await generateIdentity();
 
         vi.stubGlobal('document', {
             body: {
                 dataset: {
-                    browserDbId: '01JABCDEF1234567890ABCDEFGH',
+                    browserDbId: BROWSER_DB_ID,
                 },
             },
         });
 
-        await saveIdentity({
-            privateKey: keyPair.privateKey,
-            publicJwk,
-        });
+        await saveIdentity(identity);
 
         const { saveEncryptedIdentity } = await import('./keyStore.js');
 
         expect(saveEncryptedIdentity).toHaveBeenCalledWith(
-            '01JABCDEF1234567890ABCDEFGH',
-            expect.objectContaining({
-                ciphertext: expect.stringContaining('encrypted:'),
-            }),
+            BROWSER_DB_ID,
+            expect.objectContaining({ v: 2 }),
         );
 
         vi.unstubAllGlobals();
     });
 
     it('uses the session browser database id when the document dataset is empty', async () => {
-        setSessionBrowserDbId('01JABCDEF1234567890ABCDEFGH');
-        setSessionPassword('secret-password');
+        setSessionBrowserDbId(BROWSER_DB_ID);
 
         vi.stubGlobal('document', {
             body: {
@@ -216,5 +268,20 @@ describe('identitySession', () => {
         await expect(loadIdentity()).resolves.toBeNull();
 
         vi.unstubAllGlobals();
+    });
+
+    it('clears the unlocked IndexedDB key when locking identity', async () => {
+        const identity = await generateIdentity();
+
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+        setSessionBrowserDbId(BROWSER_DB_ID);
+
+        await lockIdentity();
+
+        const { clearUnlockedIdentity } = await import('./keyStore.js');
+
+        expect(clearUnlockedIdentity).toHaveBeenCalledWith(BROWSER_DB_ID);
+        expect(getCachedIdentity()).toBeNull();
+        expect(store.unlocked).toBeNull();
     });
 });

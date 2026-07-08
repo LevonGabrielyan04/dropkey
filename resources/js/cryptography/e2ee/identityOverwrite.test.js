@@ -14,10 +14,11 @@ vi.mock('./identitySession.js', () => ({
 
 vi.mock('./keyStore.js', () => ({
     loadEncryptedIdentity: vi.fn(async () => null),
+    loadUnlockedIdentity: vi.fn(async () => null),
 }));
 
 import { unlockIdentity } from './identitySession.js';
-import { loadEncryptedIdentity } from './keyStore.js';
+import { loadEncryptedIdentity, loadUnlockedIdentity } from './keyStore.js';
 import {
     ensureIdentityOverwriteAllowed,
     IdentityKeyOverwriteCancelledError,
@@ -29,12 +30,27 @@ describe('identityOverwrite', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(loadEncryptedIdentity).mockResolvedValue(null);
+        vi.mocked(loadUnlockedIdentity).mockResolvedValue(null);
         vi.mocked(unlockIdentity).mockResolvedValue(null);
         confirmIdentityKeyOverwrite.mockResolvedValue(true);
     });
 
     it('does not detect local overwrite when no encrypted identity exists', async () => {
         await expect(wouldOverwriteLocalIdentity('01JABCDEF1234567890ABCDEFGH')).resolves.toBe(false);
+    });
+
+    it('does not detect local overwrite when an unlocked CryptoKey is already stored', async () => {
+        vi.mocked(loadUnlockedIdentity).mockResolvedValue({
+            privateKey: {},
+            publicJwk: { kty: 'EC' },
+        });
+        vi.mocked(loadEncryptedIdentity).mockResolvedValue({
+            v: 2,
+            publicJwk: { kty: 'EC' },
+        });
+
+        await expect(wouldOverwriteLocalIdentity('01JABCDEF1234567890ABCDEFGH')).resolves.toBe(false);
+        expect(unlockIdentity).not.toHaveBeenCalled();
     });
 
     it('detects local overwrite when encrypted identity cannot be unlocked', async () => {

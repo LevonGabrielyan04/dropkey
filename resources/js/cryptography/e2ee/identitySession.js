@@ -1,10 +1,19 @@
-import { decryptViaWorker } from '../decrypt/decryptViaWorker.js';
-import { encryptViaWorker } from '../encrypt/encryptViaWorker.js';
-import { deserializeIdentity, serializeIdentity } from './identitySerialization.js';
 import {
+    createIdentityEnvelope,
+    ECDH_P256_ALGORITHM,
+    IDENTITY_KEY_USAGES,
+    unlockIdentityEnvelope,
+} from '../core/cryptoUtils.js';
+import { decryptViaWorker } from '../decrypt/decryptViaWorker.js';
+import {
+    clearUnlockedIdentity,
     databaseNameForBrowserDbId,
+    isIdentityEnvelope,
+    isLegacyEncryptedIdentity,
     loadEncryptedIdentity,
+    loadUnlockedIdentity,
     saveEncryptedIdentity,
+    saveUnlockedIdentity,
 } from './keyStore.js';
 
 const SESSION_PASSWORD_KEY = 'passshare:account-password';
@@ -83,40 +92,96 @@ export function clearSessionCredentials() {
 
 /**
  * @param {string} browserDbId
+ * @param {{ privateKey: CryptoKey, publicJwk: JsonWebKey }} identity
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
+ */
+async function cacheAndPersistUnlockedIdentity(browserDbId, identity) {
+    await saveUnlockedIdentity(browserDbId, identity);
+    cachedIdentity = identity;
+
+    return identity;
+}
+
+/**
+ * Migrate a legacy Argon2 identity blob to a v2 KEK/DEK envelope.
+ *
+ * @param {string} browserDbId
+ * @param {string} password
+ * @param {{ ciphertext: string, salt: string, iv: string }} legacy
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
+ */
+async function migrateLegacyIdentity(browserDbId, password, legacy) {
+    const plaintext = await decryptViaWorker(legacy, password);
+    const { publicJwk, privateJwk } = JSON.parse(plaintext);
+
+    // Import extractable so wrapKey can build the v2 envelope; unlocked storage uses non-extractable.
+    const privateKey = await globalThis.crypto.subtle.importKey(
+        'jwk',
+        privateJwk,
+        ECDH_P256_ALGORITHM,
+        true,
+        IDENTITY_KEY_USAGES,
+    );
+
+    return persistIdentity(browserDbId, password, {
+        privateKey,
+        publicJwk,
+    });
+}
+
+/**
+ * Unlock with password: prefers v2 envelope, migrates legacy blobs, and always
+ * persists a non-extractable CryptoKey for passwordless page reloads.
+ *
+ * @param {string} browserDbId
  * @param {string} password
  * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }|null>}
  */
 export async function unlockIdentity(browserDbId, password) {
     const encrypted = await loadEncryptedIdentity(browserDbId);
 
-    if (encrypted) {
-        const plaintext = await decryptViaWorker(encrypted, password);
+    if (! encrypted) {
+        cachedIdentity = null;
 
-        cachedIdentity = await deserializeIdentity(plaintext);
-
-        return cachedIdentity;
+        return null;
     }
 
-    cachedIdentity = null;
+    if (isIdentityEnvelope(encrypted)) {
+        const identity = await unlockIdentityEnvelope(password, encrypted);
 
-    return null;
+        return cacheAndPersistUnlockedIdentity(browserDbId, identity);
+    }
+
+    if (isLegacyEncryptedIdentity(encrypted)) {
+        return migrateLegacyIdentity(browserDbId, password, encrypted);
+    }
+
+    throw new Error('Unsupported identity storage format.');
 }
 
 /**
+ * Persist a new KEK/DEK envelope and the mandatory unlocked CryptoKey in IndexedDB.
+ *
  * @param {string} browserDbId
  * @param {string} password
  * @param {{ privateKey: CryptoKey, publicJwk: JsonWebKey }} identity
- * @returns {Promise<void>}
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }>}
  */
 export async function persistIdentity(browserDbId, password, identity) {
-    const plaintext = await serializeIdentity(identity);
-    const encrypted = await encryptViaWorker(plaintext, password);
+    const { envelope, unlockedPrivateKey } = await createIdentityEnvelope(password, identity);
+    const unlockedIdentity = {
+        privateKey: unlockedPrivateKey,
+        publicJwk: identity.publicJwk,
+    };
 
-    await saveEncryptedIdentity(browserDbId, encrypted);
-    cachedIdentity = identity;
+    await saveEncryptedIdentity(browserDbId, envelope);
+
+    return cacheAndPersistUnlockedIdentity(browserDbId, unlockedIdentity);
 }
 
 /**
+ * Load identity without prompting for a password when an unlocked CryptoKey exists.
+ *
  * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }|null>}
  */
 export async function loadIdentity() {
@@ -125,9 +190,26 @@ export async function loadIdentity() {
     }
 
     const browserDbId = resolveBrowserDbId();
+
+    if (! browserDbId) {
+        return null;
+    }
+
+    try {
+        const unlocked = await loadUnlockedIdentity(browserDbId);
+
+        if (unlocked) {
+            cachedIdentity = unlocked;
+
+            return unlocked;
+        }
+    } catch {
+        // Fall through to password unlock when structured-clone load fails.
+    }
+
     const password = getSessionPassword();
 
-    if (! browserDbId || ! password) {
+    if (! password) {
         return null;
     }
 
@@ -153,6 +235,23 @@ export async function saveIdentity(identity) {
     }
 
     await persistIdentity(browserDbId, password, identity);
+}
+
+/**
+ * Clear in-memory and IndexedDB unlocked key material for the current browser DB.
+ *
+ * @returns {Promise<void>}
+ */
+export async function lockIdentity() {
+    const browserDbId = resolveBrowserDbId();
+
+    clearCachedIdentity();
+
+    if (! browserDbId) {
+        return;
+    }
+
+    await clearUnlockedIdentity(browserDbId);
 }
 
 /**
