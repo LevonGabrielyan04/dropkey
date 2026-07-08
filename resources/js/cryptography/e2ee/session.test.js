@@ -31,6 +31,7 @@ vi.mock('./identity.js', async (importOriginal) => {
 
     return {
         ...actual,
+        ensureServerIdentityKey: vi.fn(async () => ({ registered: true })),
         registerPublicKey: vi.fn(async () => ({
             publicJwk: { kty: 'EC', crv: 'P-256', x: 'local-x', y: 'local-y' },
             fingerprint: 'a'.repeat(64),
@@ -39,7 +40,7 @@ vi.mock('./identity.js', async (importOriginal) => {
 });
 
 import { establishSession } from './session.js';
-import { registerPublicKey } from './identity.js';
+import { ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
 describe('session', () => {
     beforeEach(() => {
@@ -48,6 +49,14 @@ describe('session', () => {
     });
 
     it('establishes an encrypted session with a remote public key', async () => {
+        const local = await globalThis.crypto.subtle.generateKey(
+            { name: 'ECDH', namedCurve: 'P-256' },
+            true,
+            ['deriveBits', 'deriveKey'],
+        );
+        const localJwk = await globalThis.crypto.subtle.exportKey('jwk', local.publicKey);
+        identityStore.value = { privateKey: local.privateKey, publicJwk: localJwk };
+
         const remote = await globalThis.crypto.subtle.generateKey(
             { name: 'ECDH', namedCurve: 'P-256' },
             true,
@@ -68,13 +77,60 @@ describe('session', () => {
             recipientId: 20,
             publicKeyUrl: '/api/users/20/public-key',
             registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
             csrfToken: 'csrf-token',
         });
 
-        expect(registerPublicKey).toHaveBeenCalledOnce();
+        expect(ensureServerIdentityKey).toHaveBeenCalledWith({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+        expect(registerPublicKey).not.toHaveBeenCalled();
         expect(session.partnerFingerprint).toBe('b'.repeat(64));
         expect(session.conversationKey.type).toBe('secret');
         expect(session.conversationKey.algorithm.name).toBe('AES-GCM');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('does not register the public key when the server already has one', async () => {
+        const local = await globalThis.crypto.subtle.generateKey(
+            { name: 'ECDH', namedCurve: 'P-256' },
+            true,
+            ['deriveBits', 'deriveKey'],
+        );
+        const localJwk = await globalThis.crypto.subtle.exportKey('jwk', local.publicKey);
+        identityStore.value = { privateKey: local.privateKey, publicJwk: localJwk };
+
+        const remote = await globalThis.crypto.subtle.generateKey(
+            { name: 'ECDH', namedCurve: 'P-256' },
+            true,
+            ['deriveBits', 'deriveKey'],
+        );
+        const remoteJwk = await globalThis.crypto.subtle.exportKey('jwk', remote.publicKey);
+
+        vi.mocked(ensureServerIdentityKey).mockResolvedValue({ registered: true });
+
+        vi.stubGlobal('fetch', vi.fn(async () => ({
+            ok: true,
+            json: async () => ({
+                public_key_jwk: remoteJwk,
+                fingerprint: 'b'.repeat(64),
+            }),
+        })));
+
+        await establishSession({
+            localUserId: 10,
+            recipientId: 20,
+            publicKeyUrl: '/api/users/20/public-key',
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+
+        expect(ensureServerIdentityKey).toHaveBeenCalledOnce();
+        expect(registerPublicKey).not.toHaveBeenCalled();
 
         vi.unstubAllGlobals();
     });
@@ -87,8 +143,12 @@ describe('session', () => {
             recipientId: 2,
             publicKeyUrl: '/api/users/2/public-key',
             registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
             csrfToken: 'csrf-token',
         })).rejects.toThrow('Recipient has not registered an encryption key yet.');
+
+        expect(ensureServerIdentityKey).toHaveBeenCalledOnce();
+        expect(registerPublicKey).not.toHaveBeenCalled();
 
         vi.unstubAllGlobals();
     });

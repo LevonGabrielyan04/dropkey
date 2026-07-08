@@ -1,5 +1,5 @@
 import { deriveConversationKey } from './conversationKey.js';
-import { ensureIdentityKeyPair, importPublicKey, registerPublicKey } from './identity.js';
+import { ensureIdentityKeyPair, ensureServerIdentityKey, importPublicKey } from './identity.js';
 import { decryptMessage, encryptMessage } from './messageCrypto.js';
 
 /**
@@ -19,7 +19,7 @@ export async function establishSession({
     mineUrl,
     csrfToken,
 }) {
-    await registerPublicKey(registerUrl, csrfToken, { mineUrl });
+    await ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken });
 
     const { privateKey } = await ensureIdentityKeyPair();
 
