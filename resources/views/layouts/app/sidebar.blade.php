@@ -4,7 +4,7 @@
         @include('partials.head')
     </head>
     <body
-        class="min-h-screen bg-zinc-50 font-mono max-lg:pb-20 dark:bg-zinc-950"
+        class="min-h-screen bg-zinc-50 font-mono dark:bg-zinc-950"
         data-browser-db-id="{{ auth()->user()->identityKey?->browser_db_id }}"
         data-identity-register-url="{{ route('api.identity.public-key.store') }}"
         data-identity-mine-url="{{ route('api.identity.public-key.mine') }}"
@@ -85,13 +85,8 @@
                 </nav>
             </flux:sidebar.nav>
 
-            <div class="border-y-2 border-zinc-950 px-4 py-4 dark:border-zinc-100">
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                    {{ __('Trust model') }}
-                </p>
-                <p class="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {{ __('Secrets encrypt in your browser. Plaintext never touches our servers.') }}
-                </p>
+            <div class="border-y-2 border-zinc-950 px-4 py-4 lg:hidden dark:border-zinc-100">
+                @include('partials.global-footer-content')
             </div>
 
             <flux:spacer />

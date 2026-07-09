@@ -16,7 +16,7 @@
 
         <link rel="stylesheet" href="{{ asset('css/cursors.css') }}">
     </head>
-    <body class="min-h-screen bg-zinc-50 font-mono antialiased max-lg:pb-20">
+    <body class="min-h-screen bg-zinc-50 font-mono antialiased">
         {{-- Sticky header --}}
         <header class="sticky top-0 z-50 border-b-2 border-zinc-950 bg-zinc-50">
             <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
