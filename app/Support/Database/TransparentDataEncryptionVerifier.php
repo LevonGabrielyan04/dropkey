@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Database;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -100,13 +101,22 @@ class TransparentDataEncryptionVerifier
             return null;
         }
 
-        $result = DB::selectOne('SHOW GLOBAL VARIABLES LIKE ?', [$variable]);
+        if (! $this->isValidGlobalVariableName($variable)) {
+            return null;
+        }
+
+        $result = DB::selectOne("SELECT @@GLOBAL.{$variable} AS value");
 
         if ($result === null) {
             return null;
         }
 
-        return (string) ($result->Value ?? $result->value ?? '');
+        return (string) ($result->value ?? '');
+    }
+
+    protected function isValidGlobalVariableName(string $variable): bool
+    {
+        return (bool) preg_match('/^[a-z_][a-z0-9_]*$/i', $variable);
     }
 
     /**
@@ -122,15 +132,28 @@ class TransparentDataEncryptionVerifier
             return collect();
         }
 
-        return collect(DB::select(
-            'SELECT NAME
+        try {
+            return collect(DB::select(
+                'SELECT NAME
              FROM information_schema.INNODB_TABLESPACES_ENCRYPTION
              WHERE ENCRYPTION_SCHEME = 0
                AND NAME NOT LIKE ?',
-            ['mysql/%'],
-        ))->map(fn (object $row): string => (string) ($row->NAME ?? $row->name ?? ''))
-            ->filter()
-            ->values();
+                ['mysql/%'],
+            ))->map(fn (object $row): string => (string) ($row->NAME ?? $row->name ?? ''))
+                ->filter()
+                ->values();
+        } catch (QueryException $exception) {
+            if ($this->isProcessPrivilegeDenied($exception)) {
+                return collect();
+            }
+
+            throw $exception;
+        }
+    }
+
+    protected function isProcessPrivilegeDenied(QueryException $exception): bool
+    {
+        return str_contains($exception->getMessage(), 'PROCESS');
     }
 
     protected function tablespaceEncryptionViewExists(): bool
