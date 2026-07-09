@@ -146,7 +146,8 @@ services:
   mariadb:
     image: mariadb:12.3.2-noble
     restart: unless-stopped
-    entrypoint: ["/scripts/entrypoint-wrapper.sh"]
+    # Invoke via bash — bind-mounted scripts may lack +x on the host (non-root deploys).
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-wrapper.sh"]
     command: ["mariadbd"]
     env_file: .env
     networks:
