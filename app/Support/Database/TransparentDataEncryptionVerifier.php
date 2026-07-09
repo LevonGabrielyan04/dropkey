@@ -110,7 +110,7 @@ class TransparentDataEncryptionVerifier
     }
 
     /**
-     * @return Collection<int, string>
+     * @return Collection<int, non-falsy-string>
      */
     public function unencryptedTablespaces(): Collection
     {
