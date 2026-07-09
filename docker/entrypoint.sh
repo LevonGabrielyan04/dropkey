@@ -58,6 +58,7 @@ prepare_runtime() {
     php artisan migrate --force --no-interaction
 
     if [ "${APP_ENV:-local}" = "production" ]; then
+        php artisan db:verify-encryption --fail-on-error --no-interaction
         php artisan optimize --no-interaction
     else
         php artisan optimize:clear --no-interaction

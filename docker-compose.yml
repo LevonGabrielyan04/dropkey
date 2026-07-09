@@ -146,11 +146,17 @@ services:
   mariadb:
     image: mariadb:12.3.2-noble
     restart: unless-stopped
+    entrypoint: ["/scripts/entrypoint-wrapper.sh"]
+    command: ["mariadbd"]
     env_file: .env
     networks:
       backend: {}
     volumes:
       - mariadb-data:/var/lib/mysql
+      - mariadb-encryption:/etc/mysql/encryption
+      - ./docker/mariadb/conf.d/99-transparent-data-encryption.cnf:/etc/mysql/mariadb.conf.d/99-transparent-data-encryption.cnf:ro
+      - ./docker/mariadb/prepare-encryption-keys.sh:/scripts/prepare-encryption-keys.sh:ro
+      - ./docker/mariadb/entrypoint-wrapper.sh:/scripts/entrypoint-wrapper.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -210,6 +216,7 @@ volumes:
   app-storage:
   app-bootstrap-cache:
   mariadb-data:
+  mariadb-encryption:
   redis-data:
 
 secrets:

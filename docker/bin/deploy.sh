@@ -9,6 +9,7 @@
 #   4. Add the deploy user's SSH public key for GitHub Actions.
 #   5. Set GHCR_USERNAME and a GitHub PAT with read:packages (GHCR_TOKEN) in the server .env
 #      (CI may override GHCR_USERNAME via GITHUB_ACTOR on each deploy).
+#   6. Back up the mariadb-encryption Docker volume with database backups (TDE keyfile).
 #
 # Usage:
 #   APP_IMAGE=ghcr.io/owner/passshare:sha ./docker/bin/deploy.sh [--tunnel]
