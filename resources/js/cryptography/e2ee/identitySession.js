@@ -22,6 +22,9 @@ const SESSION_BROWSER_DB_ID_KEY = 'passshare:browser-db-id';
 /** @type {Map<string, string>} */
 const memorySessionStore = new Map();
 
+/** @type {string|null} */
+let transientAccountPassword = null;
+
 /**
  * @returns {Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>}
  */
@@ -71,8 +74,32 @@ export function clearCachedIdentity() {
 
 export function clearSessionCredentials() {
     clearCachedIdentity();
+    clearTransientAccountPassword();
 
     sessionStore().removeItem(SESSION_BROWSER_DB_ID_KEY);
+}
+
+/**
+ * Hold the account password in memory only long enough to unlock a stored identity envelope.
+ *
+ * @param {string} password
+ */
+export function setTransientAccountPassword(password) {
+    transientAccountPassword = password;
+}
+
+export function clearTransientAccountPassword() {
+    transientAccountPassword = null;
+}
+
+/**
+ * @returns {string|null}
+ */
+export function consumeTransientAccountPassword() {
+    const password = transientAccountPassword;
+    transientAccountPassword = null;
+
+    return password;
 }
 
 /**
@@ -178,6 +205,32 @@ export async function persistIdentity(browserDbId, password, identity) {
     await saveEncryptedIdentity(browserDbId, envelope);
 
     return cacheAndPersistUnlockedIdentity(browserDbId, unlockedIdentity);
+}
+
+/**
+ * Load an unlocked identity or unlock a stored envelope with a one-time password.
+ *
+ * @param {string} browserDbId
+ * @returns {Promise<{ privateKey: CryptoKey, publicJwk: JsonWebKey }|null>}
+ */
+export async function resolveStoredIdentity(browserDbId) {
+    const unlocked = await loadIdentity();
+
+    if (unlocked) {
+        return unlocked;
+    }
+
+    const password = consumeTransientAccountPassword();
+
+    if (! password) {
+        return null;
+    }
+
+    try {
+        return await unlockIdentity(browserDbId, password);
+    } catch {
+        return null;
+    }
 }
 
 /**

@@ -6,6 +6,7 @@ import {
     loadIdentity,
     persistUnlockedIdentity,
     resolveBrowserDbId,
+    resolveStoredIdentity,
     setSessionBrowserDbId,
 } from './identitySession.js';
 
@@ -59,6 +60,8 @@ export async function ensureIdentityKeyPair() {
 /**
  * Ensure the server has a registered public key for the current user.
  * Creates a local key pair and registers it only when the server has none.
+ * When the server already has a key, local material must match its fingerprint
+ * or be re-registered so peers derive the same conversation key.
  *
  * @param {object} options
  * @param {string} options.registerUrl
@@ -77,12 +80,22 @@ export async function ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken 
 
     const mine = await mineResponse.json();
 
-    if (mine.registered) {
-        setSessionBrowserDbId(mine.browser_db_id);
+    if (! mine.registered) {
+        await registerPublicKey(registerUrl, csrfToken, { mineUrl });
 
-        await ensureIdentityKeyPair();
+        return { registered: false };
+    }
 
-        return { registered: true };
+    setSessionBrowserDbId(mine.browser_db_id);
+
+    const localIdentity = await resolveStoredIdentity(mine.browser_db_id);
+
+    if (localIdentity) {
+        const localFingerprint = await fingerprintFromPublicJwk(localIdentity.publicJwk);
+
+        if (localFingerprint === mine.fingerprint) {
+            return { registered: true };
+        }
     }
 
     await registerPublicKey(registerUrl, csrfToken, { mineUrl });

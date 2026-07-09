@@ -41,13 +41,16 @@ vi.mock('./keyStore.js', () => ({
 
 import {
     clearSessionCredentials,
+    consumeTransientAccountPassword,
     getCachedIdentity,
     loadIdentity,
     lockIdentity,
     persistIdentity,
     persistUnlockedIdentity,
+    resolveStoredIdentity,
     saveIdentity,
     setSessionBrowserDbId,
+    setTransientAccountPassword,
     unlockIdentity,
 } from './identitySession.js';
 
@@ -80,6 +83,7 @@ describe('identitySession', () => {
 
     it('clears cached identity and session credentials', async () => {
         setSessionBrowserDbId(BROWSER_DB_ID);
+        setTransientAccountPassword('secret-password');
 
         const identity = await generateIdentity();
 
@@ -88,7 +92,23 @@ describe('identitySession', () => {
         clearSessionCredentials();
 
         expect(getCachedIdentity()).toBeNull();
+        expect(consumeTransientAccountPassword()).toBeNull();
         expect(store.unlocked?.publicJwk).toEqual(identity.publicJwk);
+    });
+
+    it('unlocks a stored envelope when a transient password is available', async () => {
+        const identity = await generateIdentity();
+
+        await persistIdentity(BROWSER_DB_ID, 'secret-password', identity);
+
+        store.unlocked = null;
+        clearSessionCredentials();
+        setTransientAccountPassword('secret-password');
+
+        const resolved = await resolveStoredIdentity(BROWSER_DB_ID);
+
+        expect(resolved?.publicJwk).toEqual(identity.publicJwk);
+        expect(consumeTransientAccountPassword()).toBeNull();
     });
 
     it('persists a non-extractable unlocked CryptoKey without an envelope', async () => {

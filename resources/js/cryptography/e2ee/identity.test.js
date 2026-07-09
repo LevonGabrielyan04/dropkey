@@ -7,6 +7,7 @@ const identityStore = vi.hoisted(() => ({
 vi.mock('./identitySession.js', () => ({
     getSessionBrowserDbId: vi.fn(() => '01JABCDEF1234567890ABCDEFGH'),
     loadIdentity: vi.fn(async () => identityStore.value),
+    resolveStoredIdentity: vi.fn(async () => identityStore.value),
     persistUnlockedIdentity: vi.fn(async (_browserDbId, identity) => {
         identityStore.value = identity;
     }),
@@ -135,12 +136,15 @@ describe('identitySession integration via identity', () => {
         vi.unstubAllGlobals();
     });
 
-    it('does not register when the server already has a public key', async () => {
+    it('does not register when the server already has a matching public key', async () => {
+        const generated = await ensureIdentityKeyPair();
+
         const fetchMock = vi.fn(async () => ({
             ok: true,
             json: async () => ({
                 registered: true,
                 browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                fingerprint: generated.fingerprint,
             }),
         }));
         vi.stubGlobal('fetch', fetchMock);
@@ -154,6 +158,89 @@ describe('identitySession integration via identity', () => {
         expect(result).toEqual({ registered: true });
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/public-key/mine');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('re-registers when the server has a key but local material is missing', async () => {
+        identityStore.value = null;
+
+        const fetchMock = vi.fn(async (url, init) => {
+            if (! init?.method || init.method === 'GET') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        registered: true,
+                        browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                        fingerprint: 'existing-fingerprint',
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                }),
+            };
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const result = await ensureServerIdentityKey({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+
+        expect(result).toEqual({ registered: false });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock.mock.calls[1][0]).toBe('/api/identity/public-key');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('re-registers when the server key does not match local material', async () => {
+        const generated = await ensureIdentityKeyPair();
+
+        const fetchMock = vi.fn(async (url, init) => {
+            if (! init?.method || init.method === 'GET') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        registered: true,
+                        browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                        fingerprint: 'different-fingerprint',
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    browser_db_id: '01JABCDEF1234567890ABCDEFGH',
+                }),
+            };
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const result = await ensureServerIdentityKey({
+            registerUrl: '/api/identity/public-key',
+            mineUrl: '/api/identity/public-key/mine',
+            csrfToken: 'csrf-token',
+        });
+
+        expect(result).toEqual({ registered: false });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/public-key/mine');
+        expect(fetchMock.mock.calls[1][0]).toBe('/api/identity/public-key');
+        expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+        expect(ensureIdentityOverwriteAllowed).toHaveBeenCalledWith(expect.objectContaining({
+            checkServer: true,
+            mineUrl: '/api/identity/public-key/mine',
+            fingerprint: generated.fingerprint,
+        }));
 
         vi.unstubAllGlobals();
     });
