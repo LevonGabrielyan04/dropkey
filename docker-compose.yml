@@ -1,4 +1,4 @@
-# Docker Compose stack for DropKey (PassShare).
+# Docker Compose stack for DropKey.
 # Pinned service images use Alpine or LTS patch releases.
 # The `redis` service runs Valkey (Redis-compatible); Laravel config keeps REDIS_* names.
 #
@@ -38,7 +38,7 @@ x-app-env: &app-env
 services:
   app:
     build: *app-build
-    image: passshare-app:latest
+    image: dropkey-app:latest
     restart: unless-stopped
     env_file: .env
     environment: *app-env
@@ -71,7 +71,7 @@ services:
 
   queue:
     build: *app-build
-    image: passshare-app:latest
+    image: dropkey-app:latest
     restart: unless-stopped
     command: ["queue"]
     env_file: .env
@@ -98,7 +98,7 @@ services:
 
   scheduler:
     build: *app-build
-    image: passshare-app:latest
+    image: dropkey-app:latest
     restart: unless-stopped
     command: ["scheduler"]
     env_file: .env

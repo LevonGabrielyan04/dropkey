@@ -6,7 +6,7 @@
 #   DEPLOY_HOST       — server hostname or IP
 #   DEPLOY_USER       — SSH user on the server (e.g. deploy)
 #   DEPLOY_SSH_KEY    — private SSH key (PEM) authorized on the server
-#   DEPLOY_PATH       — absolute path to the repo on the server (e.g. /opt/passshare)
+#   DEPLOY_PATH       — absolute path to the repo on the server (e.g. /opt/dropkey)
 #   FLUX_USERNAME     — Livewire Flux license (build-time, same as tests workflow)
 #   FLUX_LICENSE_KEY  — Livewire Flux license (build-time)
 #

@@ -1,7 +1,7 @@
 # Production deployment overlay — pulls a pre-built image from GHCR instead of building on the server.
 # Used by docker/bin/deploy.sh and GitHub Actions.
 #
-# Set APP_IMAGE in .env (e.g. ghcr.io/owner/passshare:latest).
+# Set APP_IMAGE in .env (e.g. ghcr.io/owner/dropkey:latest).
 
 services:
   app:

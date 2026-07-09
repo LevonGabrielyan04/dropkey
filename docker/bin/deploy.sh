@@ -4,7 +4,7 @@
 #
 # One-time server setup:
 #   1. Install Docker Engine + Compose plugin.
-#   2. Clone this repo to your deploy path (e.g. /opt/passshare).
+#   2. Clone this repo to your deploy path (e.g. /opt/dropkey).
 #   3. cp .env.docker.example .env and fill in production secrets.
 #   4. Add the deploy user's SSH public key for GitHub Actions.
 #   5. Set GHCR_USERNAME and a GitHub PAT with read:packages (GHCR_TOKEN) in the server .env
@@ -12,7 +12,7 @@
 #   6. Back up the mariadb-encryption Docker volume with database backups (TDE keyfile).
 #
 # Usage:
-#   APP_IMAGE=ghcr.io/owner/passshare:sha ./docker/bin/deploy.sh [--tunnel]
+#   APP_IMAGE=ghcr.io/owner/dropkey:sha ./docker/bin/deploy.sh [--tunnel]
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ if [[ -z "${APP_IMAGE:-}" ]] && grep -qE '^APP_IMAGE=.+$' .env 2>/dev/null; then
 fi
 
 if [[ -z "${APP_IMAGE:-}" ]]; then
-    echo "APP_IMAGE is required (GHCR image tag, e.g. ghcr.io/owner/passshare:latest)." >&2
+    echo "APP_IMAGE is required (GHCR image tag, e.g. ghcr.io/owner/dropkey:latest)." >&2
     exit 1
 fi
 
