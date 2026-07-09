@@ -10,5 +10,8 @@ test('landing page can be rendered', function () {
         ->assertSee('Private messages.', false)
         ->assertSee('Zero-knowledge relay', false)
         ->assertSee('Frequently asked questions', false)
-        ->assertSee('class="scroll-smooth scroll-pt-24"', false);
+        ->assertSee('https://github.com/LevonGabrielyan04/dropkey', false)
+        ->assertSee('https://github.com/LevonGabrielyan04/dropkey/blob/main/LICENSE', false)
+        ->assertSee('Apache License 2.0', false)
+        ->assertSee('Source code', false);
 });

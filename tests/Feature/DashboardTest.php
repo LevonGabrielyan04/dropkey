@@ -87,5 +87,7 @@ it('shows the app name and no starter kit links in the layout', function () {
         ->assertSee(config('app.name'), false)
         ->assertDontSee('Laravel Starter Kit', false)
         ->assertDontSee('https://github.com/laravel/livewire-starter-kit', false)
-        ->assertDontSee('https://laravel.com/docs/starter-kits#livewire', false);
+        ->assertDontSee('https://laravel.com/docs/starter-kits#livewire', false)
+        ->assertSee('https://github.com/LevonGabrielyan04/dropkey', false)
+        ->assertSee('Apache License 2.0', false);
 });

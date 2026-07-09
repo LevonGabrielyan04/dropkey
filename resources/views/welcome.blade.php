@@ -16,7 +16,7 @@
 
         <link rel="stylesheet" href="{{ asset('css/cursors.css') }}">
     </head>
-    <body class="min-h-screen bg-zinc-50 font-mono antialiased">
+    <body class="min-h-screen bg-zinc-50 font-mono antialiased max-lg:pb-20">
         {{-- Sticky header --}}
         <header class="sticky top-0 z-50 border-b-2 border-zinc-950 bg-zinc-50">
             <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
@@ -555,6 +555,8 @@
                         </ul>
                     </div>
                 </div>
+                @include('partials.global-footer', ['nested' => true])
+
                 <div class="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <p class="text-sm text-zinc-600">&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
                     <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Messages encrypted client-side. Server stores ciphertext only.</p>

@@ -124,4 +124,19 @@ return [
     ],
 
     'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Open Source
+    |--------------------------------------------------------------------------
+    |
+    | Public links shown in the global footer for source code and licensing.
+    |
+    */
+
+    'repository_url' => env('APP_REPOSITORY_URL', 'https://github.com/LevonGabrielyan04/dropkey'),
+
+    'license_url' => env('APP_LICENSE_URL', 'https://github.com/LevonGabrielyan04/dropkey/blob/main/LICENSE'),
+
+    'license' => env('APP_LICENSE', 'Apache License 2.0'),
 ];
