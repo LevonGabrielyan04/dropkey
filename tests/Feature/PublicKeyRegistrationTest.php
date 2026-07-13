@@ -67,7 +67,7 @@ it('exposes a partner public key to authenticated users', function () {
     $this->actingAs($partner)
         ->getJson(route('api.users.public-key.show', $owner))
         ->assertSuccessful()
-        ->assertJsonPath('user_id', $owner->id)
+        ->assertJsonPath('public_id', $owner->public_key)
         ->assertJsonPath('fingerprint', str_repeat('a', 64));
 });
 

@@ -38,7 +38,7 @@ class IdentityKeyController extends Controller
         }
 
         return response()->json([
-            'user_id' => $user->id,
+            'public_id' => $user->public_key,
             'public_key_jwk' => $identityKey->public_key_jwk,
             'fingerprint' => $identityKey->fingerprint,
         ]);
