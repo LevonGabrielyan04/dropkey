@@ -19,7 +19,7 @@ class MessageController extends Controller
         $messages = $this->chatMessages->getMessagesForUsers(
             $request->user(),
             $user,
-            $request->integer('after_id', 0),
+            $request->validated('after_public_id'),
         );
 
         return response()->json([
@@ -36,7 +36,7 @@ class MessageController extends Controller
         );
 
         return response()->json([
-            'id' => $message->id,
+            'public_id' => $message->public_id,
             'created_at' => $message->created_at,
         ], 201);
     }

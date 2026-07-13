@@ -18,7 +18,7 @@ interface ChatMessageRepositoryInterface
     /**
      * @return Collection<int, ChatMessage>
      */
-    public function getMessagesForConversation(Conversation $conversation, int $afterId = 0): Collection;
+    public function getMessagesForConversation(Conversation $conversation, ?string $afterPublicId = null): Collection;
 
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
 

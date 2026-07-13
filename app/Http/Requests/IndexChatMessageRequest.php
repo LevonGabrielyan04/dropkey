@@ -22,10 +22,10 @@ class IndexChatMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'after_id' => [
+            'after_public_id' => [
                 'sometimes',
-                'integer',
-                'min:0',
+                'nullable',
+                'uuid',
             ],
         ];
     }

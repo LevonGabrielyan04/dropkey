@@ -15,7 +15,7 @@ it('stores encrypted chat payloads without decrypting them', function () {
             'payload' => $payload,
         ])
         ->assertCreated()
-        ->assertJsonStructure(['id', 'created_at']);
+        ->assertJsonStructure(['public_id', 'created_at']);
 
     $conversation = Conversation::query()
         ->where('user_one_id', min($sender->id, $recipient->id))
@@ -83,14 +83,37 @@ it('returns not found when polling messages with yourself', function () {
         ->assertNotFound();
 });
 
-it('rejects invalid after_id query parameters', function () {
+it('does not expose internal message ids when polling', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $response = $this->actingAs($bob)
+        ->getJson(route('messages.index', $alice))
+        ->assertSuccessful()
+        ->assertJsonStructure([
+            'messages' => [
+                ['public_id', 'sender_id', 'payload', 'created_at'],
+            ],
+        ]);
+
+    expect($response->json('messages.0'))->not->toHaveKey('id');
+});
+
+it('rejects invalid after_public_id query parameters', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
 
     $this->actingAs($alice)
-        ->getJson(route('messages.index', $bob).'?after_id=not-a-number')
+        ->getJson(route('messages.index', $bob).'?after_public_id=not-a-uuid')
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('after_id');
+        ->assertJsonValidationErrors('after_public_id');
 });
 
 it('polls only messages after the provided cursor', function () {
@@ -104,17 +127,18 @@ it('polls only messages after the provided cursor', function () {
         'payload' => fakeChatPayload(),
     ]);
 
-    ChatMessage::query()->create([
+    $second = ChatMessage::query()->create([
         'conversation_id' => $conversation->id,
         'sender_id' => $bob->id,
         'payload' => fakeChatPayload(),
     ]);
 
     $this->actingAs($alice)
-        ->getJson(route('messages.index', $bob).'?after_id='.$first->id)
+        ->getJson(route('messages.index', $bob).'?after_public_id='.$first->public_id)
         ->assertSuccessful()
         ->assertJsonCount(1, 'messages')
-        ->assertJsonPath('messages.0.sender_id', $bob->id);
+        ->assertJsonPath('messages.0.sender_id', $bob->id)
+        ->assertJsonPath('messages.0.public_id', $second->public_id);
 });
 
 it('requires authentication for message relay endpoints', function () {

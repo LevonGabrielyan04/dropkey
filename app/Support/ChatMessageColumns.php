@@ -11,5 +11,5 @@ final class ChatMessageColumns
      *
      * @var array<int, string>
      */
-    public const COLUMNS = ['id', 'sender_id', 'payload', 'created_at'];
+    public const COLUMNS = ['public_id', 'sender_id', 'payload', 'created_at'];
 }

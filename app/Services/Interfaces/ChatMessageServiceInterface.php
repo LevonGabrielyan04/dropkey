@@ -13,7 +13,7 @@ interface ChatMessageServiceInterface
     /**
      * @return Collection<int, ChatMessage>
      */
-    public function getMessagesForUsers(User $user, User $otherUser, int $afterId = 0): Collection;
+    public function getMessagesForUsers(User $user, User $otherUser, ?string $afterPublicId = null): Collection;
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage;
 }

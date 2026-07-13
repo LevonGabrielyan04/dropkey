@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\BinaryCodec;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\PasskeyUser;
@@ -72,6 +73,29 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function uniqueIds(): array
     {
         return ['public_key'];
+    }
+
+    /**
+     * Resolve route model bindings using the public identifier.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'public_key';
+    }
+
+    /**
+     * Retrieve the model for a bound value, encoding the public identifier
+     * to match the binary column it is stored in.
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        $field ??= $this->getRouteKeyName();
+
+        if ($field === 'public_key' && Str::isUuid($value)) {
+            $value = BinaryCodec::encode($value, 'uuid');
+        }
+
+        return parent::resolveRouteBindingQuery($query, $value, $field);
     }
 
     /**

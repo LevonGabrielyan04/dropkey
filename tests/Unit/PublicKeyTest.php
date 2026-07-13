@@ -59,6 +59,46 @@ it('stores conversation public keys as binary uuids in the database', function (
         ->and(BinaryCodec::decode($rawPublicKey, 'uuid'))->toBe($conversation->public_key);
 });
 
+it('resolves conversation route model bindings by public key', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    expect($conversation->getRouteKeyName())->toBe('public_key')
+        ->and($conversation->getRouteKey())->toBe($conversation->public_key);
+
+    $resolved = (new Conversation)->resolveRouteBinding($conversation->public_key);
+
+    expect($resolved)->not->toBeNull()
+        ->and($resolved->is($conversation))->toBeTrue();
+});
+
+it('does not resolve conversation route model bindings by numeric id', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    expect((new Conversation)->resolveRouteBinding((string) $conversation->id))->toBeNull();
+});
+
+it('resolves user route model bindings by public key', function () {
+    $user = User::factory()->create();
+
+    expect($user->getRouteKeyName())->toBe('public_key')
+        ->and($user->getRouteKey())->toBe($user->public_key);
+
+    $resolved = (new User)->resolveRouteBinding($user->public_key);
+
+    expect($resolved)->not->toBeNull()
+        ->and($resolved->is($user))->toBeTrue();
+});
+
+it('does not resolve user route model bindings by numeric id', function () {
+    $user = User::factory()->create();
+
+    expect((new User)->resolveRouteBinding((string) $user->id))->toBeNull();
+});
+
 it('enforces unique public keys across users', function () {
     $firstUser = User::factory()->create();
     $secondUser = User::factory()->make();

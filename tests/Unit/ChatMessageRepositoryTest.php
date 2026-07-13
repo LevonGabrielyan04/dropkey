@@ -51,3 +51,18 @@ it('rejects self conversations', function () {
 
     $repository->findOrCreateConversation($user, $user);
 })->throws(InvalidArgumentException::class);
+
+it('polls only messages after the provided public id cursor', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+    $repository = app(ChatMessageRepositoryInterface::class);
+
+    $first = $repository->createMessage($conversation, $alice, fakeChatPayload());
+    $second = $repository->createMessage($conversation, $bob, fakeChatPayload());
+
+    $messages = $repository->getMessagesForConversation($conversation, $first->public_id);
+
+    expect($messages)->toHaveCount(1)
+        ->and($messages->first()->public_id)->toBe($second->public_id);
+});

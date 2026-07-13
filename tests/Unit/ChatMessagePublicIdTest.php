@@ -48,6 +48,40 @@ it('stores chat message public ids as binary uuids in the database', function ()
         ->and(BinaryCodec::decode($rawPublicId, 'uuid'))->toBe($message->public_id);
 });
 
+it('resolves chat message route model bindings by public id', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    $message = ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    expect($message->getRouteKeyName())->toBe('public_id')
+        ->and($message->getRouteKey())->toBe($message->public_id);
+
+    $resolved = (new ChatMessage)->resolveRouteBinding($message->public_id);
+
+    expect($resolved)->not->toBeNull()
+        ->and($resolved->is($message))->toBeTrue();
+});
+
+it('does not resolve chat message route model bindings by numeric id', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    $message = ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    expect((new ChatMessage)->resolveRouteBinding((string) $message->id))->toBeNull();
+});
+
 it('enforces unique public ids across chat messages', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();

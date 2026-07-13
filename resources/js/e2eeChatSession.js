@@ -38,7 +38,7 @@ document.addEventListener('alpine:init', () => {
         sendError: '',
         partnerFingerprint: '',
         conversationKey: null,
-        lastMessageId: 0,
+        lastMessagePublicId: '',
         pollTimer: null,
         localUserId: 0,
         recipientId: 0,
@@ -126,8 +126,8 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            const url = this.lastMessageId > 0
-                ? `${this.messagesUrl}?after_id=${this.lastMessageId}`
+            const url = this.lastMessagePublicId !== ''
+                ? `${this.messagesUrl}?after_public_id=${encodeURIComponent(this.lastMessagePublicId)}`
                 : this.messagesUrl;
 
             let response;
@@ -151,10 +151,14 @@ document.addEventListener('alpine:init', () => {
             for (const message of incoming) {
                 await this.ingestMessage(message);
             }
+
+            if (incoming.length > 0) {
+                this.lastMessagePublicId = incoming[incoming.length - 1].public_id;
+            }
         },
 
         async ingestMessage(message) {
-            if (this.messages.some((existing) => existing.id === message.id)) {
+            if (this.messages.some((existing) => existing.publicId === message.public_id)) {
                 return;
             }
 
@@ -165,7 +169,7 @@ document.addEventListener('alpine:init', () => {
             );
 
             this.messages.push({
-                id: message.id,
+                publicId: message.public_id,
                 senderId: message.sender_id,
                 plaintext,
                 decryptionError,
@@ -173,13 +177,12 @@ document.addEventListener('alpine:init', () => {
                 isMine: message.sender_id === this.localUserId,
             });
 
-            this.lastMessageId = Math.max(this.lastMessageId, message.id);
             this.sortMessages();
             this.scrollToBottom();
         },
 
         sortMessages() {
-            this.messages.sort((left, right) => left.id - right.id);
+            this.messages.sort((left, right) => new Date(left.createdAt) - new Date(right.createdAt));
         },
 
         scrollToBottom() {
@@ -282,7 +285,7 @@ document.addEventListener('alpine:init', () => {
                 const created = await response.json();
 
                 this.messages.push({
-                    id: created.id,
+                    publicId: created.public_id,
                     senderId: this.localUserId,
                     plaintext: text,
                     decryptionError: '',
@@ -290,7 +293,7 @@ document.addEventListener('alpine:init', () => {
                     isMine: true,
                 });
 
-                this.lastMessageId = Math.max(this.lastMessageId, created.id);
+                this.lastMessagePublicId = created.public_id;
                 this.messageText = '';
                 this.sortMessages();
                 this.scrollToBottom();

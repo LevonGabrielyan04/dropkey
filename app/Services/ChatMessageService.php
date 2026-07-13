@@ -19,7 +19,7 @@ class ChatMessageService implements ChatMessageServiceInterface
     /**
      * {@inheritDoc}
      */
-    public function getMessagesForUsers(User $user, User $otherUser, int $afterId = 0): Collection
+    public function getMessagesForUsers(User $user, User $otherUser, ?string $afterPublicId = null): Collection
     {
         $conversation = $this->chatMessages->findConversationBetweenUsers($user, $otherUser);
 
@@ -29,7 +29,7 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         $this->authorizeConversation($conversation);
 
-        return $this->chatMessages->getMessagesForConversation($conversation, $afterId);
+        return $this->chatMessages->getMessagesForConversation($conversation, $afterPublicId);
     }
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage

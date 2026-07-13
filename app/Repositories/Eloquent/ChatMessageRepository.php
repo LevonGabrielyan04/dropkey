@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Support\ChatMessageColumns;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\BinaryCodec;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class ChatMessageRepository implements ChatMessageRepositoryInterface
@@ -48,8 +50,20 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
     /**
      * {@inheritDoc}
      */
-    public function getMessagesForConversation(Conversation $conversation, int $afterId = 0): Collection
+    public function getMessagesForConversation(Conversation $conversation, ?string $afterPublicId = null): Collection
     {
+        $afterId = 0;
+
+        if ($afterPublicId !== null && $afterPublicId !== '' && Str::isUuid($afterPublicId)) {
+            $cursorId = $conversation->messages()
+                ->where('public_id', BinaryCodec::encode($afterPublicId, 'uuid'))
+                ->value('id');
+
+            if ($cursorId !== null) {
+                $afterId = (int) $cursorId;
+            }
+        }
+
         return $conversation->messages()
             ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
             ->orderBy('id')
