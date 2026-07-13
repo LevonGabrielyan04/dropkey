@@ -41,6 +41,7 @@ document.addEventListener('alpine:init', () => {
         lastMessagePublicId: '',
         pollTimer: null,
         localUserId: 0,
+        localUserPublicId: '',
         recipientId: 0,
         csrfToken: '',
         messagesUrl: '',
@@ -61,6 +62,7 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.localUserId = Number(this.$el.dataset.localUserId);
+            this.localUserPublicId = this.$el.dataset.localUserPublicId ?? '';
             this.recipientId = Number(this.$el.dataset.recipientId);
             this.csrfToken = this.$el.dataset.csrfToken ?? '';
             this.messagesUrl = this.$el.dataset.messagesUrl ?? '';
@@ -170,11 +172,11 @@ document.addEventListener('alpine:init', () => {
 
             this.messages.push({
                 publicId: message.public_id,
-                senderId: message.sender_id,
+                senderPublicId: message.sender.public_id,
                 plaintext,
                 decryptionError,
                 createdAt: message.created_at,
-                isMine: message.sender_id === this.localUserId,
+                isMine: message.sender.public_id === this.localUserPublicId,
             });
 
             this.sortMessages();
@@ -286,7 +288,7 @@ document.addEventListener('alpine:init', () => {
 
                 this.messages.push({
                     publicId: created.public_id,
-                    senderId: this.localUserId,
+                    senderPublicId: this.localUserPublicId,
                     plaintext: text,
                     decryptionError: '',
                     createdAt: created.created_at,

@@ -3,6 +3,7 @@
         class="flex h-full w-full flex-1 flex-col font-mono"
         x-data="e2eeChatSession"
         data-local-user-id="{{ auth()->id() }}"
+        data-local-user-public-id="{{ auth()->user()->public_key }}"
         data-recipient-id="{{ $recipient->id }}"
         data-csrf-token="{{ csrf_token() }}"
         data-public-key-url="{{ route('api.users.public-key.show', $recipient) }}"

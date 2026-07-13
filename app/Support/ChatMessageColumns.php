@@ -7,7 +7,7 @@ namespace App\Support;
 final class ChatMessageColumns
 {
     /**
-     * Columns exposed when polling chat messages.
+     * Columns loaded when polling chat messages.
      *
      * @var array<int, string>
      */

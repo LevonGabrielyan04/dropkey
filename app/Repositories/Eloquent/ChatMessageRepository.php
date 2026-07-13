@@ -65,6 +65,7 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
         }
 
         return $conversation->messages()
+            ->with(['sender:id,public_key'])
             ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
             ->orderBy('id')
             ->limit((int) config('chat.poll.batch_size'))

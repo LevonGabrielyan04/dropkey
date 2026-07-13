@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\IndexChatMessageRequest;
 use App\Http\Requests\StoreChatMessageRequest;
+use App\Http\Resources\ChatMessageCollection;
+use App\Http\Resources\StoredChatMessageResource;
 use App\Models\User;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +16,7 @@ class MessageController extends Controller
 {
     public function __construct(protected ChatMessageServiceInterface $chatMessages) {}
 
-    public function index(IndexChatMessageRequest $request, User $user): JsonResponse
+    public function index(IndexChatMessageRequest $request, User $user): ChatMessageCollection
     {
         $messages = $this->chatMessages->getMessagesForUsers(
             $request->user(),
@@ -22,9 +24,7 @@ class MessageController extends Controller
             $request->validated('after_public_id'),
         );
 
-        return response()->json([
-            'messages' => $messages,
-        ]);
+        return $messages->toResourceCollection();
     }
 
     public function store(StoreChatMessageRequest $request): JsonResponse
@@ -35,9 +35,9 @@ class MessageController extends Controller
             $request->validated('payload'),
         );
 
-        return response()->json([
-            'public_id' => $message->public_id,
-            'created_at' => $message->created_at,
-        ], 201);
+        return $message
+            ->toResource(StoredChatMessageResource::class)
+            ->response()
+            ->setStatusCode(201);
     }
 }

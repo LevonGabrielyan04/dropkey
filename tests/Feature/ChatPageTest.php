@@ -31,6 +31,7 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee('x-data="e2eeChatSession"', false)
         ->assertSee('data-recipient-id="'.$bob->id.'"', false)
         ->assertSee('data-local-user-id="'.$alice->id.'"', false)
+        ->assertSee('data-local-user-public-id="'.$alice->public_key.'"', false)
         ->assertSee(route('api.users.public-key.show', $bob), false)
         ->assertSee(route('messages.index', $bob), false)
         ->assertSee(route('messages.store'), false)

@@ -99,11 +99,12 @@ it('does not expose internal message ids when polling', function () {
         ->assertSuccessful()
         ->assertJsonStructure([
             'messages' => [
-                ['public_id', 'sender_id', 'payload', 'created_at'],
+                ['public_id', 'sender', 'payload', 'created_at'],
             ],
         ]);
 
-    expect($response->json('messages.0'))->not->toHaveKey('id');
+    expect($response->json('messages.0'))->not->toHaveKey('id')
+        ->and($response->json('messages.0'))->not->toHaveKey('sender_id');
 });
 
 it('rejects invalid after_public_id query parameters', function () {
@@ -137,7 +138,7 @@ it('polls only messages after the provided cursor', function () {
         ->getJson(route('messages.index', $bob).'?after_public_id='.$first->public_id)
         ->assertSuccessful()
         ->assertJsonCount(1, 'messages')
-        ->assertJsonPath('messages.0.sender_id', $bob->id)
+        ->assertJsonPath('messages.0.sender.public_id', $bob->public_key)
         ->assertJsonPath('messages.0.public_id', $second->public_id);
 });
 
