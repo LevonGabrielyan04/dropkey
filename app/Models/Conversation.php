@@ -6,13 +6,17 @@ namespace App\Models;
 
 use App\Enums\TimePeriod;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\AsBinary;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $public_key
  * @property int $user_one_id
  * @property int $user_two_id
  * @property TimePeriod $auto_delete
@@ -21,6 +25,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['user_one_id', 'user_two_id', 'auto_delete'])]
 class Conversation extends Model
 {
+    use HasUuids;
+
     public const UPDATED_AT = null;
 
     /**
@@ -31,7 +37,26 @@ class Conversation extends Model
         return [
             'auto_delete' => TimePeriod::class,
             'created_at' => 'datetime',
+            'public_key' => AsBinary::uuid(),
         ];
+    }
+
+    /**
+     * Generate a new UUID for the public identifier.
+     */
+    public function newUniqueId(): string
+    {
+        return (string) Str::uuid();
+    }
+
+    /**
+     * Get the columns that should receive a unique identifier.
+     *
+     * @return array<int, string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['public_key'];
     }
 
     /**
