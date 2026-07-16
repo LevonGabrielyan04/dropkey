@@ -72,7 +72,7 @@ it('relays bidirectional encrypted payloads without modifying ciphertext', funct
         ->assertJsonCount(2, 'messages');
 });
 
-it('stores relay payloads as opaque database text without server-side encryption', function () {
+it('encrypts relay payloads at rest while preserving client ciphertext through eloquent', function () {
     $sender = User::factory()->create();
     $recipient = User::factory()->create();
     $payload = fakeChatPayload();
@@ -85,9 +85,12 @@ it('stores relay payloads as opaque database text without server-side encryption
         ->assertCreated();
 
     $rawPayload = DB::table('chat_messages')->value('payload');
+    $message = ChatMessage::query()->first();
 
-    expect($rawPayload)->toBe($payload)
-        ->and($rawPayload)->not->toStartWith('eyJpdiI6');
+    expect($rawPayload)->not->toBe($payload)
+        ->and($rawPayload)->toStartWith('eyJpdiI6')
+        ->and($message)->not->toBeNull()
+        ->and($message->payload)->toBe($payload);
 });
 
 it('supports the full register-key then relay workflow over HTTP', function () {

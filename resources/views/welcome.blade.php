@@ -288,7 +288,7 @@
                         ['title' => 'Identity verification', 'desc' => 'Public key fingerprints let you confirm you are messaging the right person — not an impostor or MITM.'],
                         ['title' => 'Automatic expiry', 'desc' => 'Set message retention from 1 hour to 30 days. Expired messages and Sends are permanently deleted every 30 minutes.'],
                         ['title' => 'Hardened accounts', 'desc' => 'Passkeys, two-factor authentication, and email verification protect who can access your channels.'],
-                        ['title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Valkey sessions, and Laravel encrypted casts at rest for Sends.'],
+                        ['title' => 'Defense in depth', 'desc' => 'Strict Content Security Policy, short-lived Valkey sessions, and Laravel encrypted casts at rest for Sends and chat payloads.'],
                     ] as $feature)
                         <div @class([
                             'p-6',
@@ -411,7 +411,7 @@
                             <tbody>
                                 @foreach ([
                                     ['Client-side E2E', 'Send and chat content from server operator'],
-                                    ['Laravel encrypted cast', 'Send payloads at rest'],
+                                    ['Laravel encrypted cast', 'Send & chat payloads at rest'],
                                     ['ECDH + HKDF', 'Per-conversation chat encryption'],
                                     ['Identity key fingerprints', 'Wrong recipient or key substitution'],
                                     ['Opaque chat relay', 'Chat ciphertext stored as-is'],
@@ -453,7 +453,7 @@
                         ['q' => 'Can '.config('app.name').' staff read my messages?', 'a' => 'No. Chat messages and password-protected Sends are encrypted in your browser before upload. We store only ciphertext and never receive your decryption keys. We cannot recover lost identity keys or Send passwords.'],
                         ['q' => 'How does chat encryption work?', 'a' => 'Each user has an ECDH (P-256) identity key pair. Per-conversation keys are derived via ECDH + HKDF, then messages are encrypted with AES-256-GCM. Both parties derive the same key independently.'],
                         ['q' => 'Who can view a Send?', 'a' => 'Only registered users whose names you listed as viewers, plus you as the owner. There are no public links — access is strictly invite-based.'],
-                        ['q' => 'What encryption is used?', 'a' => 'Sends use AES-256-GCM with Argon2id key derivation in a Web Worker. Chat uses ECDH (P-256) + HKDF + AES-256-GCM. At rest, Laravel\'s encrypted cast adds another layer for Send payloads.'],
+                        ['q' => 'What encryption is used?', 'a' => 'Sends use AES-256-GCM with Argon2id key derivation in a Web Worker. Chat uses ECDH (P-256) + HKDF + AES-256-GCM. At rest, Laravel\'s encrypted cast adds another layer for Send and chat payloads.'],
                         ['q' => 'How long do Sends last?', 'a' => 'You choose an expiry between 1 hour and 30 days when creating a Send. Expired Sends are permanently deleted by a scheduled task that runs every 30 minutes.'],
                         ['q' => 'How many Sends can I have?', 'a' => 'Each user can have up to '.config('send.max_per_user', 15).' active Sends at a time, with up to 100 viewer names per Send and a '.number_format(config('send.message.max_length', 1000)).'-character plaintext message limit before encryption.'],
                         ['q' => 'What protects my account?', 'a' => 'Accounts support passkeys, two-factor authentication (TOTP), and email verification. Sessions are short-lived and stored in Valkey to minimize hijacking risk.'],

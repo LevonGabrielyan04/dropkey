@@ -42,6 +42,7 @@ class ChatMessage extends Model
         return [
             'created_at' => 'datetime',
             'public_id' => AsBinary::uuid(),
+            'payload' => 'encrypted',
         ];
     }
 
