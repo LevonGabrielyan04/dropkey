@@ -68,7 +68,7 @@ test('registration succeeds when turnstile verification passes', function () {
     ]);
 
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticated();
 });
@@ -127,7 +127,7 @@ test('login succeeds when turnstile verification passes', function () {
     ]);
 
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticated();
 });

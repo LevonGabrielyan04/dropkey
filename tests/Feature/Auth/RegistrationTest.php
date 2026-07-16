@@ -28,7 +28,7 @@ test('new users can register', function () {
     ]);
 
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticated();
 
@@ -45,7 +45,7 @@ test('new users can register without an email address', function () {
     ]);
 
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticated();
 

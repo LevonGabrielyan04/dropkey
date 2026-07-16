@@ -19,7 +19,7 @@ test('users can authenticate using the login screen', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticated();
 });
@@ -34,7 +34,7 @@ test('users can authenticate using their nickname', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticatedAs($user);
 });
@@ -49,7 +49,7 @@ test('users can authenticate using their nickname case insensitively', function 
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticatedAs($user);
 });
@@ -64,7 +64,7 @@ test('users without an email can authenticate using their nickname', function ()
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('chat.index', absolute: false));
 
     $this->assertAuthenticatedAs($user);
 });
