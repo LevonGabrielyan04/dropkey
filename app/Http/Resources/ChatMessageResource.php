@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 class ChatMessageResource extends JsonResource
 {
     /**
-     * @return array{public_id: string, sender: array{public_id: string}|null, payload: string, created_at: Carbon|null}
+     * @return array{public_id: string, sender: ChatMessageSenderResource, payload: string, created_at: Carbon}
      */
     public function toArray(Request $request): array
     {

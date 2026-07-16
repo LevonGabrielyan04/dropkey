@@ -24,7 +24,7 @@ class MessageController extends Controller
             $request->validated('after_public_id'),
         );
 
-        return $messages->toResourceCollection();
+        return new ChatMessageCollection($messages);
     }
 
     public function store(StoreChatMessageRequest $request): JsonResponse

@@ -17,12 +17,12 @@ class ChatMessageCollection extends ResourceCollection
     public static $wrap = null;
 
     /**
-     * @return array{messages: array<int, array<string, mixed>>}
+     * @return array{messages: list<array<string, mixed>>}
      */
     public function toArray(Request $request): array
     {
         return [
-            'messages' => parent::toArray($request),
+            'messages' => array_values($this->collection->map->resolve($request)->all()),
         ];
     }
 }
