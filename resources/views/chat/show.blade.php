@@ -70,6 +70,10 @@
             </div>
         </header>
 
+        @include('partials.chat-notifications-tip', [
+            'message' => __('Enable notifications so you know when a new encrypted message arrives.'),
+        ])
+
         <div class="border-x-2 border-b-2 border-zinc-950 bg-white p-4 dark:border-zinc-100 dark:bg-zinc-950">
             <p x-show="loading" x-cloak class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ __('Establishing encrypted session...') }}

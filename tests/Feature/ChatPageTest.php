@@ -87,3 +87,44 @@ it('resolves chat routes by user name instead of numeric id', function () {
         ->get('/chat/'.$bob->id)
         ->assertNotFound();
 });
+
+it('shows a notifications tip when the user has no push subscription', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+
+    $this->actingAs($alice)
+        ->get(route('chat.index'))
+        ->assertSuccessful()
+        ->assertSee(__('Enable notifications so you know when a new message arrives.'))
+        ->assertSee(route('notifications.edit'), false)
+        ->assertSee(__('Notification settings'));
+
+    $this->actingAs($alice)
+        ->get(route('chat.show', $bob))
+        ->assertSuccessful()
+        ->assertSee(__('Enable notifications so you know when a new encrypted message arrives.'))
+        ->assertSee(route('notifications.edit'), false);
+});
+
+it('hides the notifications tip when the user has a push subscription', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+
+    $alice->updatePushSubscription(
+        'https://fcm.googleapis.com/fcm/send/chat-tip-endpoint',
+        'p256dh-test-key',
+        'auth-test-token',
+        'aes128gcm',
+    );
+
+    $this->actingAs($alice)
+        ->get(route('chat.index'))
+        ->assertSuccessful()
+        ->assertDontSee(__('Enable notifications so you know when a new message arrives.'));
+
+    $this->actingAs($alice)
+        ->get(route('chat.show', $bob))
+        ->assertSuccessful()
+        ->assertDontSee(__('Enable notifications so you know when a new encrypted message arrives.'));
+});
+

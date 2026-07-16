@@ -16,6 +16,10 @@
             </div>
         </header>
 
+        @include('partials.chat-notifications-tip', [
+            'message' => __('Enable notifications so you know when a new message arrives.'),
+        ])
+
         <section
             x-data="e2eeChatInbox"
             data-chat-base-url="{{ url('/chat') }}"
