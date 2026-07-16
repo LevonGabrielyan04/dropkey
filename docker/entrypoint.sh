@@ -55,13 +55,15 @@ prepare_runtime() {
     chown -R app:app storage bootstrap/cache
     chmod -R ug+rwx storage bootstrap/cache
 
+    # Persistent bootstrap/cache volume can hold config from a previous image.
+    # Clear it before migrate so new package config (e.g. webpush) is available.
+    php artisan optimize:clear --no-interaction
+
     php artisan migrate --force --no-interaction
 
     if [ "${APP_ENV:-local}" = "production" ]; then
         php artisan db:verify-encryption --fail-on-error --no-interaction
         php artisan optimize --no-interaction
-    else
-        php artisan optimize:clear --no-interaction
     fi
 }
 

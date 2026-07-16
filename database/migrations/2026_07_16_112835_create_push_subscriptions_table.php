@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection(config('webpush.database_connection'))->create(config('webpush.table_name'), function (Blueprint $table) {
+        Schema::connection($this->connectionName())->create($this->tableName(), function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->morphs('subscribable', 'push_subscriptions_subscribable_morph_idx');
             $table->string('endpoint', 500)->unique();
@@ -27,6 +27,20 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection(config('webpush.database_connection'))->dropIfExists(config('webpush.table_name'));
+        Schema::connection($this->connectionName())->dropIfExists($this->tableName());
+    }
+
+    private function connectionName(): ?string
+    {
+        $connection = config('webpush.database_connection');
+
+        return is_string($connection) && $connection !== '' ? $connection : null;
+    }
+
+    private function tableName(): string
+    {
+        $table = config('webpush.table_name');
+
+        return is_string($table) && $table !== '' ? $table : 'push_subscriptions';
     }
 };
