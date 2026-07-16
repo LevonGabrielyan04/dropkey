@@ -29,7 +29,11 @@
                 </flux:text>
 
                 <flux:text class="!mt-2 !font-mono !text-sm">
-                    {{ __('To restore your messages, sign in on the same device and browser where you originally encrypted them.') }}
+                    {{ __('Browsers may automatically delete stored encryption keys under certain circumstances, such as after a period of inactivity or when using Incognito / private browsing.') }}
+                </flux:text>
+
+                <flux:text class="!mt-2 !font-mono !text-sm">
+                    {{ __('If the key still exists elsewhere, sign in on the same device and browser where you originally encrypted your messages.') }}
                 </flux:text>
             </flux:callout>
         </div>

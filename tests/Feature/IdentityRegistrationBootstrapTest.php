@@ -23,7 +23,8 @@ it('includes identity registration bootstrap data on authenticated app pages', f
         ->assertSee('data-test="identity-key-overwrite-modal"', false)
         ->assertSee(__('Replacing your encryption key will permanently remove access to your old messages. This cannot be undone.'), false)
         ->assertSee(__('Your previous decryption key was not found on this device.'), false)
-        ->assertSee(__('To restore your messages, sign in on the same device and browser where you originally encrypted them.'), false);
+        ->assertSee(__('Browsers may automatically delete stored encryption keys under certain circumstances, such as after a period of inactivity or when using Incognito / private browsing.'), false)
+        ->assertSee(__('If the key still exists elsewhere, sign in on the same device and browser where you originally encrypted your messages.'), false);
 });
 
 it('does not include identity registration bootstrap data on guest pages', function () {
