@@ -38,7 +38,7 @@ vi.mock('./identity.js', async (importOriginal) => {
     };
 });
 
-import { establishSession } from './session.js';
+import { establishSession, fetchPartnerConversationKey } from './session.js';
 import { ensureServerIdentityKey, registerPublicKey } from './identity.js';
 
 describe('session', () => {
@@ -130,6 +130,58 @@ describe('session', () => {
 
         expect(ensureServerIdentityKey).toHaveBeenCalledOnce();
         expect(registerPublicKey).not.toHaveBeenCalled();
+
+        vi.unstubAllGlobals();
+    });
+
+    it('fetches a partner conversation key without registering local identity', async () => {
+        const local = await globalThis.crypto.subtle.generateKey(
+            { name: 'ECDH', namedCurve: 'P-256' },
+            true,
+            ['deriveBits', 'deriveKey'],
+        );
+        const localJwk = await globalThis.crypto.subtle.exportKey('jwk', local.publicKey);
+        identityStore.value = { privateKey: local.privateKey, publicJwk: localJwk };
+
+        const remote = await globalThis.crypto.subtle.generateKey(
+            { name: 'ECDH', namedCurve: 'P-256' },
+            true,
+            ['deriveBits', 'deriveKey'],
+        );
+        const remoteJwk = await globalThis.crypto.subtle.exportKey('jwk', remote.publicKey);
+
+        vi.stubGlobal('fetch', vi.fn(async () => ({
+            ok: true,
+            json: async () => ({
+                public_key_jwk: remoteJwk,
+                fingerprint: 'b'.repeat(64),
+            }),
+        })));
+
+        const session = await fetchPartnerConversationKey({
+            localUserId: 10,
+            recipientId: 20,
+            publicKeyUrl: '/api/users/20/public-key',
+        });
+
+        expect(ensureServerIdentityKey).not.toHaveBeenCalled();
+        expect(registerPublicKey).not.toHaveBeenCalled();
+        expect(session?.partnerFingerprint).toBe('b'.repeat(64));
+        expect(session?.conversationKey.algorithm.name).toBe('AES-GCM');
+
+        vi.unstubAllGlobals();
+    });
+
+    it('returns null when the partner public key is unavailable', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false })));
+
+        const session = await fetchPartnerConversationKey({
+            localUserId: 1,
+            recipientId: 2,
+            publicKeyUrl: '/api/users/2/public-key',
+        });
+
+        expect(session).toBeNull();
 
         vi.unstubAllGlobals();
     });

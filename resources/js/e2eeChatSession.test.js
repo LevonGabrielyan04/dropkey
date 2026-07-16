@@ -6,13 +6,34 @@ vi.mock('./cryptography/e2ee/session.js', () => ({
     decryptChatMessage,
     encryptChatMessage: vi.fn(),
     establishSession: vi.fn(),
+    fetchPartnerConversationKey: vi.fn(),
 }));
 
-import { DEFAULT_AUTO_DELETE, resolveChatMessageContent } from './e2eeChatSession.js';
+import {
+    DEFAULT_AUTO_DELETE,
+    hasPartnerSessionChanged,
+    redecryptStoredMessages,
+    resolveChatMessageContent,
+    resolveIncomingMessageContent,
+} from './e2eeChatSession.js';
 
 describe('DEFAULT_AUTO_DELETE', () => {
     it('defaults to seven days', () => {
         expect(DEFAULT_AUTO_DELETE).toBe('7 days');
+    });
+});
+
+describe('hasPartnerSessionChanged', () => {
+    it('returns false when the partner fingerprint is unchanged', () => {
+        expect(hasPartnerSessionChanged('abc', 'abc')).toBe(false);
+    });
+
+    it('returns false before the initial partner fingerprint is known', () => {
+        expect(hasPartnerSessionChanged('', 'abc')).toBe(false);
+    });
+
+    it('returns true when the partner fingerprint changes', () => {
+        expect(hasPartnerSessionChanged('abc', 'def')).toBe(true);
     });
 });
 
@@ -36,6 +57,89 @@ describe('resolveChatMessageContent', () => {
         decryptChatMessage.mockRejectedValue(new Error('OperationError'));
 
         const result = await resolveChatMessageContent('payload', {}, 'Unable to decrypt this message.');
+
+        expect(result).toEqual({
+            plaintext: null,
+            decryptionError: 'Unable to decrypt this message.',
+        });
+    });
+});
+
+describe('redecryptStoredMessages', () => {
+    beforeEach(() => {
+        decryptChatMessage.mockReset();
+    });
+
+    it('clears decryption errors when a stored payload can be decrypted', async () => {
+        decryptChatMessage.mockResolvedValue('Recovered message');
+
+        const messages = [{
+            payload: 'encrypted-payload',
+            plaintext: null,
+            decryptionError: 'Unable to decrypt this message.',
+        }];
+
+        await redecryptStoredMessages(messages, {}, 'Unable to decrypt this message.');
+
+        expect(messages[0]).toEqual({
+            payload: 'encrypted-payload',
+            plaintext: 'Recovered message',
+            decryptionError: '',
+        });
+    });
+
+    it('leaves failed messages unchanged when decryption still fails', async () => {
+        decryptChatMessage.mockRejectedValue(new Error('OperationError'));
+
+        const messages = [{
+            payload: 'encrypted-payload',
+            plaintext: null,
+            decryptionError: 'Unable to decrypt this message.',
+        }];
+
+        await redecryptStoredMessages(messages, {}, 'Unable to decrypt this message.');
+
+        expect(messages[0].decryptionError).toBe('Unable to decrypt this message.');
+    });
+});
+
+describe('resolveIncomingMessageContent', () => {
+    beforeEach(() => {
+        decryptChatMessage.mockReset();
+    });
+
+    it('retries decryption after refreshing the partner session', async () => {
+        const staleKey = { id: 'stale' };
+        const freshKey = { id: 'fresh' };
+
+        decryptChatMessage
+            .mockRejectedValueOnce(new Error('OperationError'))
+            .mockResolvedValueOnce('Hello after rotation');
+
+        const result = await resolveIncomingMessageContent(
+            'payload',
+            () => staleKey,
+            'Unable to decrypt this message.',
+            async () => ({ conversationKey: freshKey, partnerFingerprint: 'new-fingerprint' }),
+        );
+
+        expect(result).toEqual({
+            plaintext: 'Hello after rotation',
+            decryptionError: '',
+        });
+        expect(decryptChatMessage).toHaveBeenNthCalledWith(1, 'payload', staleKey);
+        expect(decryptChatMessage).toHaveBeenNthCalledWith(2, 'payload', freshKey);
+    });
+
+    it('returns a decryption error when refresh does not recover the message', async () => {
+        decryptChatMessage.mockRejectedValue(new Error('OperationError'));
+
+        const result = await resolveIncomingMessageContent(
+            'payload',
+            () => ({ id: 'stale' }),
+            'Unable to decrypt this message.',
+            async () => null,
+        );
 
         expect(result).toEqual({
             plaintext: null,

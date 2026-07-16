@@ -7,6 +7,41 @@ import { decryptMessage, encryptMessage } from './messageCrypto.js';
  * @param {number} options.localUserId
  * @param {number} options.recipientId
  * @param {string} options.publicKeyUrl
+ * @returns {Promise<{ conversationKey: CryptoKey, partnerFingerprint: string }|null>}
+ */
+export async function fetchPartnerConversationKey({
+    localUserId,
+    recipientId,
+    publicKeyUrl,
+}) {
+    const { privateKey } = await ensureIdentityKeyPair();
+
+    const response = await fetch(publicKeyUrl, {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+
+    if (! response.ok) {
+        return null;
+    }
+
+    const { public_key_jwk: publicJwk, fingerprint } = await response.json();
+    const remotePublicKey = await importPublicKey(publicJwk);
+    const conversationKey = await deriveConversationKey(
+        privateKey,
+        remotePublicKey,
+        localUserId,
+        recipientId,
+    );
+
+    return { conversationKey, partnerFingerprint: fingerprint };
+}
+
+/**
+ * @param {object} options
+ * @param {number} options.localUserId
+ * @param {number} options.recipientId
+ * @param {string} options.publicKeyUrl
  * @param {string} options.registerUrl
  * @param {string} [options.mineUrl]
  * @param {string} options.csrfToken
@@ -21,27 +56,17 @@ export async function establishSession({
 }) {
     await ensureServerIdentityKey({ registerUrl, mineUrl, csrfToken });
 
-    const { privateKey } = await ensureIdentityKeyPair();
-
-    const response = await fetch(publicKeyUrl, {
-        headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
+    const partnerSession = await fetchPartnerConversationKey({
+        localUserId,
+        recipientId,
+        publicKeyUrl,
     });
 
-    if (! response.ok) {
+    if (! partnerSession) {
         throw new Error('Recipient has not registered an encryption key yet.');
     }
 
-    const { public_key_jwk: publicJwk, fingerprint } = await response.json();
-    const remotePublicKey = await importPublicKey(publicJwk);
-    const conversationKey = await deriveConversationKey(
-        privateKey,
-        remotePublicKey,
-        localUserId,
-        recipientId,
-    );
-
-    return { conversationKey, partnerFingerprint: fingerprint };
+    return partnerSession;
 }
 
 export { decryptMessage as decryptChatMessage, encryptMessage as encryptChatMessage };

@@ -2,9 +2,18 @@ import {
     decryptChatMessage,
     encryptChatMessage,
     establishSession,
+    fetchPartnerConversationKey,
 } from './cryptography/e2ee/session.js';
 
 export const DEFAULT_AUTO_DELETE = '7 days';
+
+/**
+ * @param {string} currentFingerprint
+ * @param {string} incomingFingerprint
+ */
+export function hasPartnerSessionChanged(currentFingerprint, incomingFingerprint) {
+    return currentFingerprint !== '' && incomingFingerprint !== currentFingerprint;
+}
 
 /**
  * @param {string} payload
@@ -20,6 +29,66 @@ export async function resolveChatMessageContent(payload, conversationKey, decryp
     } catch {
         return { plaintext: null, decryptionError: decryptionFailedMessage };
     }
+}
+
+/**
+ * @param {Array<{ payload?: string, plaintext: string|null, decryptionError: string }>} messages
+ * @param {CryptoKey} conversationKey
+ * @param {string} decryptionFailedMessage
+ */
+export async function redecryptStoredMessages(messages, conversationKey, decryptionFailedMessage) {
+    for (const message of messages) {
+        if (! message.decryptionError || ! message.payload) {
+            continue;
+        }
+
+        const resolved = await resolveChatMessageContent(
+            message.payload,
+            conversationKey,
+            decryptionFailedMessage,
+        );
+
+        if (! resolved.decryptionError) {
+            message.plaintext = resolved.plaintext;
+            message.decryptionError = '';
+        }
+    }
+}
+
+/**
+ * @param {string} payload
+ * @param {() => CryptoKey|null} getConversationKey
+ * @param {string} decryptionFailedMessage
+ * @param {() => Promise<{ conversationKey: CryptoKey, partnerFingerprint: string }|null>} refreshPartnerSession
+ * @returns {Promise<{ plaintext: string|null, decryptionError: string }>}
+ */
+export async function resolveIncomingMessageContent(
+    payload,
+    getConversationKey,
+    decryptionFailedMessage,
+    refreshPartnerSession,
+) {
+    const conversationKey = getConversationKey();
+
+    if (! conversationKey) {
+        return { plaintext: null, decryptionError: decryptionFailedMessage };
+    }
+
+    let resolved = await resolveChatMessageContent(payload, conversationKey, decryptionFailedMessage);
+
+    if (resolved.decryptionError) {
+        const refreshed = await refreshPartnerSession();
+
+        if (refreshed) {
+            resolved = await resolveChatMessageContent(
+                payload,
+                refreshed.conversationKey,
+                decryptionFailedMessage,
+            );
+        }
+    }
+
+    return resolved;
 }
 
 /**
@@ -123,10 +192,39 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        async syncPartnerSession() {
+            const partnerSession = await fetchPartnerConversationKey({
+                localUserId: this.localUserId,
+                recipientId: this.recipientId,
+                publicKeyUrl: this.publicKeyUrl,
+            });
+
+            if (! partnerSession) {
+                return null;
+            }
+
+            if (! hasPartnerSessionChanged(this.partnerFingerprint, partnerSession.partnerFingerprint)) {
+                return null;
+            }
+
+            this.conversationKey = partnerSession.conversationKey;
+            this.partnerFingerprint = partnerSession.partnerFingerprint;
+
+            await redecryptStoredMessages(
+                this.messages,
+                this.conversationKey,
+                this.decryptionFailedMessage,
+            );
+
+            return partnerSession;
+        },
+
         async fetchMessages() {
             if (! this.conversationKey || ! this.messagesUrl) {
                 return;
             }
+
+            await this.syncPartnerSession();
 
             const url = this.lastMessagePublicId !== ''
                 ? `${this.messagesUrl}?after_public_id=${encodeURIComponent(this.lastMessagePublicId)}`
@@ -160,19 +258,38 @@ document.addEventListener('alpine:init', () => {
         },
 
         async ingestMessage(message) {
-            if (this.messages.some((existing) => existing.publicId === message.public_id)) {
+            const existing = this.messages.find((item) => item.publicId === message.public_id);
+
+            if (existing) {
+                if (existing.decryptionError) {
+                    const resolved = await resolveChatMessageContent(
+                        message.payload,
+                        this.conversationKey,
+                        this.decryptionFailedMessage,
+                    );
+
+                    if (! resolved.decryptionError) {
+                        existing.plaintext = resolved.plaintext;
+                        existing.decryptionError = '';
+                    }
+
+                    existing.payload = message.payload;
+                }
+
                 return;
             }
 
-            const { plaintext, decryptionError } = await resolveChatMessageContent(
+            const { plaintext, decryptionError } = await resolveIncomingMessageContent(
                 message.payload,
-                this.conversationKey,
+                () => this.conversationKey,
                 this.decryptionFailedMessage,
+                () => this.syncPartnerSession(),
             );
 
             this.messages.push({
                 publicId: message.public_id,
                 senderPublicId: message.sender.public_id,
+                payload: message.payload,
                 plaintext,
                 decryptionError,
                 createdAt: message.created_at,
