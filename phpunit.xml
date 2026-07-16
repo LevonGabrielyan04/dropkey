@@ -40,5 +40,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="VAPID_SUBJECT" value="https://passshare.test"/>
+        <env name="VAPID_PUBLIC_KEY" value="BFP-4F2KMLYsNbjbB2XCY7GlFH1sshtUh43rlMn2VZU3FGkc-aZhatU__sOQQVKFpSRIRoCEtFCE5Wsti2u8mck"/>
+        <env name="VAPID_PRIVATE_KEY" value="rwrdCgUSHzcdePu27lNNg_mtGvH7l_efVVKHw7mPYBI"/>
     </php>
 </phpunit>

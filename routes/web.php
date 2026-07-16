@@ -4,6 +4,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\IdentityKeyController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SendController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,16 @@ Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
         Route::patch('/conversations/{user}/auto-delete', [ConversationController::class, 'updateAutoDelete'])
             ->middleware(['throttle:chat-write', 'not-self'])
             ->name('conversations.auto-delete.update');
+
+        Route::get('/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey'])
+            ->middleware('throttle:chat-poll')
+            ->name('api.push.vapid-public-key');
+        Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])
+            ->middleware('throttle:chat-write')
+            ->name('api.push-subscriptions.store');
+        Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])
+            ->middleware('throttle:chat-write')
+            ->name('api.push-subscriptions.destroy');
     });
 });
 

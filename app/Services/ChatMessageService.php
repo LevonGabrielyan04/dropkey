@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Notifications\NewChatMessageNotification;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -38,7 +39,20 @@ class ChatMessageService implements ChatMessageServiceInterface
             $this->chatMessages->findOrCreateConversation($sender, $recipient),
         );
 
-        return $this->chatMessages->createMessage($conversation, $sender, $payload);
+        $message = $this->chatMessages->createMessage($conversation, $sender, $payload);
+
+        $this->notifyRecipientOfNewMessage($sender, $recipient);
+
+        return $message;
+    }
+
+    private function notifyRecipientOfNewMessage(User $sender, User $recipient): void
+    {
+        if (! $recipient->pushSubscriptions()->exists()) {
+            return;
+        }
+
+        $recipient->notify(new NewChatMessageNotification($sender));
     }
 
     private function authorizeConversation(Conversation $conversation): Conversation
