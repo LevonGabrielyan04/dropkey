@@ -22,6 +22,7 @@ use App\Services\SendReadService;
 use App\Services\SendWriteService;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -30,6 +31,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -64,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureAuthenticatedWebRoutes();
 
         RateLimiter::for('sends-write', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()->id);
@@ -88,6 +91,27 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPulse', function (User $user) {
             return ! is_null($user->email_verified_at)
                 && $user->email === config('pulse.admin_email');
+        });
+    }
+
+    /**
+     * Require authentication for all web routes.
+     *
+     * Opt out in route files with withoutMiddleware(['auth']), or via Fortify's guest middleware.
+     */
+    protected function configureAuthenticatedWebRoutes(): void
+    {
+        Route::pushMiddlewareToGroup('web', 'auth');
+
+        $this->app->booted(function (): void {
+            foreach (Route::getRoutes() as $route) {
+                $usesGuestMiddleware = collect($route->middleware())
+                    ->contains(fn (mixed $middleware): bool => is_string($middleware) && str_starts_with($middleware, 'guest'));
+
+                if ($usesGuestMiddleware) {
+                    $route->withoutMiddleware(['auth', Authenticate::class]);
+                }
+            }
         });
     }
 

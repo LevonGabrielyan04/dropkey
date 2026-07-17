@@ -8,9 +8,11 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SendController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::view('/', 'welcome')
+    ->withoutMiddleware(['auth'])
+    ->name('home');
 
-Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
+Route::middleware(['throttle:60,1', 'verified'])->group(function () {
     Route::resource('sends', SendController::class)->except(['index']);
 
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
@@ -49,7 +51,7 @@ Route::middleware(['auth', 'throttle:60,1', 'verified'])->group(function () {
 });
 
 Route::get('/dashboard', [SendController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['verified'])
     ->name('dashboard');
 
 require __DIR__.'/settings.php';
