@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Event;
 
 it('stores encrypted chat payloads without decrypting them', function () {
+    Event::fake([ChatMessageSent::class]);
+
     $sender = User::factory()->create();
     $recipient = User::factory()->create();
     $payload = fakeChatPayload();
@@ -33,11 +35,13 @@ it('stores encrypted chat payloads without decrypting them', function () {
         ->and($message->sender_id)->toBe($sender->id)
         ->and($response->json('conversation_public_key'))->toBe($conversation->public_key);
 
-    Event::assertDispatched(ChatMessageSent::class, function (ChatMessageSent $event) use ($sender, $payload, $conversation) {
+    Event::assertDispatched(ChatMessageSent::class, function (ChatMessageSent $event) use ($sender, $recipient, $payload, $conversation) {
         return $event->message->sender_id === $sender->id
             && $event->message->payload === $payload
             && $event->message->conversation->is($conversation)
-            && $event->message->relationLoaded('sender');
+            && $event->message->relationLoaded('sender')
+            && $event->sender->is($sender)
+            && $event->recipient->is($recipient);
     });
 });
 

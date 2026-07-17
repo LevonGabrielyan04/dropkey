@@ -1,11 +1,9 @@
 <?php
 
-use App\Events\ChatMessageSent;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -22,9 +20,6 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->beforeEach(function () {
-        Event::fake([ChatMessageSent::class]);
-    })
     ->in('Feature');
 
 /*

@@ -8,7 +8,6 @@ use App\Events\ChatMessageSent;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
-use App\Notifications\NewChatMessageNotification;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,22 +41,13 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         $message = $this->chatMessages->createMessage($conversation, $sender, $payload);
 
-        broadcast(new ChatMessageSent(
+        ChatMessageSent::dispatch(
             $message->load(['conversation', 'sender:id,public_key']),
-        ));
-
-        $this->notifyRecipientOfNewMessage($sender, $recipient);
+            $sender,
+            $recipient,
+        );
 
         return $message;
-    }
-
-    private function notifyRecipientOfNewMessage(User $sender, User $recipient): void
-    {
-        if (! $recipient->pushSubscriptions()->exists()) {
-            return;
-        }
-
-        $recipient->notify(new NewChatMessageNotification($sender));
     }
 
     private function authorizeConversation(Conversation $conversation): Conversation

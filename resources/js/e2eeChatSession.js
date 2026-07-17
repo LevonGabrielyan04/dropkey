@@ -311,7 +311,7 @@ document.addEventListener('alpine:init', () => {
 
             this.conversationChannel = window.Echo
                 .private(`conversation.${this.conversationPublicKey}`)
-                .listen('ChatMessageSent', async (event) => {
+                .listen('.ChatMessageSent', async (event) => {
                     if (event.sender.public_id !== this.localUserPublicId) {
                         await this.ingestMessage(event);
                     }
