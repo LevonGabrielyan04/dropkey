@@ -36,6 +36,7 @@ class MessageController extends Controller
         );
 
         return $message
+            ->load('conversation')
             ->toResource(StoredChatMessageResource::class)
             ->response()
             ->setStatusCode(201);

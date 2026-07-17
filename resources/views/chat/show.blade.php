@@ -11,7 +11,7 @@
         data-mine-url="{{ route('api.identity.public-key.mine') }}"
         data-messages-url="{{ route('messages.index', $recipient) }}"
         data-send-url="{{ route('messages.store') }}"
-        data-poll-interval-ms="{{ config('chat.poll_interval_ms') }}"
+        data-conversation-public-key="{{ $conversation?->public_key ?? '' }}"
         data-decryption-failed-message="{{ __('Unable to decrypt this message.') }}"
         data-auto-delete="{{ $autoDelete->value }}"
         data-auto-delete-url="{{ route('conversations.auto-delete.update', $recipient) }}"

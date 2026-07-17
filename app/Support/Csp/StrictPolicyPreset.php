@@ -95,6 +95,7 @@ class StrictPolicyPreset implements Preset
     {
         $sources = [
             ...$this->allowedOrigins(),
+            ...$this->reverbConnectSources(),
             'https://api.pwnedpasswords.com',
         ];
 
@@ -207,6 +208,22 @@ class StrictPolicyPreset implements Preset
     }
 
     /**
+     * @return list<int>
+     */
+    private function lanDevAppPorts(): array
+    {
+        $ports = [8000];
+
+        $appPort = parse_url((string) config('app.url'), PHP_URL_PORT);
+
+        if (is_int($appPort)) {
+            $ports[] = $appPort;
+        }
+
+        return array_values(array_unique($ports));
+    }
+
+    /**
      * @return list<string>
      */
     private function lanDevHosts(): array
@@ -228,6 +245,11 @@ class StrictPolicyPreset implements Preset
         foreach ($this->lanDevHosts() as $host) {
             $origins[] = "http://{$host}";
             $origins[] = "https://{$host}";
+
+            foreach ($this->lanDevAppPorts() as $port) {
+                $origins[] = "http://{$host}:{$port}";
+                $origins[] = "https://{$host}:{$port}";
+            }
 
             foreach ($this->viteDevPorts() as $port) {
                 $origins[] = "http://{$host}:{$port}";
@@ -314,5 +336,30 @@ class StrictPolicyPreset implements Preset
         $requestHost = request()->getHost();
 
         return $requestHost !== '' && $this->isLoopbackHost($requestHost);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function reverbConnectSources(): array
+    {
+        $host = config('broadcasting.connections.reverb.client.host');
+        $port = config('broadcasting.connections.reverb.client.port');
+        $scheme = config('broadcasting.connections.reverb.client.scheme', 'https');
+
+        if (! is_string($host) || $host === '' || ! is_numeric($port)) {
+            return [];
+        }
+
+        $webSocketScheme = $scheme === 'https' ? 'wss' : 'ws';
+        $origins = ["{$webSocketScheme}://{$host}:{$port}"];
+
+        if ($host === 'localhost') {
+            $origins[] = "{$webSocketScheme}://127.0.0.1:{$port}";
+        } elseif ($host === '127.0.0.1') {
+            $origins[] = "{$webSocketScheme}://localhost:{$port}";
+        }
+
+        return $origins;
     }
 }

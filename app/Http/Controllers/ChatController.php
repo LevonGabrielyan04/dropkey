@@ -33,6 +33,7 @@ class ChatController extends Controller
 
         return view('chat.show', [
             'recipient' => $user,
+            'conversation' => $conversation,
             'autoDelete' => $conversation->auto_delete ?? TimePeriod::SEVEN_DAYS,
             'timePeriods' => TimePeriod::cases(),
         ]);

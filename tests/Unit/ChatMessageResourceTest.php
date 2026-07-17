@@ -72,12 +72,15 @@ it('resolves the stored chat message resource for create responses', function ()
         'payload' => fakeChatPayload(),
     ]);
 
+    $message->load('conversation');
+
     $resource = $message->toResource(StoredChatMessageResource::class)
         ->response(Request::create('/'))
         ->getData(true);
 
     expect($resource)->toMatchArray([
         'public_id' => $message->public_id,
+        'conversation_public_key' => $conversation->public_key,
         'created_at' => $message->created_at?->toJSON(),
     ])->and($resource)->not->toHaveKey('payload')
         ->and($resource)->not->toHaveKey('sender');

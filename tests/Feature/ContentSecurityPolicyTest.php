@@ -51,6 +51,8 @@ it('allows the vite dev server origin when running locally', function () {
         ->toContain("wss://{$herdHost}:5173")
         ->toContain('ws://127.0.0.1:5173')
         ->toContain('ws://localhost:5173')
+        ->toContain('ws://localhost:8080')
+        ->toContain('ws://127.0.0.1:8080')
         ->toContain('worker-src http://localhost http://127.0.0.1')
         ->toContain('blob:');
 });
@@ -124,12 +126,25 @@ it('allows lan dev hosts when running locally', function () {
     expect($policy)
         ->toContain('http://10.29.74.198')
         ->toContain('https://10.29.74.198')
+        ->toContain('http://10.29.74.198:8000')
+        ->toContain('https://10.29.74.198:8000')
         ->toContain('http://10.29.74.198:5173')
         ->toContain('https://10.29.74.198:5173')
         ->toContain('https://vite.10.29.74.198:5173')
         ->toContain('ws://10.29.74.198:5173')
         ->toContain('wss://10.29.74.198:5173')
         ->toContain('wss://vite.10.29.74.198:5173');
+});
+
+it('allows lan dev hosts when running in testing', function () {
+    config([
+        'app.url' => 'https://example.test',
+        'app.env' => 'testing',
+    ]);
+
+    $policy = Policy::create([StrictPolicyPreset::class])->getContents();
+
+    expect($policy)->toContain('http://10.29.74.198:8000');
 });
 
 it('does not allow lan dev hosts outside local and testing environments', function () {

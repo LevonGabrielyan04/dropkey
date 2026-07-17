@@ -1,21 +1,23 @@
 <?php
 
+use App\Events\ChatMessageSent;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 
 it('stores encrypted chat payloads without decrypting them', function () {
     $sender = User::factory()->create();
     $recipient = User::factory()->create();
     $payload = fakeChatPayload();
 
-    $this->actingAs($sender)
+    $response = $this->actingAs($sender)
         ->postJson(route('messages.store'), [
             'recipient_id' => $recipient->id,
             'payload' => $payload,
         ])
         ->assertCreated()
-        ->assertJsonStructure(['public_id', 'created_at']);
+        ->assertJsonStructure(['public_id', 'conversation_public_key', 'created_at']);
 
     $conversation = Conversation::query()
         ->where('user_one_id', min($sender->id, $recipient->id))
@@ -28,7 +30,15 @@ it('stores encrypted chat payloads without decrypting them', function () {
 
     expect($message)->not->toBeNull()
         ->and($message->payload)->toBe($payload)
-        ->and($message->sender_id)->toBe($sender->id);
+        ->and($message->sender_id)->toBe($sender->id)
+        ->and($response->json('conversation_public_key'))->toBe($conversation->public_key);
+
+    Event::assertDispatched(ChatMessageSent::class, function (ChatMessageSent $event) use ($sender, $payload, $conversation) {
+        return $event->message->sender_id === $sender->id
+            && $event->message->payload === $payload
+            && $event->message->conversation->is($conversation)
+            && $event->message->relationLoaded('sender');
+    });
 });
 
 it('rejects plaintext chat payloads', function () {

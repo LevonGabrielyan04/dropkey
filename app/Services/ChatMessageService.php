@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ChatMessageSent;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
@@ -40,6 +41,10 @@ class ChatMessageService implements ChatMessageServiceInterface
         );
 
         $message = $this->chatMessages->createMessage($conversation, $sender, $payload);
+
+        broadcast(new ChatMessageSent(
+            $message->load(['conversation', 'sender:id,public_key']),
+        ));
 
         $this->notifyRecipientOfNewMessage($sender, $recipient);
 

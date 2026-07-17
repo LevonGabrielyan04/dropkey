@@ -34,6 +34,8 @@ x-app-env: &app-env
   REDIS_HOST: redis
   REDIS_PORT: 6379
   PULSE_SERVER_NAME: app
+  REVERB_SERVER_HOST: 0.0.0.0
+  REVERB_SERVER_PORT: "8081"
 
 services:
   app:

@@ -35,6 +35,8 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee(route('api.users.public-key.show', $bob), false)
         ->assertSee(route('messages.index', $bob), false)
         ->assertSee(route('messages.store'), false)
+        ->assertSee('data-conversation-public-key=""', false)
+        ->assertDontSee('data-poll-interval-ms', false)
         ->assertSee($bob->name)
         ->assertSee(__('Send encrypted message'))
         ->assertSee(':disabled="!canSendMessage"', false)
@@ -44,6 +46,17 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee('data-auto-delete="'.TimePeriod::SEVEN_DAYS->value.'"', false)
         ->assertSee('message.decryptionError', false)
         ->assertDontSee('${partnerFingerprint}', false);
+});
+
+it('exposes the conversation public key when a chat already exists', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    $this->actingAs($alice)
+        ->get(route('chat.show', $bob))
+        ->assertSuccessful()
+        ->assertSee('data-conversation-public-key="'.$conversation->public_key.'"', false);
 });
 
 it('includes the messages navigation link in the sidebar', function () {
@@ -127,4 +140,3 @@ it('hides the notifications tip when the user has a push subscription', function
         ->assertSuccessful()
         ->assertDontSee(__('Enable notifications so you know when a new encrypted message arrives.'));
 });
-

@@ -1,3 +1,4 @@
+import './bootstrap.js';
 import './alpineComponents.js';
 import './viewerManager.js';
 import './sendDetailsManager.js';

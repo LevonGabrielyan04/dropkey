@@ -108,7 +108,8 @@ document.addEventListener('alpine:init', () => {
         partnerFingerprint: '',
         conversationKey: null,
         lastMessagePublicId: '',
-        pollTimer: null,
+        conversationPublicKey: '',
+        conversationChannel: null,
         localUserId: 0,
         localUserPublicId: '',
         recipientId: 0,
@@ -118,7 +119,6 @@ document.addEventListener('alpine:init', () => {
         registerUrl: '',
         mineUrl: '',
         publicKeyUrl: '',
-        pollIntervalMs: 3000,
         decryptionFailedMessage: 'Unable to decrypt this message.',
         autoDelete: DEFAULT_AUTO_DELETE,
         autoDeleteUrl: '',
@@ -139,29 +139,17 @@ document.addEventListener('alpine:init', () => {
             this.registerUrl = this.$el.dataset.registerUrl ?? '';
             this.mineUrl = this.$el.dataset.mineUrl ?? '';
             this.publicKeyUrl = this.$el.dataset.publicKeyUrl ?? '';
-            this.pollIntervalMs = Number(this.$el.dataset.pollIntervalMs) || 3000;
+            this.conversationPublicKey = this.$el.dataset.conversationPublicKey ?? '';
             this.decryptionFailedMessage = this.$el.dataset.decryptionFailedMessage
                 ?? 'Unable to decrypt this message.';
             this.autoDelete = this.$el.dataset.autoDelete || DEFAULT_AUTO_DELETE;
             this.autoDeleteUrl = this.$el.dataset.autoDeleteUrl ?? '';
 
-            this._visibilityHandler = () => {
-                if (document.visibilityState === 'hidden') {
-                    this.stopPolling();
-                } else if (this.ready) {
-                    this.fetchMessages();
-                    this.startPolling();
-                }
-            };
-
-            document.addEventListener('visibilitychange', this._visibilityHandler);
-
             this.bootstrap();
         },
 
         destroy() {
-            this.stopPolling();
-            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this.leaveConversationChannel();
         },
 
         async bootstrap() {
@@ -183,7 +171,7 @@ document.addEventListener('alpine:init', () => {
                 this.partnerFingerprint = session.partnerFingerprint;
 
                 await this.fetchMessages();
-                this.startPolling();
+                this.subscribeToConversation();
                 this.ready = true;
             } catch {
                 this.error = 'Unable to establish an encrypted session. Ensure your partner has opened Messages at least once.';
@@ -314,19 +302,29 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
-        startPolling() {
-            this.stopPolling();
+        subscribeToConversation() {
+            if (! this.conversationPublicKey || ! window.Echo) {
+                return;
+            }
 
-            this.pollTimer = window.setInterval(() => {
-                this.fetchMessages();
-            }, this.pollIntervalMs);
+            this.leaveConversationChannel();
+
+            this.conversationChannel = window.Echo
+                .private(`conversation.${this.conversationPublicKey}`)
+                .listen('ChatMessageSent', async (event) => {
+                    if (event.sender.public_id !== this.localUserPublicId) {
+                        await this.ingestMessage(event);
+                    }
+                });
         },
 
-        stopPolling() {
-            if (this.pollTimer !== null) {
-                window.clearInterval(this.pollTimer);
-                this.pollTimer = null;
+        leaveConversationChannel() {
+            if (! this.conversationPublicKey || ! window.Echo) {
+                return;
             }
+
+            window.Echo.leave(`conversation.${this.conversationPublicKey}`);
+            this.conversationChannel = null;
         },
 
         async updateAutoDelete() {
@@ -402,6 +400,12 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 const created = await response.json();
+
+                if (created.conversation_public_key && ! this.conversationPublicKey) {
+                    this.conversationPublicKey = created.conversation_public_key;
+                    this.$el.dataset.conversationPublicKey = this.conversationPublicKey;
+                    this.subscribeToConversation();
+                }
 
                 this.messages.push({
                     publicId: created.public_id,
