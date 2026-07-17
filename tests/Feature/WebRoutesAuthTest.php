@@ -41,3 +41,15 @@ it('applies auth middleware from the web group except opted-out and guest routes
         ->and($loginMiddleware)->not->toContain(Authenticate::class)
         ->and($dashboardMiddleware)->toContain(Authenticate::class);
 });
+
+it('applies auth middleware to newly registered web routes by default', function () {
+    $route = Route::middleware('web')
+        ->get('/__temporary-auth-check', fn (): string => 'ok')
+        ->name('temporary.auth.check');
+
+    $middleware = app(Router::class)->gatherRouteMiddleware($route);
+
+    expect($middleware)->toContain(Authenticate::class);
+
+    $this->get('/__temporary-auth-check')->assertRedirect(route('login'));
+});
