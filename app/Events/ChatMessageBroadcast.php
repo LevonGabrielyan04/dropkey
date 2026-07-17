@@ -16,6 +16,11 @@ class ChatMessageBroadcast implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * Dedicated queue so chat realtime is not blocked by slow jobs.
+     */
+    public string $queue = 'broadcasts';
+
     public function __construct(public ChatMessage $message) {}
 
     public function broadcastAs(): string

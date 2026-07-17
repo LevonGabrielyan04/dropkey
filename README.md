@@ -114,7 +114,7 @@ Chat broadcasting requires **Laravel Reverb** and a **queue worker**. For local 
 
 ```bash
 php artisan reverb:start
-php artisan queue:work
+php artisan queue:work --queue=broadcasts,default
 
 ```
 
@@ -125,14 +125,14 @@ composer run dev
 
 ```
 
-`composer run dev` starts the HTTP server, queue listener, and Vite — but **not** Reverb. Still run `php artisan reverb:start` in a separate terminal.
+`composer run dev` starts the HTTP server, queue listener (`broadcasts` then `default`), and Vite — but **not** Reverb. Still run `php artisan reverb:start` in a separate terminal.
 
 Or run processes separately:
 
 ```bash
 php artisan serve
 php artisan reverb:start
-php artisan queue:work
+php artisan queue:work --queue=broadcasts,default
 npm run dev
 
 ```
@@ -195,7 +195,7 @@ Password-protected Sends require a password of at least **15 characters** (`conf
 
 The repository includes a production-oriented Docker Compose stack (app, queue worker, scheduler, MariaDB, Valkey, optional Cloudflare Tunnel). The Compose service is named `redis`; Laravel connects via the usual `REDIS_*` environment variables.
 
-Reverb runs inside the **app** container (Supervisor). The **queue** service runs `php artisan queue:work` so broadcast jobs are delivered. Configure `REVERB_*` and `VITE_REVERB_*` (or equivalent build-time values) as in `.env.docker.example`.
+Reverb runs inside the **app** container (Supervisor). The **queue** service runs `php artisan queue:work redis --queue=broadcasts,default` so chat broadcasts are processed ahead of other jobs. Configure `REVERB_*` and `VITE_REVERB_*` (or equivalent build-time values) as in `.env.docker.example`.
 
 ```bash
 cp .env.docker.example .env

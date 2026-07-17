@@ -74,7 +74,7 @@ case "$ROLE" in
         ;;
     queue)
         prepare_runtime
-        exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+        exec php artisan queue:work redis --queue=broadcasts,default --sleep=3 --tries=3 --max-time=3600
         ;;
     scheduler)
         prepare_runtime

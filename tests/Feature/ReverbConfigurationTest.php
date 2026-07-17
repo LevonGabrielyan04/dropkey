@@ -3,6 +3,11 @@
 use App\Support\Csp\StrictPolicyPreset;
 use Spatie\Csp\Policy;
 
+it('restricts allowed origins to the application host', function () {
+    expect(config('reverb.apps.apps.0.allowed_origins'))
+        ->toBe([parse_url(config('app.url'), PHP_URL_HOST)]);
+});
+
 it('separates internal broadcast api options from public client options', function () {
     config([
         'broadcasting.default' => 'reverb',

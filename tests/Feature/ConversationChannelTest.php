@@ -1,7 +1,16 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Str;
+
+beforeEach(function () {
+    // Channel callbacks are registered on the default broadcaster at boot
+    // (null in phpunit.xml). Switch to reverb and re-register so auth is real.
+    config(['broadcasting.default' => 'reverb']);
+    Broadcast::forgetDrivers();
+    require base_path('routes/channels.php');
+});
 
 it('authorizes conversation participants to join the private channel', function () {
     $alice = User::factory()->create();
@@ -13,14 +22,16 @@ it('authorizes conversation participants to join the private channel', function 
             'channel_name' => 'private-conversation.'.$conversation->public_key,
             'socket_id' => '1234.5678',
         ])
-        ->assertSuccessful();
+        ->assertSuccessful()
+        ->assertJsonStructure(['auth']);
 
     $this->actingAs($bob)
         ->postJson('/broadcasting/auth', [
             'channel_name' => 'private-conversation.'.$conversation->public_key,
             'socket_id' => '1234.5678',
         ])
-        ->assertSuccessful();
+        ->assertSuccessful()
+        ->assertJsonStructure(['auth']);
 });
 
 it('denies strangers access to the conversation channel', function () {
@@ -48,7 +59,7 @@ it('denies access when the conversation does not exist', function () {
         ->assertForbidden();
 });
 
-it('denies unauthenticated access to the conversation channel', function () {
+it('redirects unauthenticated users away from the conversation channel', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
     $conversation = createConversation($alice, $bob);
@@ -57,5 +68,5 @@ it('denies unauthenticated access to the conversation channel', function () {
         'channel_name' => 'private-conversation.'.$conversation->public_key,
         'socket_id' => '1234.5678',
     ])
-        ->assertForbidden();
+        ->assertRedirect(route('login'));
 });
