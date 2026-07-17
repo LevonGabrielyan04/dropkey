@@ -8,6 +8,16 @@ it('restricts allowed origins to the application host', function () {
         ->toBe([parse_url(config('app.url'), PHP_URL_HOST)]);
 });
 
+it('enables websocket message rate limiting by default', function () {
+    expect(config('reverb.apps.apps.0.rate_limiting'))
+        ->toMatchArray([
+            'enabled' => true,
+            'max_attempts' => 60,
+            'decay_seconds' => 60,
+            'terminate_on_limit' => false,
+        ]);
+});
+
 it('separates internal broadcast api options from public client options', function () {
     config([
         'broadcasting.default' => 'reverb',
