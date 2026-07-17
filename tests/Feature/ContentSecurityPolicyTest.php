@@ -113,6 +113,36 @@ it('allows cloudflare turnstile sources when turnstile is enabled', function () 
     expect(substr_count($policy, 'https://challenges.cloudflare.com'))->toBeGreaterThanOrEqual(3);
 });
 
+it('allows lan dev hosts when running locally', function () {
+    config([
+        'app.url' => 'https://example.test',
+        'app.env' => 'local',
+    ]);
+
+    $policy = Policy::create([StrictPolicyPreset::class])->getContents();
+
+    expect($policy)
+        ->toContain('http://10.29.74.198')
+        ->toContain('https://10.29.74.198')
+        ->toContain('http://10.29.74.198:5173')
+        ->toContain('https://10.29.74.198:5173')
+        ->toContain('https://vite.10.29.74.198:5173')
+        ->toContain('ws://10.29.74.198:5173')
+        ->toContain('wss://10.29.74.198:5173')
+        ->toContain('wss://vite.10.29.74.198:5173');
+});
+
+it('does not allow lan dev hosts outside local and testing environments', function () {
+    config([
+        'app.url' => 'https://example.test',
+        'app.env' => 'production',
+    ]);
+
+    $policy = Policy::create([StrictPolicyPreset::class])->getContents();
+
+    expect($policy)->not->toContain('10.29.74.198');
+});
+
 it('does not allow loopback vite origins when the app url is not loopback', function () {
     config([
         'app.url' => 'https://example.test',

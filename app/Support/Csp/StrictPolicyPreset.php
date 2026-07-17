@@ -57,6 +57,7 @@ class StrictPolicyPreset implements Preset
             ...$this->localDevAppOrigins(),
             ...$this->viteDevOrigins(),
             ...$this->loopbackViteDevOrigins(),
+            ...$this->lanDevOrigins(),
         ]));
     }
 
@@ -102,6 +103,7 @@ class StrictPolicyPreset implements Preset
                 ...$sources,
                 ...$this->viteDevWebSocketOrigins(),
                 ...$this->loopbackViteDevWebSocketOrigins(),
+                ...$this->lanDevWebSocketOrigins(),
             ];
         }
 
@@ -202,6 +204,61 @@ class StrictPolicyPreset implements Preset
     private function viteDevPorts(): array
     {
         return [5173];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lanDevHosts(): array
+    {
+        return ['10.29.74.198'];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lanDevOrigins(): array
+    {
+        if (! in_array(config('app.env'), ['local', 'testing'], true)) {
+            return [];
+        }
+
+        $origins = [];
+
+        foreach ($this->lanDevHosts() as $host) {
+            $origins[] = "http://{$host}";
+            $origins[] = "https://{$host}";
+
+            foreach ($this->viteDevPorts() as $port) {
+                $origins[] = "http://{$host}:{$port}";
+                $origins[] = "https://{$host}:{$port}";
+                $origins[] = "https://vite.{$host}:{$port}";
+            }
+        }
+
+        return $origins;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lanDevWebSocketOrigins(): array
+    {
+        if (! in_array(config('app.env'), ['local', 'testing'], true)) {
+            return [];
+        }
+
+        $origins = [];
+
+        foreach ($this->lanDevHosts() as $host) {
+            foreach ($this->viteDevPorts() as $port) {
+                $origins[] = "ws://{$host}:{$port}";
+                $origins[] = "wss://{$host}:{$port}";
+                $origins[] = "wss://vite.{$host}:{$port}";
+            }
+        }
+
+        return $origins;
     }
 
     /**
