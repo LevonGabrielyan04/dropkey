@@ -10,14 +10,13 @@ function pulseDashboardUrl(): string
     return route('pulse');
 }
 
-it('denies unauthenticated users access to pulse', function () {
+it('redirects unauthenticated users to the login page', function () {
     $this->get(pulseDashboardUrl())
-        ->assertForbidden();
+        ->assertRedirect(route('login'));
 });
 
-it('denies authenticated users with a different email access to pulse', function () {
+it('denies authenticated users without pulse access with 403', function () {
     $user = User::factory()->create([
-        'email' => 'other@example.com',
         'email_verified_at' => now(),
     ]);
 
