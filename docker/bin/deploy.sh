@@ -95,7 +95,13 @@ if ((tunnel_mode)); then
 fi
 
 docker compose "${compose_files[@]}" pull app queue scheduler
-docker compose "${compose_files[@]}" "${compose_profiles[@]}" up -d --remove-orphans
+
+if ! docker compose "${compose_files[@]}" "${compose_profiles[@]}" up -d --remove-orphans; then
+    echo "Compose failed to bring the stack up. Recent app logs:" >&2
+    docker compose "${compose_files[@]}" "${compose_profiles[@]}" logs --tail=200 app >&2 || true
+    docker compose "${compose_files[@]}" "${compose_profiles[@]}" ps -a >&2 || true
+    exit 1
+fi
 
 docker image prune -f --filter "until=24h" >/dev/null 2>&1 || true
 

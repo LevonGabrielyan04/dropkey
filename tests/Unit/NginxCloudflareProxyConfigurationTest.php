@@ -43,6 +43,46 @@ test('docker nginx config passes controlled forwarded headers to php', function 
         ->not->toContain('fastcgi_param REMOTE_ADDR $remote_addr;');
 });
 
+test('docker nginx websocket upgrade map lives inside the http block', function () {
+    $nginxConfig = file_get_contents(base_path('docker/nginx/nginx.conf'));
+
+    expect(preg_match('/^map\s+\$http_upgrade/m', $nginxConfig))->toBe(0);
+
+    expect(preg_match('/http\s*\{[\s\S]*map\s+\$http_upgrade\s+\$connection_upgrade/m', $nginxConfig))
+        ->toBe(1);
+
+    expect($nginxConfig)
+        ->toContain('map $http_upgrade $connection_upgrade')
+        ->toContain("''      close;");
+});
+
+test('docker nginx proxies reverb websocket and api paths', function () {
+    $defaultConfig = file_get_contents(base_path('docker/nginx/default.conf'));
+
+    expect($defaultConfig)
+        ->toContain('location ~ ^/(app|apps) {')
+        ->toContain('proxy_pass http://127.0.0.1:8081;')
+        ->toContain('proxy_set_header Upgrade $http_upgrade;')
+        ->toContain('proxy_set_header Connection $connection_upgrade;');
+});
+
+test('docker supervisor runs reverb server in app container', function () {
+    $supervisorConfig = file_get_contents(base_path('docker/supervisor/supervisord.conf'));
+
+    expect($supervisorConfig)
+        ->toContain('[program:reverb]')
+        ->toContain('command=php artisan reverb:start')
+        ->toContain('user=app');
+});
+
+test('docker compose sets reverb server bind address for app container', function () {
+    $compose = file_get_contents(base_path('docker-compose.yml'));
+
+    expect($compose)
+        ->toContain('REVERB_SERVER_HOST: 0.0.0.0')
+        ->toContain('REVERB_SERVER_PORT: "8081"');
+});
+
 test('docker nginx http block loads cloudflare configuration', function () {
     $nginxConfig = file_get_contents(base_path('docker/nginx/nginx.conf'));
 
