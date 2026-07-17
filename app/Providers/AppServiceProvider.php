@@ -104,9 +104,9 @@ class AppServiceProvider extends ServiceProvider
         Route::pushMiddlewareToGroup('web', 'auth');
 
         $this->app->booted(function (): void {
-            foreach (Route::getRoutes() as $route) {
+            foreach (Route::getRoutes()->getRoutes() as $route) {
                 $usesGuestMiddleware = collect($route->middleware())
-                    ->contains(fn (mixed $middleware): bool => is_string($middleware) && str_starts_with($middleware, 'guest'));
+                    ->contains(fn (string $middleware): bool => str_starts_with($middleware, 'guest'));
 
                 if ($usesGuestMiddleware) {
                     $route->withoutMiddleware(['auth', Authenticate::class]);
