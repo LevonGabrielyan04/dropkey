@@ -12,6 +12,7 @@ use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class ChatMessageService implements ChatMessageServiceInterface
 {
@@ -22,6 +23,12 @@ class ChatMessageService implements ChatMessageServiceInterface
      */
     public function getMessagesForUsers(User $user, User $otherUser, ?string $afterPublicId = null): Collection
     {
+        if ($user->is($otherUser)) {
+            throw ValidationException::withMessages([
+                'user' => __('You cannot fetch messages with yourself.'),
+            ]);
+        }
+
         $conversation = $this->chatMessages->findConversationBetweenUsers($user, $otherUser);
 
         if ($conversation === null) {
@@ -35,6 +42,12 @@ class ChatMessageService implements ChatMessageServiceInterface
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage
     {
+        if ($sender->is($recipient)) {
+            throw ValidationException::withMessages([
+                'recipient_id' => __('You cannot send a message to yourself.'),
+            ]);
+        }
+
         $conversation = $this->authorizeConversation(
             $this->chatMessages->findOrCreateConversation($sender, $recipient),
         );
