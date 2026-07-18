@@ -18,6 +18,11 @@ it('enables websocket message rate limiting by default', function () {
         ]);
 });
 
+it('casts reverb rate limit numeric settings to integers', function () {
+    expect(config('reverb.apps.apps.0.rate_limiting.max_attempts'))->toBeInt()
+        ->and(config('reverb.apps.apps.0.rate_limiting.decay_seconds'))->toBeInt();
+});
+
 it('separates internal broadcast api options from public client options', function () {
     config([
         'broadcasting.default' => 'reverb',
