@@ -205,3 +205,18 @@ test('dockerfile copies nginx rate limit configuration', function () {
 
     expect($dockerfile)->toContain('COPY docker/nginx/rate-limit.conf /etc/nginx/conf.d/rate-limit.conf');
 });
+
+test('dockerfile installs pcntl so reverb signal handling can start', function () {
+    $dockerfile = file_get_contents(base_path('Dockerfile'));
+
+    // reverb:start references SIGINT/SIGTERM/SIGTSTP (pcntl constants).
+    expect($dockerfile)->toContain('pcntl');
+});
+
+test('php cli has unlimited execution time while fpm is capped', function () {
+    $phpIni = file_get_contents(base_path('docker/php/php.ini'));
+    $wwwConf = file_get_contents(base_path('docker/php/www.conf'));
+
+    expect($phpIni)->toContain('max_execution_time = 0');
+    expect($wwwConf)->toContain('php_admin_value[max_execution_time] = 60');
+});

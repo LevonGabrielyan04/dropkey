@@ -82,6 +82,7 @@ RUN apk add --no-cache \
         bcmath \
         intl \
         mbstring \
+        pcntl \
         pdo_mysql \
         zip \
     && pecl install redis-6.3.0 \
