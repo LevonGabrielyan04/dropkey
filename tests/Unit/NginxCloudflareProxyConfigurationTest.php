@@ -70,8 +70,12 @@ test('docker supervisor runs reverb server in app container', function () {
     $supervisorConfig = file_get_contents(base_path('docker/supervisor/supervisord.conf'));
 
     expect($supervisorConfig)
+        ->toContain('[unix_http_server]')
+        ->toContain('file=/dev/shm/supervisor.sock')
+        ->toContain('[supervisorctl]')
+        ->toContain('serverurl=unix:///dev/shm/supervisor.sock')
         ->toContain('[program:reverb]')
-        ->toContain('command=php artisan reverb:start')
+        ->toContain('command=php artisan reverb:start --host=0.0.0.0 --port=8081')
         ->toContain('user=app');
 });
 
