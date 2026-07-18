@@ -8,6 +8,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -26,7 +27,7 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->registrationPasswordRules(),
         ])->validate();
 
-        $email = filled($input['email'] ?? null) ? $input['email'] : null;
+        $email = filled($input['email'] ?? null) ? Str::lower($input['email']) : null;
 
         $user = User::create([
             'name' => $input['name'],

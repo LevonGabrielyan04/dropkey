@@ -52,23 +52,23 @@
             </div>
 
             <div class="border-b-2 border-zinc-950 bg-white p-6 dark:border-zinc-100 dark:bg-zinc-950">
-                <label for="email" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                <label for="name" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
                     {{ __('Email or nickname') }}
                 </label>
 
                 <input
                     type="text"
-                    id="email"
-                    name="email"
-                    value="{{ old('email') }}"
+                    id="name"
+                    name="name"
+                    value="{{ old('name') }}"
                     placeholder="{{ __('Email or nickname') }}"
                     required
                     autofocus
                     autocomplete="username"
-                    class="mt-2 block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50 @error('email') border-red-600 @enderror"
+                    class="mt-2 block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50 @error('name') border-red-600 @enderror"
                 />
 
-                @error('email')
+                @error('name')
                     <span class="mt-2 block text-sm text-red-600">{{ $message }}</span>
                 @enderror
             </div>

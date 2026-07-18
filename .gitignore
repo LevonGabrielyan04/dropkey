@@ -24,3 +24,4 @@ yarn-error.log
 /.zed
 /.ai/mcp/mcp.json
 /draft.txt
+/start-dev.sh

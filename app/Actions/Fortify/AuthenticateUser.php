@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
 
 class AuthenticateUser
@@ -29,10 +30,13 @@ class AuthenticateUser
      */
     private function findUser(string $login): ?User
     {
-        if (str_contains($login, '@')) {
-            return User::query()->where('email', $login)->first();
-        }
+        $normalizedLogin = Str::lower($login);
 
-        return User::query()->whereRaw('LOWER(name) = ?', [$login])->first();
+        return User::query()
+            ->where(function ($query) use ($normalizedLogin): void {
+                $query->where('email', $normalizedLogin)
+                    ->orWhereRaw('LOWER(name) = ?', [$normalizedLogin]);
+            })
+            ->first();
     }
 }
