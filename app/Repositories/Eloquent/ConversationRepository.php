@@ -29,6 +29,12 @@ class ConversationRepository implements ConversationRepositoryInterface
                 'userTwo',
                 'messages' => fn ($query) => $query->latest('id')->limit(1),
             ])
+            ->withCount([
+                'messages as unread_messages_count' => function ($query) use ($user): void {
+                    $query->where('sender_id', '!=', $user->id)
+                        ->where('is_viewed', false);
+                },
+            ])
             ->latest('id')
             ->get();
     }

@@ -54,3 +54,30 @@ it('eager loads participants and the latest message', function () {
         ->and($result->relationLoaded('messages'))->toBeTrue()
         ->and($result->messages)->toHaveCount(1);
 });
+
+it('counts unread messages from the other participant', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $repository = app(ConversationRepositoryInterface::class);
+    $conversation = createConversation($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $bob->id,
+        'payload' => fakeChatPayload(),
+    ]);
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $bob->id,
+        'payload' => fakeChatPayload(),
+    ])->forceFill(['is_viewed' => true])->save();
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $result = $repository->getConversationsForUser($alice)->sole();
+
+    expect($result->unread_messages_count)->toBe(1);
+});
