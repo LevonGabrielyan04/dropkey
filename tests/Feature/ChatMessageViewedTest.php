@@ -1,9 +1,11 @@
 <?php
 
+use App\Events\ChatMessagesViewedBroadcast;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
+use Illuminate\Support\Facades\Event;
 
 it('defaults new chat messages to not viewed', function () {
     $alice = User::factory()->create();
@@ -17,6 +19,32 @@ it('defaults new chat messages to not viewed', function () {
     ]);
 
     expect($message->fresh()->is_viewed)->toBeFalse();
+});
+
+it('exposes is_viewed on polled messages before and after the recipient reads them', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $this->actingAs($alice)
+        ->getJson(route('messages.index', $bob))
+        ->assertSuccessful()
+        ->assertJsonPath('messages.0.is_viewed', false);
+
+    $this->actingAs($bob)
+        ->getJson(route('messages.index', $alice))
+        ->assertSuccessful();
+
+    $this->actingAs($alice)
+        ->getJson(route('messages.index', $bob))
+        ->assertSuccessful()
+        ->assertJsonPath('messages.0.is_viewed', true);
 });
 
 it('marks the opposite users messages as viewed when fetching messages', function () {
@@ -67,8 +95,31 @@ it('marks only unviewed messages from the opposite user via the repository', fun
 
     $updated = $repository->markMessagesAsViewed($conversation, $alice);
 
-    expect($updated)->toBe(1)
+    expect($updated)->toBe([$unviewed->public_id])
         ->and($unviewed->fresh()->is_viewed)->toBeTrue()
         ->and($alreadyViewed->fresh()->is_viewed)->toBeTrue()
         ->and($fromBob->fresh()->is_viewed)->toBeFalse();
+});
+
+it('broadcasts read receipts when the recipient fetches messages', function () {
+    Event::fake([ChatMessagesViewedBroadcast::class]);
+
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+
+    $message = ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $this->actingAs($bob)
+        ->getJson(route('messages.index', $alice))
+        ->assertSuccessful();
+
+    Event::assertDispatched(ChatMessagesViewedBroadcast::class, function (ChatMessagesViewedBroadcast $event) use ($conversation, $message) {
+        return $event->conversation->is($conversation)
+            && $event->broadcastWith() === ['public_ids' => [$message->public_id]];
+    });
 });

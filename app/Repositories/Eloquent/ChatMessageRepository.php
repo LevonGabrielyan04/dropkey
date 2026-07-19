@@ -72,12 +72,25 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
             ->get(ChatMessageColumns::COLUMNS);
     }
 
-    public function markMessagesAsViewed(Conversation $conversation, User $sender): int
+    /**
+     * {@inheritDoc}
+     */
+    public function markMessagesAsViewed(Conversation $conversation, User $sender): array
     {
-        return $conversation->messages()
+        $messages = $conversation->messages()
             ->where('sender_id', $sender->id)
             ->where('is_viewed', false)
+            ->get(['id', 'public_id']);
+
+        if ($messages->isEmpty()) {
+            return [];
+        }
+
+        $conversation->messages()
+            ->whereIn('id', $messages->modelKeys())
             ->update(['is_viewed' => true]);
+
+        return $messages->pluck('public_id')->values()->all();
     }
 
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage

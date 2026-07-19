@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 class ChatMessageResource extends JsonResource
 {
     /**
-     * @return array{public_id: string, sender: ChatMessageSenderResource, payload: string, created_at: Carbon}
+     * @return array{public_id: string, sender: ChatMessageSenderResource, payload: string, is_viewed: bool, created_at: Carbon}
      */
     public function toArray(Request $request): array
     {
@@ -23,6 +23,7 @@ class ChatMessageResource extends JsonResource
             'public_id' => $this->public_id,
             'sender' => ChatMessageSenderResource::make($this->whenLoaded('sender')),
             'payload' => $this->payload,
+            'is_viewed' => $this->is_viewed,
             'created_at' => $this->created_at,
         ];
     }

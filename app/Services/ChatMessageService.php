@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\ChatMessageSent;
+use App\Events\ChatMessagesViewedBroadcast;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
@@ -38,11 +39,20 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         $this->authorizeConversation($conversation);
 
-        return DB::transaction(function () use ($conversation, $otherUser, $afterPublicId) {
-            $this->chatMessages->markMessagesAsViewed($conversation, $otherUser);
+        /** @var list<string> $viewedPublicIds */
+        $viewedPublicIds = [];
+
+        $messages = DB::transaction(function () use ($conversation, $otherUser, $afterPublicId, &$viewedPublicIds) {
+            $viewedPublicIds = $this->chatMessages->markMessagesAsViewed($conversation, $otherUser);
 
             return $this->chatMessages->getMessagesForConversation($conversation, $afterPublicId);
         });
+
+        if ($viewedPublicIds !== []) {
+            broadcast(new ChatMessagesViewedBroadcast($conversation, $viewedPublicIds));
+        }
+
+        return $messages;
     }
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage

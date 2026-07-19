@@ -11,6 +11,7 @@ vi.mock('./cryptography/e2ee/session.js', () => ({
 
 import {
     DEFAULT_AUTO_DELETE,
+    applyMessageViewedReceipts,
     hasPartnerSessionChanged,
     redecryptStoredMessages,
     resolveChatMessageContent,
@@ -20,6 +21,33 @@ import {
 describe('DEFAULT_AUTO_DELETE', () => {
     it('defaults to seven days', () => {
         expect(DEFAULT_AUTO_DELETE).toBe('7 days');
+    });
+});
+
+describe('applyMessageViewedReceipts', () => {
+    it('marks matching messages as viewed', () => {
+        const messages = [
+            { publicId: 'msg-1', isViewed: false },
+            { publicId: 'msg-2', isViewed: false },
+            { publicId: 'msg-3', isViewed: false },
+        ];
+
+        applyMessageViewedReceipts(messages, ['msg-1', 'msg-3']);
+
+        expect(messages).toEqual([
+            { publicId: 'msg-1', isViewed: true },
+            { publicId: 'msg-2', isViewed: false },
+            { publicId: 'msg-3', isViewed: true },
+        ]);
+    });
+
+    it('ignores empty or invalid public id payloads', () => {
+        const messages = [{ publicId: 'msg-1', isViewed: false }];
+
+        applyMessageViewedReceipts(messages, []);
+        applyMessageViewedReceipts(messages, null);
+
+        expect(messages[0].isViewed).toBe(false);
     });
 });
 

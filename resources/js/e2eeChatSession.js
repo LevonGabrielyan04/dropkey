@@ -92,6 +92,24 @@ export async function resolveIncomingMessageContent(
 }
 
 /**
+ * @param {Array<{ publicId: string, isViewed?: boolean }>} messages
+ * @param {unknown} publicIds
+ */
+export function applyMessageViewedReceipts(messages, publicIds) {
+    if (! Array.isArray(publicIds) || publicIds.length === 0) {
+        return;
+    }
+
+    const viewedIds = new Set(publicIds);
+
+    for (const message of messages) {
+        if (viewedIds.has(message.publicId)) {
+            message.isViewed = true;
+        }
+    }
+}
+
+/**
  * Alpine component for a 1v1 E2EE chat session.
  * All crypto runs in the browser via Web Crypto; the server relays ciphertext only.
  */
@@ -110,6 +128,7 @@ document.addEventListener('alpine:init', () => {
         lastMessagePublicId: '',
         conversationPublicKey: '',
         conversationChannel: null,
+        receiptsChannel: null,
         localUserId: 0,
         localUserPublicId: '',
         recipientId: 0,
@@ -150,6 +169,7 @@ document.addEventListener('alpine:init', () => {
 
         destroy() {
             this.leaveConversationChannel();
+            this.leaveReceiptsChannel();
         },
 
         async bootstrap() {
@@ -172,6 +192,7 @@ document.addEventListener('alpine:init', () => {
 
                 await this.fetchMessages();
                 this.subscribeToConversation();
+                this.subscribeToReceipts();
                 this.ready = true;
             } catch {
                 this.error = 'Unable to establish an encrypted session. Ensure your partner has opened Messages at least once.';
@@ -249,6 +270,8 @@ document.addEventListener('alpine:init', () => {
             const existing = this.messages.find((item) => item.publicId === message.public_id);
 
             if (existing) {
+                existing.isViewed = Boolean(message.is_viewed);
+
                 if (existing.decryptionError) {
                     const resolved = await resolveChatMessageContent(
                         message.payload,
@@ -282,6 +305,7 @@ document.addEventListener('alpine:init', () => {
                 decryptionError,
                 createdAt: message.created_at,
                 isMine: message.sender.public_id === this.localUserPublicId,
+                isViewed: Boolean(message.is_viewed),
             });
 
             this.sortMessages();
@@ -325,6 +349,36 @@ document.addEventListener('alpine:init', () => {
 
             window.Echo.leave(`conversation.${this.conversationPublicKey}`);
             this.conversationChannel = null;
+        },
+
+        subscribeToReceipts() {
+            if (! this.conversationPublicKey || ! window.Echo) {
+                return;
+            }
+
+            this.leaveReceiptsChannel();
+
+            this.receiptsChannel = window.Echo
+                .private(`conversation.${this.conversationPublicKey}.receipts`)
+                .listen('.ChatMessagesViewed', (event) => {
+                    this.markMessagesAsViewed(event.public_ids);
+                });
+        },
+
+        leaveReceiptsChannel() {
+            if (! this.conversationPublicKey || ! window.Echo) {
+                return;
+            }
+
+            window.Echo.leave(`conversation.${this.conversationPublicKey}.receipts`);
+            this.receiptsChannel = null;
+        },
+
+        /**
+         * @param {unknown} publicIds
+         */
+        markMessagesAsViewed(publicIds) {
+            applyMessageViewedReceipts(this.messages, publicIds);
         },
 
         async updateAutoDelete() {
@@ -405,6 +459,7 @@ document.addEventListener('alpine:init', () => {
                     this.conversationPublicKey = created.conversation_public_key;
                     this.$el.dataset.conversationPublicKey = this.conversationPublicKey;
                     this.subscribeToConversation();
+                    this.subscribeToReceipts();
                 }
 
                 this.messages.push({
@@ -414,6 +469,7 @@ document.addEventListener('alpine:init', () => {
                     decryptionError: '',
                     createdAt: created.created_at,
                     isMine: true,
+                    isViewed: Boolean(created.is_viewed),
                 });
 
                 this.lastMessagePublicId = created.public_id;

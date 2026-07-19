@@ -22,8 +22,10 @@ interface ChatMessageRepositoryInterface
 
     /**
      * Mark unviewed messages from the given sender as viewed.
+     *
+     * @return list<string> Public IDs of messages newly marked as viewed
      */
-    public function markMessagesAsViewed(Conversation $conversation, User $sender): int;
+    public function markMessagesAsViewed(Conversation $conversation, User $sender): array;
 
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
 

@@ -45,6 +45,9 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee('id="auto-delete"', false)
         ->assertSee('data-auto-delete="'.TimePeriod::SEVEN_DAYS->value.'"', false)
         ->assertSee('message.decryptionError', false)
+        ->assertSee('message.isMine', false)
+        ->assertSee('x-show="message.isMine"', false)
+        ->assertSee('message.isViewed', false)
         ->assertDontSee('${partnerFingerprint}', false);
 });
 

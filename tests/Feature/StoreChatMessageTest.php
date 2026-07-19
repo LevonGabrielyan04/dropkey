@@ -86,7 +86,8 @@ it('returns encrypted messages for conversation participants', function () {
         ->getJson(route('messages.index', $alice))
         ->assertSuccessful()
         ->assertJsonCount(1, 'messages')
-        ->assertJsonPath('messages.0.payload', $payload);
+        ->assertJsonPath('messages.0.payload', $payload)
+        ->assertJsonPath('messages.0.is_viewed', true);
 });
 
 it('returns not found when polling messages with yourself', function () {
@@ -113,7 +114,7 @@ it('does not expose internal message ids when polling', function () {
         ->assertSuccessful()
         ->assertJsonStructure([
             'messages' => [
-                ['public_id', 'sender', 'payload', 'created_at'],
+                ['public_id', 'sender', 'payload', 'is_viewed', 'created_at'],
             ],
         ]);
 

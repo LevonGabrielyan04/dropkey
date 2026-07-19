@@ -31,6 +31,7 @@ it('resolves the chat message resource from the model', function () {
         'public_id' => $message->public_id,
         'sender' => ['public_id' => $alice->public_key],
         'payload' => $payload,
+        'is_viewed' => false,
     ])->and($resource)->not->toHaveKey('sender_id')
         ->and($resource)->not->toHaveKey('id');
 });
@@ -81,6 +82,7 @@ it('resolves the stored chat message resource for create responses', function ()
     expect($resource)->toMatchArray([
         'public_id' => $message->public_id,
         'conversation_public_key' => $conversation->public_key,
+        'is_viewed' => false,
         'created_at' => $message->created_at?->toJSON(),
     ])->and($resource)->not->toHaveKey('payload')
         ->and($resource)->not->toHaveKey('sender');

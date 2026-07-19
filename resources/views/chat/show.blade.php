@@ -118,10 +118,37 @@
                         class="whitespace-pre-wrap break-words"
                         x-text="message.decryptionError"
                     ></p>
-                    <p
-                        class="mt-1 text-[10px] uppercase tracking-[0.14em] text-zinc-500"
-                        x-text="message.isMine ? '{{ __('You') }}' : '{{ $recipient->name }}'"
-                    ></p>
+                    <div class="mt-1 flex items-center justify-between gap-2">
+                        <p
+                            class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
+                            x-text="message.isMine ? '{{ __('You') }}' : '{{ $recipient->name }}'"
+                        ></p>
+                        <span
+                            x-show="message.isMine"
+                            class="inline-flex shrink-0"
+                            :class="message.isViewed
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-zinc-400 dark:text-zinc-500'"
+                            :title="message.isViewed ? '{{ __('Viewed') }}' : '{{ __('Sent') }}'"
+                            :aria-label="message.isViewed ? '{{ __('Viewed') }}' : '{{ __('Sent') }}'"
+                        >
+                            {{-- Lucide check-check --}}
+                            <svg
+                                class="size-3.5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M18 6 7 17l-5-5" />
+                                <path d="m22 10-7.5 7.5L13 16" />
+                            </svg>
+                        </span>
+                    </div>
                 </article>
             </template>
         </div>

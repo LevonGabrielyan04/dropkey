@@ -17,7 +17,7 @@ class StoredChatMessageResource extends JsonResource
     public static $wrap = null;
 
     /**
-     * @return array{public_id: string, conversation_public_key: string|null, created_at: Carbon|null}
+     * @return array{public_id: string, conversation_public_key: string|null, is_viewed: bool, created_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {
@@ -27,6 +27,7 @@ class StoredChatMessageResource extends JsonResource
                 'conversation',
                 fn (): string => $this->conversation->public_key,
             ),
+            'is_viewed' => $this->is_viewed,
             'created_at' => $this->created_at,
         ];
     }
