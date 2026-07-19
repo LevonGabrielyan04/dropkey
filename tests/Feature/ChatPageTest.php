@@ -18,6 +18,7 @@ it('renders the chat inbox with the start conversation form', function () {
         ->assertSee('data-chat-base-url', false)
         ->assertSee('e2eeChatInbox', false)
         ->assertSee(__('Start a conversation'))
+        ->assertSee(__('Recipient public ID'))
         ->assertSee(__('Open channel'));
 });
 
@@ -90,14 +91,18 @@ it('lists existing conversations on the inbox page', function () {
         ->assertSee(route('chat.show', $bob), false);
 });
 
-it('resolves chat routes by user name instead of numeric id', function () {
+it('resolves chat routes by public id instead of name or numeric id', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();
 
     $this->actingAs($alice)
-        ->get('/chat/'.$bob->name)
+        ->get('/chat/'.$bob->public_key)
         ->assertSuccessful()
         ->assertSee($bob->name);
+
+    $this->actingAs($alice)
+        ->get('/chat/'.$bob->name)
+        ->assertNotFound();
 
     $this->actingAs($alice)
         ->get('/chat/'.$bob->id)

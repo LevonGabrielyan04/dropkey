@@ -485,7 +485,7 @@ document.addEventListener('alpine:init', () => {
     }));
 
     Alpine.data('e2eeChatInbox', () => ({
-        username: '',
+        publicId: '',
         error: '',
 
         init() {
@@ -494,23 +494,21 @@ document.addEventListener('alpine:init', () => {
 
         startChat() {
             this.error = '';
-            const name = this.username.trim().replace(/,/g, '');
+            const publicId = this.publicId.trim().toLowerCase();
 
-            if (! name) {
+            if (! publicId) {
                 return;
             }
 
-            if (name.length > 255) {
-                this.error = 'User name must be 255 characters or fewer.';
+            if (! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(publicId)) {
+                this.error = 'Enter a valid public ID.';
                 return;
             }
-
-            const segment = encodeURIComponent(name);
 
             if (window.Livewire?.navigate) {
-                window.Livewire.navigate(`${this.chatBaseUrl}/${segment}`);
+                window.Livewire.navigate(`${this.chatBaseUrl}/${publicId}`);
             } else {
-                window.location.href = `${this.chatBaseUrl}/${segment}`;
+                window.location.href = `${this.chatBaseUrl}/${publicId}`;
             }
         },
     }));
