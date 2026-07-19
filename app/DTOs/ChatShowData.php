@@ -51,7 +51,11 @@ class ChatShowData
 
     private function calculateAutoDelete(): TimePeriod
     {
-        return $this->conversation?->auto_delete ?? TimePeriod::SEVEN_DAYS;
+        if ($this->conversation === null) {
+            return TimePeriod::SEVEN_DAYS;
+        }
+
+        return $this->conversation->auto_delete;
     }
 
     /**
