@@ -175,6 +175,7 @@ document.addEventListener('alpine:init', () => {
         csrfToken: '',
         messagesUrl: '',
         sendUrl: '',
+        messageViewedUrlTemplate: '',
         registerUrl: '',
         mineUrl: '',
         publicKeyUrl: '',
@@ -197,6 +198,7 @@ document.addEventListener('alpine:init', () => {
             this.csrfToken = this.$el.dataset.csrfToken ?? '';
             this.messagesUrl = this.$el.dataset.messagesUrl ?? '';
             this.sendUrl = this.$el.dataset.sendUrl ?? '';
+            this.messageViewedUrlTemplate = this.$el.dataset.messageViewedUrlTemplate ?? '';
             this.registerUrl = this.$el.dataset.registerUrl ?? '';
             this.mineUrl = this.$el.dataset.mineUrl ?? '';
             this.publicKeyUrl = this.$el.dataset.publicKeyUrl ?? '';
@@ -329,6 +331,8 @@ document.addEventListener('alpine:init', () => {
                     existing.payload = message.payload;
                 }
 
+                this.acknowledgeMessageViewed(message);
+
                 return;
             }
 
@@ -352,6 +356,35 @@ document.addEventListener('alpine:init', () => {
 
             this.sortMessages();
             this.scrollToBottom();
+            this.acknowledgeMessageViewed(message);
+        },
+
+        /**
+         * @param {{ public_id?: unknown, sender?: { public_id?: unknown }, is_viewed?: unknown }} message
+         */
+        acknowledgeMessageViewed(message) {
+            if (
+                ! this.messageViewedUrlTemplate
+                || ! message?.public_id
+                || message.sender?.public_id === this.localUserPublicId
+                || Boolean(message.is_viewed)
+            ) {
+                return;
+            }
+
+            const url = this.messageViewedUrlTemplate.replace(
+                '__PUBLIC_ID__',
+                encodeURIComponent(String(message.public_id)),
+            );
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                credentials: 'same-origin',
+            }).catch(() => {});
         },
 
         sortMessages() {

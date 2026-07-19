@@ -16,4 +16,6 @@ interface ChatMessageServiceInterface
     public function getMessagesForUsers(User $user, User $otherUser, ?string $afterPublicId = null): Collection;
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage;
+
+    public function markMessageAsViewed(User $viewer, ChatMessage $message): void;
 }

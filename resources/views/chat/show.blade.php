@@ -11,6 +11,7 @@
         data-mine-url="{{ route('api.identity.public-key.mine') }}"
         data-messages-url="{{ route('messages.index', $recipient) }}"
         data-send-url="{{ route('messages.store') }}"
+        data-message-viewed-url-template="{{ route('messages.viewed', ['message' => '__PUBLIC_ID__']) }}"
         data-conversation-public-key="{{ $conversation?->public_key ?? '' }}"
         data-decryption-failed-message="{{ __('Unable to decrypt this message.') }}"
         data-auto-delete="{{ $autoDelete->value }}"

@@ -101,6 +101,19 @@ it('marks only unviewed messages from the opposite user via the repository', fun
         ->and($fromBob->fresh()->is_viewed)->toBeFalse();
 });
 
+it('marks a single unviewed message via the repository', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+    $conversation = createConversation($alice, $bob);
+    $repository = app(ChatMessageRepositoryInterface::class);
+
+    $message = $repository->createMessage($conversation, $alice, fakeChatPayload());
+
+    expect($repository->markMessageAsViewed($message))->toBe($message->public_id)
+        ->and($message->fresh()->is_viewed)->toBeTrue()
+        ->and($repository->markMessageAsViewed($message->fresh()))->toBeNull();
+});
+
 it('broadcasts read receipts when the recipient fetches messages', function () {
     Event::fake([ChatMessagesViewedBroadcast::class]);
 

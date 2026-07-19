@@ -27,6 +27,13 @@ interface ChatMessageRepositoryInterface
      */
     public function markMessagesAsViewed(Conversation $conversation, User $sender): array;
 
+    /**
+     * Mark a single unviewed message as viewed.
+     *
+     * @return string|null Public ID when newly marked, otherwise null
+     */
+    public function markMessageAsViewed(ChatMessage $message): ?string;
+
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
 
     public function deleteExpired(): int;

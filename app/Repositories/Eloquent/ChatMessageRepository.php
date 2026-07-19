@@ -95,6 +95,29 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
             ->all());
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function markMessageAsViewed(ChatMessage $message): ?string
+    {
+        if ($message->is_viewed) {
+            return null;
+        }
+
+        $updated = $this->model->query()
+            ->whereKey($message->getKey())
+            ->where('is_viewed', false)
+            ->update(['is_viewed' => true]);
+
+        if ($updated === 0) {
+            return null;
+        }
+
+        $message->forceFill(['is_viewed' => true]);
+
+        return $message->public_id;
+    }
+
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage
     {
         return $conversation->messages()->create([

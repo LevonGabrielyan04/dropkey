@@ -3,6 +3,7 @@
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\IdentityKeyController;
+use App\Http\Controllers\MarkChatMessageAsViewedController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SendController;
@@ -35,6 +36,9 @@ Route::middleware(['throttle:60,1', 'verified'])->group(function () {
         Route::post('/messages', [MessageController::class, 'store'])
             ->middleware('throttle:chat-write')
             ->name('messages.store');
+        Route::post('/messages/{message}/viewed', MarkChatMessageAsViewedController::class)
+            ->middleware(['throttle:chat-write', 'can:markChatMessageAsViewed,message'])
+            ->name('messages.viewed');
         Route::patch('/conversations/{user}/auto-delete', [ConversationController::class, 'updateAutoDelete'])
             ->middleware(['throttle:chat-write', 'not-self'])
             ->name('conversations.auto-delete.update');

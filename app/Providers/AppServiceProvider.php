@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Interfaces\PreparesSendPivotData;
 use App\Actions\PrepareSendPivotDataAction;
+use App\Gates\MarkChatMessageAsViewed;
 use App\Models\User;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Eloquent\ChatMessageRepository;
@@ -92,6 +93,8 @@ class AppServiceProvider extends ServiceProvider
             return ! is_null($user->email_verified_at)
                 && $user->email === config('pulse.admin_email');
         });
+
+        Gate::define('markChatMessageAsViewed', MarkChatMessageAsViewed::class);
     }
 
     /**

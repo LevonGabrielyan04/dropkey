@@ -38,6 +38,8 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee(route('api.users.public-key.show', $bob), false)
         ->assertSee(route('messages.index', $bob), false)
         ->assertSee(route('messages.store'), false)
+        ->assertSee('data-message-viewed-url-template', false)
+        ->assertSee(route('messages.viewed', ['message' => '__PUBLIC_ID__']), false)
         ->assertSee('data-conversation-public-key=""', false)
         ->assertDontSee('data-poll-interval-ms', false)
         ->assertSee($bob->name)

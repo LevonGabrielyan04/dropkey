@@ -78,6 +78,19 @@ class ChatMessageService implements ChatMessageServiceInterface
         return $message;
     }
 
+    public function markMessageAsViewed(User $viewer, ChatMessage $message): void
+    {
+        $message->loadMissing('conversation');
+
+        Gate::forUser($viewer)->authorize('markChatMessageAsViewed', $message);
+
+        $viewedPublicId = $this->chatMessages->markMessageAsViewed($message);
+
+        if ($viewedPublicId !== null) {
+            broadcast(new ChatMessagesViewedBroadcast($message->conversation, [$viewedPublicId]));
+        }
+    }
+
     private function authorizeConversation(Conversation $conversation): Conversation
     {
         Gate::authorize('view', $conversation);
