@@ -41,6 +41,7 @@ it('rejects fetching messages when both users are the same person', function () 
     $user = User::factory()->make(['id' => 1]);
     $repository = Mockery::mock(ChatMessageRepositoryInterface::class);
     $repository->shouldNotReceive('findConversationBetweenUsers');
+    $repository->shouldNotReceive('markMessagesAsViewed');
     $repository->shouldNotReceive('getMessagesForConversation');
 
     $service = new ChatMessageService($repository);

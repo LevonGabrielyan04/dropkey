@@ -20,6 +20,11 @@ interface ChatMessageRepositoryInterface
      */
     public function getMessagesForConversation(Conversation $conversation, ?string $afterPublicId = null): Collection;
 
+    /**
+     * Mark unviewed messages from the given sender as viewed.
+     */
+    public function markMessagesAsViewed(Conversation $conversation, User $sender): int;
+
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage;
 
     public function deleteExpired(): int;

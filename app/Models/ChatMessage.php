@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
  * @property int $conversation_id
  * @property int $sender_id
  * @property string $payload
+ * @property bool $is_viewed
  * @property Carbon $created_at
  */
 #[Fillable(['conversation_id', 'sender_id', 'payload'])]
@@ -35,6 +36,13 @@ class ChatMessage extends Model
     public const UPDATED_AT = null;
 
     /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_viewed' => false,
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -43,6 +51,7 @@ class ChatMessage extends Model
             'created_at' => 'datetime',
             'public_id' => AsBinary::uuid(),
             'payload' => 'encrypted',
+            'is_viewed' => 'boolean',
         ];
     }
 

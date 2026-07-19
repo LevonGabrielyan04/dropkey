@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Services\Interfaces\ChatMessageServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -37,7 +38,11 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         $this->authorizeConversation($conversation);
 
-        return $this->chatMessages->getMessagesForConversation($conversation, $afterPublicId);
+        return DB::transaction(function () use ($conversation, $otherUser, $afterPublicId) {
+            $this->chatMessages->markMessagesAsViewed($conversation, $otherUser);
+
+            return $this->chatMessages->getMessagesForConversation($conversation, $afterPublicId);
+        });
     }
 
     public function storeMessage(User $sender, User $recipient, string $payload): ChatMessage
