@@ -91,6 +91,52 @@ it('lists existing conversations on the inbox page', function () {
         ->assertSee(route('chat.show', $bob), false);
 });
 
+it('shows the unread message count for conversations on the inbox page', function () {
+    $alice = User::factory()->create(['name' => 'Alice Chat']);
+    $bob = User::factory()->create(['name' => 'Bob Chat']);
+    $conversation = createConversation($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $bob->id,
+        'payload' => fakeChatPayload(),
+    ]);
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $bob->id,
+        'payload' => fakeChatPayload(),
+    ]);
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $alice->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    $this->actingAs($alice)
+        ->get(route('chat.index'))
+        ->assertSuccessful()
+        ->assertSee('Bob Chat')
+        ->assertSee('aria-label="2 unread messages"', false);
+});
+
+it('hides the unread message count when a conversation has no unread messages', function () {
+    $alice = User::factory()->create(['name' => 'Alice Chat']);
+    $bob = User::factory()->create(['name' => 'Bob Chat']);
+    $conversation = createConversation($alice, $bob);
+
+    ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $bob->id,
+        'payload' => fakeChatPayload(),
+    ])->forceFill(['is_viewed' => true])->save();
+
+    $this->actingAs($alice)
+        ->get(route('chat.index'))
+        ->assertSuccessful()
+        ->assertSee('Bob Chat')
+        ->assertDontSee('unread message', false);
+});
+
 it('resolves chat routes by public id instead of name or numeric id', function () {
     $alice = User::factory()->create();
     $bob = User::factory()->create();

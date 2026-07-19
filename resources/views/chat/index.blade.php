@@ -76,20 +76,31 @@
                             <a
                                 href="{{ route('chat.show', $partner) }}"
                                 wire:navigate
-                                class="flex items-center justify-between px-6 py-4 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                                class="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900"
                             >
                                 <span class="text-sm font-bold uppercase tracking-[0.16em] text-zinc-950 dark:text-zinc-50">
                                     {{ $partner->name }}
                                 </span>
 
-                                @if ($conversation->messages->isNotEmpty())
-                                    <span
-                                        x-data="localDatetime"
-                                        data-utc-datetime="{{ $conversation->messages->first()->created_at->utc()->toIso8601String() }}"
-                                        x-text="formatted"
-                                        class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
-                                    ></span>
-                                @endif
+                                <span class="flex shrink-0 items-center gap-3">
+                                    @if ($conversation->unread_messages_count > 0)
+                                        <span
+                                            class="inline-flex min-w-6 items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950 dark:border-zinc-100"
+                                            aria-label="{{ trans_choice(':count unread message|:count unread messages', $conversation->unread_messages_count, ['count' => $conversation->unread_messages_count]) }}"
+                                        >
+                                            {{ $conversation->unread_messages_count }}
+                                        </span>
+                                    @endif
+
+                                    @if ($conversation->messages->isNotEmpty())
+                                        <span
+                                            x-data="localDatetime"
+                                            data-utc-datetime="{{ $conversation->messages->first()->created_at->utc()->toIso8601String() }}"
+                                            x-text="formatted"
+                                            class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
+                                        ></span>
+                                    @endif
+                                </span>
                             </a>
                         </li>
                     @endforeach
