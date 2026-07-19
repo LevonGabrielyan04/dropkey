@@ -6,8 +6,9 @@ namespace App\Listeners;
 
 use App\Events\ChatMessageSent;
 use App\Notifications\NewChatMessageNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class NotifyRecipientOfNewChatMessage
+class NotifyRecipientOfNewChatMessage implements ShouldQueue
 {
     public function handle(ChatMessageSent $event): void
     {

@@ -5,8 +5,11 @@ use App\Listeners\NotifyRecipientOfNewChatMessage;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Notifications\NewChatMessageNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 it('is registered to listen for ChatMessageSent', function () {
     Event::fake();
@@ -15,6 +18,30 @@ it('is registered to listen for ChatMessageSent', function () {
         ChatMessageSent::class,
         NotifyRecipientOfNewChatMessage::class,
     );
+});
+
+it('implements ShouldQueue', function () {
+    expect(new NotifyRecipientOfNewChatMessage)->toBeInstanceOf(ShouldQueue::class);
+});
+
+it('is queued when ChatMessageSent is dispatched', function () {
+    Queue::fake();
+
+    $sender = User::factory()->create();
+    $recipient = User::factory()->create();
+    $conversation = createConversation($sender, $recipient);
+
+    $message = ChatMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $sender->id,
+        'payload' => fakeChatPayload(),
+    ]);
+
+    ChatMessageSent::dispatch($message, $sender, $recipient);
+
+    Queue::assertPushed(CallQueuedListener::class, function (CallQueuedListener $job) {
+        return $job->class === NotifyRecipientOfNewChatMessage::class;
+    });
 });
 
 it('notifies the recipient when they have a push subscription', function () {
