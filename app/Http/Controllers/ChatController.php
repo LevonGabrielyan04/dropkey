@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\TimePeriod;
+use App\DTOs\ChatShowData;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Repositories\Interfaces\ConversationRepositoryInterface;
@@ -31,11 +31,6 @@ class ChatController extends Controller
 
         $conversation = $this->chatMessages->findConversationBetweenUsers(auth()->user(), $user);
 
-        return view('chat.show', [
-            'recipient' => $user,
-            'conversation' => $conversation,
-            'autoDelete' => $conversation->auto_delete ?? TimePeriod::SEVEN_DAYS,
-            'timePeriods' => TimePeriod::cases(),
-        ]);
+        return view('chat.show', ChatShowData::from($user, $conversation)->toArray());
     }
 }
