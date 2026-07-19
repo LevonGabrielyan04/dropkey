@@ -15,10 +15,10 @@ it('renders the chat inbox with the start conversation form', function () {
     $this->actingAs($user)
         ->get(route('chat.index'))
         ->assertSuccessful()
-        ->assertSee('data-chat-base-url', false)
+        ->assertSee('data-chat-open-url', false)
         ->assertSee('e2eeChatInbox', false)
         ->assertSee(__('Start a conversation'))
-        ->assertSee(__('Recipient public ID'))
+        ->assertSee(__('Recipient user name'))
         ->assertSee(__('Open channel'));
 });
 
@@ -107,6 +107,15 @@ it('resolves chat routes by public id instead of name or numeric id', function (
     $this->actingAs($alice)
         ->get('/chat/'.$bob->id)
         ->assertNotFound();
+});
+
+it('redirects name-based chat opens to the public id url', function () {
+    $alice = User::factory()->create();
+    $bob = User::factory()->create();
+
+    $this->actingAs($alice)
+        ->get(route('chat.open', $bob->name))
+        ->assertRedirect(route('chat.show', $bob));
 });
 
 it('shows a notifications tip when the user has no push subscription', function () {

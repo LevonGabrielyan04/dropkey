@@ -8,6 +8,7 @@ use App\DTOs\ChatShowData;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Repositories\Interfaces\ConversationRepositoryInterface;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -23,6 +24,15 @@ class ChatController extends Controller
         $conversations = $this->conversations->getConversationsForUser($request->user());
 
         return view('chat.index', compact('conversations'));
+    }
+
+    public function openByName(string $name): RedirectResponse
+    {
+        $user = User::query()->where('name', $name)->firstOrFail();
+
+        abort_unless(auth()->id() !== $user->id, 404);
+
+        return redirect()->route('chat.show', $user);
     }
 
     public function show(User $user): View

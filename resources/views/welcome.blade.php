@@ -318,7 +318,7 @@
 
                 <ol class="divide-y-2 divide-zinc-950">
                     @foreach ([
-                        ['step' => '01', 'title' => 'Start a conversation', 'desc' => 'Open Messages, enter a recipient public ID, and open a pairwise encrypted channel.'],
+                        ['step' => '01', 'title' => 'Start a conversation', 'desc' => 'Open Messages, enter a registered user name, and open a pairwise encrypted channel.'],
                         ['step' => '02', 'title' => 'Identity keys', 'desc' => 'Each user gets an ECDH (P-256) key pair in the browser. The public key is registered with the server; the private key stays local.'],
                         ['step' => '03', 'title' => 'Derived conversation keys', 'desc' => 'Messages are encrypted with AES-256-GCM using a per-conversation key derived via ECDH + HKDF.'],
                         ['step' => '04', 'title' => 'Server relay only', 'desc' => 'The server stores and relays opaque ciphertext. It cannot decrypt message content.'],

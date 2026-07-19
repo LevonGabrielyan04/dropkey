@@ -22,7 +22,7 @@
 
         <section
             x-data="e2eeChatInbox"
-            data-chat-base-url="{{ url('/chat') }}"
+            data-chat-open-url="{{ url('/chat/to') }}"
             class="border-x-2 border-b-2 border-zinc-950 dark:border-zinc-100"
         >
             <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
@@ -32,16 +32,16 @@
             </div>
 
             <form @submit.prevent="startChat" class="bg-white p-6 dark:bg-zinc-950">
-                <label for="chat-public-id" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                    {{ __('Recipient public ID') }}
+                <label for="chat-username" class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                    {{ __('Recipient user name') }}
                 </label>
 
                 <div class="mt-2 flex flex-col gap-3 sm:flex-row">
                     <input
-                        id="chat-public-id"
+                        id="chat-username"
                         type="text"
-                        x-model="publicId"
-                        placeholder="{{ __('Enter a recipient public ID') }}"
+                        x-model="username"
+                        placeholder="{{ __('Enter a registered user name') }}"
                         class="block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50"
                     />
 

@@ -16,6 +16,7 @@ Route::middleware(['throttle:60,1', 'verified'])->group(function () {
     Route::resource('sends', SendController::class)->except(['index']);
 
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/to/{name}', [ChatController::class, 'openByName'])->name('chat.open');
     Route::get('/chat/{user}', [ChatController::class, 'show'])->name('chat.show');
 
     Route::prefix('api')->group(function () {
