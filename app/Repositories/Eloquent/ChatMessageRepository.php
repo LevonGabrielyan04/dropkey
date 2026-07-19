@@ -90,7 +90,9 @@ class ChatMessageRepository implements ChatMessageRepositoryInterface
             ->whereIn('id', $messages->modelKeys())
             ->update(['is_viewed' => true]);
 
-        return $messages->pluck('public_id')->values()->all();
+        return array_values($messages
+            ->map(static fn (ChatMessage $message): string => $message->public_id)
+            ->all());
     }
 
     public function createMessage(Conversation $conversation, User $sender, string $payload): ChatMessage
