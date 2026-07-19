@@ -51,6 +51,8 @@ it('renders the encrypted chat session shell for a recipient', function () {
         ->assertSee('message.isMine', false)
         ->assertSee('x-show="message.isMine"', false)
         ->assertSee('message.isViewed', false)
+        ->assertSee('formatMessageTime(message.createdAt)', false)
+        ->assertSee(':datetime="message.createdAt"', false)
         ->assertDontSee('${partnerFingerprint}', false);
 });
 

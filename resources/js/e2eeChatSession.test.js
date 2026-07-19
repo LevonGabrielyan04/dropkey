@@ -13,6 +13,7 @@ import {
     DEFAULT_AUTO_DELETE,
     applyMessageViewedReceipts,
     applyUnreadCountUpdate,
+    formatMessageTime,
     formatUnreadMessagesLabel,
     hasPartnerSessionChanged,
     redecryptStoredMessages,
@@ -23,6 +24,14 @@ import {
 describe('DEFAULT_AUTO_DELETE', () => {
     it('defaults to seven days', () => {
         expect(DEFAULT_AUTO_DELETE).toBe('7 days');
+    });
+});
+
+describe('formatMessageTime', () => {
+    it('formats message timestamps for display', () => {
+        expect(formatMessageTime('2026-07-02T18:30:00Z', 'America/New_York', 'en-US'))
+            .toBe('Jul 2, 2026 2:30 PM');
+        expect(formatMessageTime('')).toBe('');
     });
 });
 

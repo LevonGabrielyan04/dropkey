@@ -119,10 +119,17 @@
                         x-text="message.decryptionError"
                     ></p>
                     <div class="mt-1 flex items-center justify-between gap-2">
-                        <p
-                            class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
-                            x-text="message.isMine ? '{{ __('You') }}' : '{{ $recipient->name }}'"
-                        ></p>
+                        <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <p
+                                class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
+                                x-text="message.isMine ? '{{ __('You') }}' : '{{ $recipient->name }}'"
+                            ></p>
+                            <time
+                                class="text-[10px] tracking-[0.08em] text-zinc-500"
+                                :datetime="message.createdAt"
+                                x-text="formatMessageTime(message.createdAt)"
+                            ></time>
+                        </div>
                         <span
                             x-show="message.isMine"
                             class="inline-flex shrink-0"

@@ -4,8 +4,18 @@ import {
     establishSession,
     fetchPartnerConversationKey,
 } from './cryptography/e2ee/session.js';
+import { formatLocalDatetime } from './formatLocalDatetime.js';
 
 export const DEFAULT_AUTO_DELETE = '7 days';
+
+/**
+ * @param {string} createdAt
+ * @param {string | undefined} timeZone
+ * @param {string | undefined} locale
+ */
+export function formatMessageTime(createdAt, timeZone = undefined, locale = undefined) {
+    return formatLocalDatetime(createdAt, timeZone, locale);
+}
 
 /**
  * @param {string} currentFingerprint
@@ -177,6 +187,8 @@ document.addEventListener('alpine:init', () => {
         get canSendMessage() {
             return this.ready && ! this.sending && this.messageText.trim() !== '';
         },
+
+        formatMessageTime,
 
         init() {
             this.localUserId = Number(this.$el.dataset.localUserId);
