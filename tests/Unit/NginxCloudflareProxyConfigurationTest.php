@@ -163,12 +163,12 @@ test('docker nginx rate limit config defines auth zones by real client ip', func
     expect($rateLimitConfig)
         ->toContain('map $request_method $auth_limit_key')
         ->toContain('limit_req_zone $auth_limit_key zone=auth:10m rate=5r/m;')
-        ->toContain('limit_req_zone $auth_limit_key zone=auth_hourly:10m rate=20r/h;')
         ->toContain('map $request_method $auth_post_global_limit_key')
         ->toContain('limit_req_zone $auth_post_global_limit_key zone=auth_post_global:10m rate=15r/s;')
         ->toContain('limit_req_status 429;')
         ->not->toContain('auth_login')
-        ->not->toContain('auth_register');
+        ->not->toContain('auth_register')
+        ->not->toContain('r/h');
 });
 
 test('docker nginx http block loads rate limit configuration after cloudflare', function () {
@@ -193,13 +193,12 @@ test('docker nginx default config rate limits post login and register only', fun
         ->toContain('location = /register {')
         ->toContain('limit_req zone=auth_post_global;')
         ->toContain('limit_req zone=auth burst=2 nodelay;')
-        ->toContain('limit_req zone=auth_hourly burst=2 nodelay;')
         ->not->toContain('limit_except')
         ->not->toContain('auth_login')
-        ->not->toContain('auth_register');
+        ->not->toContain('auth_register')
+        ->not->toContain('auth_hourly');
 
-    expect(substr_count($defaultConfig, 'limit_req zone=auth burst=2 nodelay;'))->toBe(2)
-        ->and(substr_count($defaultConfig, 'limit_req zone=auth_hourly burst=2 nodelay;'))->toBe(2);
+    expect(substr_count($defaultConfig, 'limit_req zone=auth burst=2 nodelay;'))->toBe(2);
 
     expect($rateLimitConfig)
         ->toContain('GET     "";')
