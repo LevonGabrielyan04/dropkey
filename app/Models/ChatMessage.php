@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Http\Resources\ChatMessageCollection;
 use App\Http\Resources\ChatMessageResource;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UseResource;
 use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
 use Illuminate\Database\Eloquent\Casts\AsBinary;
@@ -27,6 +28,7 @@ use Illuminate\Support\Str;
  * @property Carbon $created_at
  */
 #[Fillable(['conversation_id', 'sender_id', 'payload'])]
+#[Hidden(['id'])]
 #[UseResource(ChatMessageResource::class)]
 #[UseResourceCollection(ChatMessageCollection::class)]
 class ChatMessage extends Model

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\BelongsToManyWithBinaryUlidParentKey;
 use App\Models\Traits\HasPublicAndPrivateIds;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ use Illuminate\Support\Str;
 
 #[Table(key: 'id', keyType: 'string', incrementing: false)]
 #[WithoutTimestamps]
+#[Hidden(['user_id', 'id'])]
 class Send extends Model
 {
     use HasPublicAndPrivateIds, HasUuids;
@@ -26,8 +28,6 @@ class Send extends Model
      * @var list<string>
      */
     protected $guarded = [];
-
-    protected $hidden = ['user_id', 'id'];
 
     /**
      * The attributes that should be cast.

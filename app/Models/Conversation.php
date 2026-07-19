@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\TimePeriod;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\AsBinary;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,7 @@ use Illuminate\Support\Str;
  * @property Carbon $created_at
  */
 #[Fillable(['user_one_id', 'user_two_id', 'auto_delete'])]
+#[Hidden(['user_one_id', 'user_two_id', 'id'])]
 class Conversation extends Model
 {
     use HasUuids;

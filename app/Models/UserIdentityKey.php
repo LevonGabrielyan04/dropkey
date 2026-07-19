@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\AsBinary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ use Illuminate\Support\Str;
  * @property Carbon $created_at
  */
 #[Fillable(['user_id', 'browser_db_id', 'public_key_jwk', 'fingerprint'])]
+#[Hidden(['user_id', 'id'])]
 class UserIdentityKey extends Model
 {
     public const UPDATED_AT = null;
