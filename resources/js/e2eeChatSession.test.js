@@ -12,6 +12,8 @@ vi.mock('./cryptography/e2ee/session.js', () => ({
 import {
     DEFAULT_AUTO_DELETE,
     applyMessageViewedReceipts,
+    applyUnreadCountUpdate,
+    formatUnreadMessagesLabel,
     hasPartnerSessionChanged,
     redecryptStoredMessages,
     resolveChatMessageContent,
@@ -48,6 +50,59 @@ describe('applyMessageViewedReceipts', () => {
         applyMessageViewedReceipts(messages, null);
 
         expect(messages[0].isViewed).toBe(false);
+    });
+});
+
+describe('applyUnreadCountUpdate', () => {
+    it('updates the unread count for a conversation', () => {
+        const unreadCounts = { 'conv-1': 1 };
+
+        applyUnreadCountUpdate(unreadCounts, {
+            conversation_public_key: 'conv-1',
+            unread_messages_count: 3,
+        });
+
+        expect(unreadCounts).toEqual({ 'conv-1': 3 });
+    });
+
+    it('adds a count for conversations that are not yet tracked', () => {
+        const unreadCounts = {};
+
+        applyUnreadCountUpdate(unreadCounts, {
+            conversation_public_key: 'conv-2',
+            unread_messages_count: 1,
+        });
+
+        expect(unreadCounts).toEqual({ 'conv-2': 1 });
+    });
+
+    it('ignores invalid payloads', () => {
+        const unreadCounts = { 'conv-1': 2 };
+
+        applyUnreadCountUpdate(unreadCounts, {
+            conversation_public_key: '',
+            unread_messages_count: 5,
+        });
+        applyUnreadCountUpdate(unreadCounts, {
+            conversation_public_key: 'conv-1',
+            unread_messages_count: -1,
+        });
+        applyUnreadCountUpdate(unreadCounts, {
+            conversation_public_key: 'conv-1',
+            unread_messages_count: '2',
+        });
+        applyUnreadCountUpdate(unreadCounts, null);
+
+        expect(unreadCounts).toEqual({ 'conv-1': 2 });
+    });
+});
+
+describe('formatUnreadMessagesLabel', () => {
+    it('formats singular and plural unread labels', () => {
+        expect(formatUnreadMessagesLabel(1, ':count unread message', ':count unread messages'))
+            .toBe('1 unread message');
+        expect(formatUnreadMessagesLabel(2, ':count unread message', ':count unread messages'))
+            .toBe('2 unread messages');
     });
 });
 

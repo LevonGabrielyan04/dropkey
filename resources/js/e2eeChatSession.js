@@ -110,6 +110,36 @@ export function applyMessageViewedReceipts(messages, publicIds) {
 }
 
 /**
+ * @param {Record<string, number>} unreadCounts
+ * @param {{ conversation_public_key?: unknown, unread_messages_count?: unknown }} event
+ */
+export function applyUnreadCountUpdate(unreadCounts, event) {
+    const conversationPublicKey = event?.conversation_public_key;
+    const unreadMessagesCount = event?.unread_messages_count;
+
+    if (typeof conversationPublicKey !== 'string' || conversationPublicKey === '') {
+        return;
+    }
+
+    if (typeof unreadMessagesCount !== 'number' || ! Number.isFinite(unreadMessagesCount) || unreadMessagesCount < 0) {
+        return;
+    }
+
+    unreadCounts[conversationPublicKey] = Math.floor(unreadMessagesCount);
+}
+
+/**
+ * @param {number} count
+ * @param {string} one
+ * @param {string} other
+ */
+export function formatUnreadMessagesLabel(count, one, other) {
+    const template = count === 1 ? one : other;
+
+    return template.replaceAll(':count', String(count));
+}
+
+/**
  * Alpine component for a 1v1 E2EE chat session.
  * All crypto runs in the browser via Web Crypto; the server relays ciphertext only.
  */
@@ -487,9 +517,78 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('e2eeChatInbox', () => ({
         username: '',
         error: '',
+        localUserPublicId: '',
+        unreadCounts: {},
+        unreadLabelOne: ':count unread message',
+        unreadLabelOther: ':count unread messages',
+        unreadCountsChannel: null,
+        chatOpenUrl: '/chat/to',
 
         init() {
             this.chatOpenUrl = this.$el.dataset.chatOpenUrl ?? '/chat/to';
+            this.localUserPublicId = this.$el.dataset.localUserPublicId ?? '';
+            this.unreadLabelOne = this.$el.dataset.unreadLabelOne ?? this.unreadLabelOne;
+            this.unreadLabelOther = this.$el.dataset.unreadLabelOther ?? this.unreadLabelOther;
+
+            try {
+                this.unreadCounts = JSON.parse(this.$el.dataset.initialUnreadCounts || '{}');
+            } catch {
+                this.unreadCounts = {};
+            }
+
+            this.subscribeToUnreadCounts();
+        },
+
+        destroy() {
+            this.leaveUnreadCountsChannel();
+        },
+
+        /**
+         * @param {string} conversationPublicKey
+         */
+        unreadCountFor(conversationPublicKey) {
+            return Number(this.unreadCounts[conversationPublicKey] ?? 0);
+        },
+
+        /**
+         * @param {string} conversationPublicKey
+         */
+        unreadLabelFor(conversationPublicKey) {
+            return formatUnreadMessagesLabel(
+                this.unreadCountFor(conversationPublicKey),
+                this.unreadLabelOne,
+                this.unreadLabelOther,
+            );
+        },
+
+        /**
+         * @param {{ conversation_public_key?: unknown, unread_messages_count?: unknown }} event
+         */
+        updateUnreadCount(event) {
+            applyUnreadCountUpdate(this.unreadCounts, event);
+        },
+
+        subscribeToUnreadCounts() {
+            if (! this.localUserPublicId || ! window.Echo) {
+                return;
+            }
+
+            this.leaveUnreadCountsChannel();
+
+            this.unreadCountsChannel = window.Echo
+                .private(`chat.${this.localUserPublicId}`)
+                .listen('.ChatUnreadCount', (event) => {
+                    this.updateUnreadCount(event);
+                });
+        },
+
+        leaveUnreadCountsChannel() {
+            if (! this.localUserPublicId || ! window.Echo) {
+                return;
+            }
+
+            window.Echo.leave(`chat.${this.localUserPublicId}`);
+            this.unreadCountsChannel = null;
         },
 
         startChat() {

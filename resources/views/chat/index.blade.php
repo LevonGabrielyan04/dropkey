@@ -1,5 +1,13 @@
 <x-layouts::app :title="__('Messages')">
-    <div class="flex h-full w-full flex-1 flex-col font-mono">
+    <div
+        x-data="e2eeChatInbox"
+        data-chat-open-url="{{ url('/chat/to') }}"
+        data-local-user-public-id="{{ auth()->user()->public_key }}"
+        data-initial-unread-counts='@json($conversations->mapWithKeys(fn ($conversation) => [$conversation->public_key => (int) $conversation->unread_messages_count]))'
+        data-unread-label-one="{{ __(':count unread message') }}"
+        data-unread-label-other="{{ __(':count unread messages') }}"
+        class="flex h-full w-full flex-1 flex-col font-mono"
+    >
         <header class="border-2 border-zinc-950 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950">
             <div class="border-b-2 border-emerald-500 bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-950">
                 {{ __('Encrypted inbox') }}
@@ -20,11 +28,7 @@
             'message' => __('Enable notifications so you know when a new message arrives.'),
         ])
 
-        <section
-            x-data="e2eeChatInbox"
-            data-chat-open-url="{{ url('/chat/to') }}"
-            class="border-x-2 border-b-2 border-zinc-950 dark:border-zinc-100"
-        >
+        <section class="border-x-2 border-b-2 border-zinc-950 dark:border-zinc-100">
             <div class="border-b-2 border-zinc-950 bg-zinc-200 px-4 py-3 dark:border-zinc-100 dark:bg-zinc-800">
                 <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-400">
                     {{ __('Start a conversation') }}
@@ -83,14 +87,17 @@
                                 </span>
 
                                 <span class="flex shrink-0 items-center gap-3">
-                                    @if ($conversation->unread_messages_count > 0)
-                                        <span
-                                            class="inline-flex min-w-6 items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950 dark:border-zinc-100"
+                                    <span
+                                        x-show="unreadCountFor(@js($conversation->public_key)) > 0"
+                                        x-text="unreadCountFor(@js($conversation->public_key))"
+                                        :aria-label="unreadLabelFor(@js($conversation->public_key))"
+                                        @if ($conversation->unread_messages_count < 1)
+                                            style="display: none;"
+                                        @else
                                             aria-label="{{ trans_choice(':count unread message|:count unread messages', $conversation->unread_messages_count, ['count' => $conversation->unread_messages_count]) }}"
-                                        >
-                                            {{ $conversation->unread_messages_count }}
-                                        </span>
-                                    @endif
+                                        @endif
+                                        class="inline-flex min-w-6 items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950 dark:border-zinc-100"
+                                    >{{ $conversation->unread_messages_count > 0 ? $conversation->unread_messages_count : '' }}</span>
 
                                     @if ($conversation->messages->isNotEmpty())
                                         <span

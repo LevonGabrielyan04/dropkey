@@ -15,3 +15,7 @@ Broadcast::channel('conversation.{conversation}', function (User $user, Conversa
 Broadcast::channel('conversation.{conversation}.receipts', function (User $user, Conversation $conversation): bool {
     return $conversation->includesUser($user);
 });
+
+Broadcast::channel('chat.{user}', function (User $user, User $channelUser): bool {
+    return $user->is($channelUser);
+});
