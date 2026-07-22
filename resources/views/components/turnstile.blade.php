@@ -1,7 +1,15 @@
 @if (config('turnstile.enabled'))
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}"></script>
+    <script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        async
+        defer
+        data-navigate-once
+        nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}"
+    ></script>
 
     <div
+        wire:ignore
+        x-data="turnstileWidget"
         class="cf-turnstile"
         data-sitekey="{{ config('turnstile.site_key') }}"
         data-theme="auto"

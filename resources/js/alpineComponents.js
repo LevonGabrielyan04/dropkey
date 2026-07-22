@@ -172,6 +172,70 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('turnstileWidget', () => ({
+        widgetId: null,
+        pollId: null,
+
+        init() {
+            this.mount();
+        },
+
+        destroy() {
+            this.teardown();
+        },
+
+        mount() {
+            const tryRender = () => {
+                if (! window.turnstile || this.widgetId !== null) {
+                    return false;
+                }
+
+                this.widgetId = window.turnstile.render(this.$el, {
+                    sitekey: this.$el.dataset.sitekey,
+                    theme: this.$el.dataset.theme || 'auto',
+                });
+
+                return true;
+            };
+
+            if (tryRender()) {
+                return;
+            }
+
+            if (window.turnstile) {
+                window.turnstile.ready(() => {
+                    tryRender();
+                });
+
+                return;
+            }
+
+            this.pollId = window.setInterval(() => {
+                if (! window.turnstile) {
+                    return;
+                }
+
+                window.clearInterval(this.pollId);
+                this.pollId = null;
+                window.turnstile.ready(() => {
+                    tryRender();
+                });
+            }, 50);
+        },
+
+        teardown() {
+            if (this.pollId !== null) {
+                window.clearInterval(this.pollId);
+                this.pollId = null;
+            }
+
+            if (this.widgetId !== null && window.turnstile) {
+                window.turnstile.remove(this.widgetId);
+                this.widgetId = null;
+            }
+        },
+    }));
+
     Alpine.data('passwordTooltip', () => ({
         showTooltip: false,
 

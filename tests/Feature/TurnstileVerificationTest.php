@@ -16,8 +16,10 @@ test('registration screen includes turnstile when enabled', function () {
     $response
         ->assertOk()
         ->assertSee('cf-turnstile', false)
+        ->assertSee('turnstileWidget', false)
         ->assertSee('1x00000000000000000AA', false)
-        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
+        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', false)
+        ->assertSee('data-navigate-once', false)
         ->assertSee('nonce="', false);
 });
 
@@ -81,8 +83,10 @@ test('login screen includes turnstile when enabled', function () {
     $response
         ->assertOk()
         ->assertSee('cf-turnstile', false)
+        ->assertSee('turnstileWidget', false)
         ->assertSee('1x00000000000000000AA', false)
-        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
+        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', false)
+        ->assertSee('data-navigate-once', false)
         ->assertSee('nonce="', false);
 });
 
@@ -142,8 +146,10 @@ test('forgot password screen includes turnstile when enabled', function () {
     $response
         ->assertOk()
         ->assertSee('cf-turnstile', false)
+        ->assertSee('turnstileWidget', false)
         ->assertSee('1x00000000000000000AA', false)
-        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js', false)
+        ->assertSee('challenges.cloudflare.com/turnstile/v0/api.js?render=explicit', false)
+        ->assertSee('data-navigate-once', false)
         ->assertSee('nonce="', false);
 });
 
