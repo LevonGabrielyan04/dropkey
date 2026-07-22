@@ -2,10 +2,12 @@
     <div
         x-data="e2eeChatInbox"
         data-chat-open-url="{{ url('/chat/to') }}"
+        data-conversations-url="{{ route('conversations.index') }}"
         data-local-user-public-id="{{ auth()->user()->public_key }}"
-        data-initial-unread-counts='@json($conversations->mapWithKeys(fn ($conversation) => [$conversation->public_key => (int) $conversation->unread_messages_count]))'
+        data-initial-conversations='@json($conversationsPayload['conversations'])'
         data-unread-label-one="{{ __(':count unread message') }}"
         data-unread-label-other="{{ __(':count unread messages') }}"
+        data-empty-conversations-label="{{ __('No conversations yet.') }}"
         class="flex h-full w-full flex-1 flex-col font-mono"
     >
         <header class="border-2 border-zinc-950 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950">
@@ -68,51 +70,52 @@
                 </p>
             </div>
 
-            @if ($conversations->isEmpty())
-                <p class="bg-white p-6 text-sm text-zinc-500 dark:bg-zinc-950">
-                    {{ __('No conversations yet.') }}
-                </p>
-            @else
-                <ul class="divide-y-2 divide-zinc-950 bg-white dark:divide-zinc-100 dark:bg-zinc-950">
-                    @foreach ($conversations as $conversation)
-                        @php($partner = $conversation->partnerFor(auth()->user()))
-                        <li>
-                            <a
-                                href="{{ route('chat.show', $partner) }}"
-                                wire:navigate
-                                class="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                            >
-                                <span class="text-sm font-bold uppercase tracking-[0.16em] text-zinc-950 dark:text-zinc-50">
-                                    {{ $partner->name }}
-                                </span>
+            <p
+                x-show="conversations.length === 0"
+                x-text="emptyConversationsLabel"
+                class="bg-white p-6 text-sm text-zinc-500 dark:bg-zinc-950"
+                @if ($conversations->isNotEmpty())
+                    style="display: none;"
+                @endif
+            >{{ __('No conversations yet.') }}</p>
 
-                                <span class="flex shrink-0 items-center gap-3">
-                                    <span
-                                        x-show="unreadCountFor(@js($conversation->public_key)) > 0"
-                                        x-text="unreadCountFor(@js($conversation->public_key))"
-                                        :aria-label="unreadLabelFor(@js($conversation->public_key))"
-                                        @if ($conversation->unread_messages_count < 1)
-                                            style="display: none;"
-                                        @else
-                                            aria-label="{{ trans_choice(':count unread message|:count unread messages', $conversation->unread_messages_count, ['count' => $conversation->unread_messages_count]) }}"
-                                        @endif
-                                        class="inline-flex min-w-6 items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950 dark:border-zinc-100"
-                                    >{{ $conversation->unread_messages_count > 0 ? $conversation->unread_messages_count : '' }}</span>
+            <ul
+                x-show="conversations.length > 0"
+                class="divide-y-2 divide-zinc-950 bg-white dark:divide-zinc-100 dark:bg-zinc-950"
+                @if ($conversations->isEmpty())
+                    style="display: none;"
+                @endif
+            >
+                <template x-for="conversation in conversations" :key="conversation.public_key">
+                    <li>
+                        <a
+                            :href="conversation.partner.url"
+                            wire:navigate
+                            class="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                        >
+                            <span
+                                x-text="conversation.partner.name"
+                                class="text-sm font-bold uppercase tracking-[0.16em] text-zinc-950 dark:text-zinc-50"
+                            ></span>
 
-                                    @if ($conversation->messages->isNotEmpty())
-                                        <span
-                                            x-data="localDatetime"
-                                            data-utc-datetime="{{ $conversation->messages->first()->created_at->utc()->toIso8601String() }}"
-                                            x-text="formatted"
-                                            class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
-                                        ></span>
-                                    @endif
-                                </span>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
+                            <span class="flex shrink-0 items-center gap-3">
+                                <span
+                                    x-show="unreadCountFor(conversation.public_key) > 0"
+                                    x-text="unreadCountFor(conversation.public_key)"
+                                    :aria-label="unreadLabelFor(conversation.public_key)"
+                                    class="inline-flex min-w-6 items-center justify-center border-2 border-zinc-950 bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950 dark:border-zinc-100"
+                                ></span>
+
+                                <span
+                                    x-show="conversation.last_message_at"
+                                    x-text="formatConversationTime(conversation.last_message_at)"
+                                    class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
+                                ></span>
+                            </span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
         </section>
     </div>
 </x-layouts::app>

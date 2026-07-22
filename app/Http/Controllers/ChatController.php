@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\DTOs\ChatShowData;
+use App\Http\Resources\ConversationCollection;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Repositories\Interfaces\ConversationRepositoryInterface;
@@ -23,7 +24,10 @@ class ChatController extends Controller
     {
         $conversations = $this->conversations->getConversationsForUser($request->user());
 
-        return view('chat.index', compact('conversations'));
+        return view('chat.index', [
+            'conversations' => $conversations,
+            'conversationsPayload' => (new ConversationCollection($conversations))->resolve(),
+        ]);
     }
 
     public function openByName(string $name): RedirectResponse

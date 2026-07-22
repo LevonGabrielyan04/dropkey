@@ -139,6 +139,52 @@ export function applyUnreadCountUpdate(unreadCounts, event) {
 }
 
 /**
+ * @param {unknown} payload
+ * @returns {Array<{
+ *   public_key: string,
+ *   unread_messages_count: number,
+ *   partner: { name: string, url: string },
+ *   last_message_at: string|null
+ * }>}
+ */
+export function normalizeConversationsPayload(payload) {
+    const conversations = Array.isArray(payload?.conversations)
+        ? payload.conversations
+        : Array.isArray(payload)
+            ? payload
+            : [];
+
+    return conversations.filter((conversation) => (
+        typeof conversation?.public_key === 'string'
+        && conversation.public_key !== ''
+        && typeof conversation?.partner?.name === 'string'
+        && typeof conversation?.partner?.url === 'string'
+    )).map((conversation) => ({
+        public_key: conversation.public_key,
+        unread_messages_count: Number.isFinite(Number(conversation.unread_messages_count))
+            ? Math.max(0, Math.floor(Number(conversation.unread_messages_count)))
+            : 0,
+        partner: {
+            name: conversation.partner.name,
+            url: conversation.partner.url,
+        },
+        last_message_at: typeof conversation.last_message_at === 'string'
+            ? conversation.last_message_at
+            : null,
+    }));
+}
+
+/**
+ * @param {Record<string, number>} unreadCounts
+ * @param {Array<{ public_key: string, unread_messages_count: number }>} conversations
+ */
+export function syncUnreadCountsFromConversations(unreadCounts, conversations) {
+    for (const conversation of conversations) {
+        unreadCounts[conversation.public_key] = conversation.unread_messages_count;
+    }
+}
+
+/**
  * @param {number} count
  * @param {string} one
  * @param {string} other
@@ -563,29 +609,46 @@ document.addEventListener('alpine:init', () => {
         username: '',
         error: '',
         localUserPublicId: '',
+        conversations: [],
         unreadCounts: {},
         unreadLabelOne: ':count unread message',
         unreadLabelOther: ':count unread messages',
+        emptyConversationsLabel: 'No conversations yet.',
         unreadCountsChannel: null,
         chatOpenUrl: '/chat/to',
+        conversationsUrl: '',
+        refreshingConversations: false,
+        pendingConversationsRefresh: false,
 
         init() {
             this.chatOpenUrl = this.$el.dataset.chatOpenUrl ?? '/chat/to';
+            this.conversationsUrl = this.$el.dataset.conversationsUrl ?? '';
             this.localUserPublicId = this.$el.dataset.localUserPublicId ?? '';
             this.unreadLabelOne = this.$el.dataset.unreadLabelOne ?? this.unreadLabelOne;
             this.unreadLabelOther = this.$el.dataset.unreadLabelOther ?? this.unreadLabelOther;
+            this.emptyConversationsLabel = this.$el.dataset.emptyConversationsLabel ?? this.emptyConversationsLabel;
 
             try {
-                this.unreadCounts = JSON.parse(this.$el.dataset.initialUnreadCounts || '{}');
+                this.conversations = normalizeConversationsPayload({
+                    conversations: JSON.parse(this.$el.dataset.initialConversations || '[]'),
+                });
             } catch {
-                this.unreadCounts = {};
+                this.conversations = [];
             }
 
+            syncUnreadCountsFromConversations(this.unreadCounts, this.conversations);
             this.subscribeToUnreadCounts();
         },
 
         destroy() {
             this.leaveUnreadCountsChannel();
+        },
+
+        /**
+         * @param {string|null|undefined} createdAt
+         */
+        formatConversationTime(createdAt) {
+            return formatMessageTime(createdAt ?? '');
         },
 
         /**
@@ -607,10 +670,52 @@ document.addEventListener('alpine:init', () => {
         },
 
         /**
-         * @param {{ conversation_public_key?: unknown, unread_messages_count?: unknown }} event
+         * @param {{ conversation_public_key?: unknown, unread_messages_count?: unknown, refresh?: unknown }} event
          */
         updateUnreadCount(event) {
             applyUnreadCountUpdate(this.unreadCounts, event);
+
+            if (event?.refresh === true) {
+                this.refreshConversations();
+            }
+        },
+
+        async refreshConversations() {
+            if (! this.conversationsUrl) {
+                return;
+            }
+
+            if (this.refreshingConversations) {
+                this.pendingConversationsRefresh = true;
+
+                return;
+            }
+
+            this.refreshingConversations = true;
+
+            try {
+                const response = await fetch(this.conversationsUrl, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
+
+                if (! response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                this.conversations = normalizeConversationsPayload(data);
+                syncUnreadCountsFromConversations(this.unreadCounts, this.conversations);
+            } catch {
+                // Keep the current inbox state if the refresh request fails.
+            } finally {
+                this.refreshingConversations = false;
+
+                if (this.pendingConversationsRefresh) {
+                    this.pendingConversationsRefresh = false;
+                    this.refreshConversations();
+                }
+            }
         },
 
         subscribeToUnreadCounts() {

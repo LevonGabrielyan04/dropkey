@@ -16,9 +16,11 @@ import {
     formatMessageTime,
     formatUnreadMessagesLabel,
     hasPartnerSessionChanged,
+    normalizeConversationsPayload,
     redecryptStoredMessages,
     resolveChatMessageContent,
     resolveIncomingMessageContent,
+    syncUnreadCountsFromConversations,
 } from './e2eeChatSession.js';
 
 describe('DEFAULT_AUTO_DELETE', () => {
@@ -112,6 +114,67 @@ describe('formatUnreadMessagesLabel', () => {
             .toBe('1 unread message');
         expect(formatUnreadMessagesLabel(2, ':count unread message', ':count unread messages'))
             .toBe('2 unread messages');
+    });
+});
+
+describe('normalizeConversationsPayload', () => {
+    it('normalizes wrapped conversation payloads', () => {
+        expect(normalizeConversationsPayload({
+            conversations: [
+                {
+                    public_key: 'conv-1',
+                    unread_messages_count: 2,
+                    partner: { name: 'Bob', url: '/chat/bob' },
+                    last_message_at: '2026-07-02T18:30:00Z',
+                },
+                {
+                    public_key: '',
+                    partner: { name: 'Skip', url: '/chat/skip' },
+                },
+            ],
+        })).toEqual([
+            {
+                public_key: 'conv-1',
+                unread_messages_count: 2,
+                partner: { name: 'Bob', url: '/chat/bob' },
+                last_message_at: '2026-07-02T18:30:00Z',
+            },
+        ]);
+    });
+
+    it('accepts a bare conversations array', () => {
+        expect(normalizeConversationsPayload([
+            {
+                public_key: 'conv-2',
+                unread_messages_count: '1',
+                partner: { name: 'Carol', url: '/chat/carol' },
+                last_message_at: null,
+            },
+        ])).toEqual([
+            {
+                public_key: 'conv-2',
+                unread_messages_count: 1,
+                partner: { name: 'Carol', url: '/chat/carol' },
+                last_message_at: null,
+            },
+        ]);
+    });
+});
+
+describe('syncUnreadCountsFromConversations', () => {
+    it('writes unread counts from conversations into the counts map', () => {
+        const unreadCounts = { 'conv-old': 9 };
+
+        syncUnreadCountsFromConversations(unreadCounts, [
+            { public_key: 'conv-1', unread_messages_count: 3 },
+            { public_key: 'conv-2', unread_messages_count: 0 },
+        ]);
+
+        expect(unreadCounts).toEqual({
+            'conv-old': 9,
+            'conv-1': 3,
+            'conv-2': 0,
+        });
     });
 });
 

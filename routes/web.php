@@ -39,6 +39,9 @@ Route::middleware(['throttle:60,1', 'verified'])->group(function () {
         Route::post('/messages/{message}/viewed', MarkChatMessageAsViewedController::class)
             ->middleware(['throttle:chat-write', 'can:markChatMessageAsViewed,message'])
             ->name('messages.viewed');
+        Route::get('/conversations', [ConversationController::class, 'index'])
+            ->middleware('throttle:chat-poll')
+            ->name('conversations.index');
         Route::patch('/conversations/{user}/auto-delete', [ConversationController::class, 'updateAutoDelete'])
             ->middleware(['throttle:chat-write', 'not-self'])
             ->name('conversations.auto-delete.update');

@@ -43,13 +43,14 @@ class ChatUnreadCountBroadcast implements ShouldBroadcast
     }
 
     /**
-     * @return array{conversation_public_key: string, unread_messages_count: int}
+     * @return array{conversation_public_key: string, unread_messages_count: int, refresh: true}
      */
     public function broadcastWith(): array
     {
         return [
             'conversation_public_key' => $this->conversation->public_key,
             'unread_messages_count' => $this->unreadMessagesCount,
+            'refresh' => true,
         ];
     }
 }

@@ -16,5 +16,6 @@ it('broadcasts unread count payload on the recipient chat channel', function () 
         ->and($event->broadcastWith())->toBe([
             'conversation_public_key' => $conversation->public_key,
             'unread_messages_count' => 3,
+            'refresh' => true,
         ]);
 });

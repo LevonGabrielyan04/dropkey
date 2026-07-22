@@ -16,8 +16,9 @@ it('renders the chat inbox with the start conversation form', function () {
         ->get(route('chat.index'))
         ->assertSuccessful()
         ->assertSee('data-chat-open-url', false)
+        ->assertSee('data-conversations-url', false)
         ->assertSee('data-local-user-public-id="'.$user->public_key.'"', false)
-        ->assertSee('data-initial-unread-counts', false)
+        ->assertSee('data-initial-conversations', false)
         ->assertSee('e2eeChatInbox', false)
         ->assertSee(__('Start a conversation'))
         ->assertSee(__('Recipient user name'))
@@ -94,7 +95,7 @@ it('lists existing conversations on the inbox page', function () {
         ->get(route('chat.index'))
         ->assertSuccessful()
         ->assertSee('Bob Chat')
-        ->assertSee(route('chat.show', $bob), false);
+        ->assertSee($bob->public_key, false);
 });
 
 it('shows the unread message count for conversations on the inbox page', function () {
@@ -122,8 +123,8 @@ it('shows the unread message count for conversations on the inbox page', functio
         ->get(route('chat.index'))
         ->assertSuccessful()
         ->assertSee('Bob Chat')
-        ->assertSee('aria-label="2 unread messages"', false)
-        ->assertSee('"'.$conversation->public_key.'":2', false);
+        ->assertSee('"public_key":"'.$conversation->public_key.'"', false)
+        ->assertSee('"unread_messages_count":2', false);
 });
 
 it('hides the unread message count when a conversation has no unread messages', function () {
@@ -137,13 +138,12 @@ it('hides the unread message count when a conversation has no unread messages', 
         'payload' => fakeChatPayload(),
     ])->forceFill(['is_viewed' => true])->save();
 
-    $response = $this->actingAs($alice)
+    $this->actingAs($alice)
         ->get(route('chat.index'))
         ->assertSuccessful()
         ->assertSee('Bob Chat')
-        ->assertSee('"'.$conversation->public_key.'":0', false);
-
-    expect($response->getContent())->not->toMatch('/aria-label="\d+ unread message/');
+        ->assertSee('"public_key":"'.$conversation->public_key.'"', false)
+        ->assertSee('"unread_messages_count":0', false);
 });
 
 it('resolves chat routes by public id instead of name or numeric id', function () {

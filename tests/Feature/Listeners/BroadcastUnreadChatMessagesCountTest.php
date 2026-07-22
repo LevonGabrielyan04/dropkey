@@ -75,6 +75,7 @@ it('broadcasts the unread messages count on the recipient chat channel', functio
             && $event->broadcastWith() === [
                 'conversation_public_key' => $conversation->public_key,
                 'unread_messages_count' => 2,
+                'refresh' => true,
             ];
     });
 });

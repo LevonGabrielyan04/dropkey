@@ -6,10 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\TimePeriod;
 use App\Http\Requests\UpdateConversationAutoDeleteRequest;
+use App\Http\Resources\ConversationCollection;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
 use App\Repositories\Interfaces\ConversationRepositoryInterface;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class ConversationController extends Controller
@@ -18,6 +20,13 @@ class ConversationController extends Controller
         protected ChatMessageRepositoryInterface $chatMessages,
         protected ConversationRepositoryInterface $conversations,
     ) {}
+
+    public function index(Request $request): ConversationCollection
+    {
+        return new ConversationCollection(
+            $this->conversations->getConversationsForUser($request->user()),
+        );
+    }
 
     public function updateAutoDelete(UpdateConversationAutoDeleteRequest $request, User $user): JsonResponse
     {
