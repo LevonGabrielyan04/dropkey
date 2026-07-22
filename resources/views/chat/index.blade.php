@@ -108,6 +108,7 @@
 
                                 <span
                                     x-show="conversation.last_message_at"
+                                    :data-utc-datetime="conversation.last_message_at"
                                     x-text="formatConversationTime(conversation.last_message_at)"
                                     class="text-[10px] uppercase tracking-[0.14em] text-zinc-500"
                                 ></span>
