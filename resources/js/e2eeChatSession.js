@@ -179,9 +179,20 @@ export function normalizeConversationsPayload(payload) {
  * @param {Array<{ public_key: string, unread_messages_count: number }>} conversations
  */
 export function syncUnreadCountsFromConversations(unreadCounts, conversations) {
+    for (const key of Object.keys(unreadCounts)) {
+        delete unreadCounts[key];
+    }
+
     for (const conversation of conversations) {
         unreadCounts[conversation.public_key] = conversation.unread_messages_count;
     }
+}
+
+/**
+ * @param {{ persisted?: boolean } | null | undefined} event
+ */
+export function shouldRefreshInboxOnPageShow(event) {
+    return Boolean(event?.persisted);
 }
 
 /**
@@ -619,6 +630,8 @@ document.addEventListener('alpine:init', () => {
         conversationsUrl: '',
         refreshingConversations: false,
         pendingConversationsRefresh: false,
+        handleNavigated: null,
+        handlePageShow: null,
 
         init() {
             this.chatOpenUrl = this.$el.dataset.chatOpenUrl ?? '/chat/to';
@@ -638,10 +651,42 @@ document.addEventListener('alpine:init', () => {
 
             syncUnreadCountsFromConversations(this.unreadCounts, this.conversations);
             this.subscribeToUnreadCounts();
+            this.bindInboxVisibilityListeners();
+            // Livewire navigate / browser back can restore a cached inbox with stale badges.
+            this.refreshConversations();
         },
 
         destroy() {
             this.leaveUnreadCountsChannel();
+            this.unbindInboxVisibilityListeners();
+        },
+
+        bindInboxVisibilityListeners() {
+            this.unbindInboxVisibilityListeners();
+
+            this.handleNavigated = () => {
+                this.refreshConversations();
+            };
+            this.handlePageShow = (event) => {
+                if (shouldRefreshInboxOnPageShow(event)) {
+                    this.refreshConversations();
+                }
+            };
+
+            document.addEventListener('livewire:navigated', this.handleNavigated);
+            window.addEventListener('pageshow', this.handlePageShow);
+        },
+
+        unbindInboxVisibilityListeners() {
+            if (this.handleNavigated) {
+                document.removeEventListener('livewire:navigated', this.handleNavigated);
+                this.handleNavigated = null;
+            }
+
+            if (this.handlePageShow) {
+                window.removeEventListener('pageshow', this.handlePageShow);
+                this.handlePageShow = null;
+            }
         },
 
         /**

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Events\ChatMessageSent;
 use App\Events\ChatMessagesViewedBroadcast;
+use App\Events\ChatUnreadCountBroadcast;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
@@ -50,6 +51,7 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         if ($viewedPublicIds !== []) {
             broadcast(new ChatMessagesViewedBroadcast($conversation, $viewedPublicIds));
+            $this->broadcastViewerUnreadCount($user, $conversation);
         }
 
         return $messages;
@@ -88,7 +90,19 @@ class ChatMessageService implements ChatMessageServiceInterface
 
         if ($viewedPublicId !== null) {
             broadcast(new ChatMessagesViewedBroadcast($message->conversation, [$viewedPublicId]));
+            $this->broadcastViewerUnreadCount($viewer, $message->conversation);
         }
+    }
+
+    private function broadcastViewerUnreadCount(User $viewer, Conversation $conversation): void
+    {
+        $unreadMessagesCount = $conversation
+            ->messages()
+            ->where('sender_id', '!=', $viewer->id)
+            ->where('is_viewed', false)
+            ->count();
+
+        broadcast(new ChatUnreadCountBroadcast($viewer, $conversation, $unreadMessagesCount));
     }
 
     private function authorizeConversation(Conversation $conversation): Conversation

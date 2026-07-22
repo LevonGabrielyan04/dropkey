@@ -20,6 +20,7 @@ import {
     redecryptStoredMessages,
     resolveChatMessageContent,
     resolveIncomingMessageContent,
+    shouldRefreshInboxOnPageShow,
     syncUnreadCountsFromConversations,
 } from './e2eeChatSession.js';
 
@@ -162,7 +163,7 @@ describe('normalizeConversationsPayload', () => {
 });
 
 describe('syncUnreadCountsFromConversations', () => {
-    it('writes unread counts from conversations into the counts map', () => {
+    it('replaces unread counts from the latest conversations payload', () => {
         const unreadCounts = { 'conv-old': 9 };
 
         syncUnreadCountsFromConversations(unreadCounts, [
@@ -171,10 +172,17 @@ describe('syncUnreadCountsFromConversations', () => {
         ]);
 
         expect(unreadCounts).toEqual({
-            'conv-old': 9,
             'conv-1': 3,
             'conv-2': 0,
         });
+    });
+});
+
+describe('shouldRefreshInboxOnPageShow', () => {
+    it('refreshes only when the page was restored from bfcache', () => {
+        expect(shouldRefreshInboxOnPageShow({ persisted: true })).toBe(true);
+        expect(shouldRefreshInboxOnPageShow({ persisted: false })).toBe(false);
+        expect(shouldRefreshInboxOnPageShow(null)).toBe(false);
     });
 });
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\ChatMessagesViewedBroadcast;
+use App\Events\ChatUnreadCountBroadcast;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Repositories\Interfaces\ChatMessageRepositoryInterface;
@@ -115,7 +116,7 @@ it('marks a single unviewed message via the repository', function () {
 });
 
 it('broadcasts read receipts when the recipient fetches messages', function () {
-    Event::fake([ChatMessagesViewedBroadcast::class]);
+    Event::fake([ChatMessagesViewedBroadcast::class, ChatUnreadCountBroadcast::class]);
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
@@ -134,5 +135,16 @@ it('broadcasts read receipts when the recipient fetches messages', function () {
     Event::assertDispatched(ChatMessagesViewedBroadcast::class, function (ChatMessagesViewedBroadcast $event) use ($conversation, $message) {
         return $event->conversation->is($conversation)
             && $event->broadcastWith() === ['public_ids' => [$message->public_id]];
+    });
+
+    Event::assertDispatched(ChatUnreadCountBroadcast::class, function (ChatUnreadCountBroadcast $event) use ($bob, $conversation) {
+        return $event->recipient->is($bob)
+            && $event->conversation->is($conversation)
+            && $event->unreadMessagesCount === 0
+            && $event->broadcastWith() === [
+                'conversation_public_key' => $conversation->public_key,
+                'unread_messages_count' => 0,
+                'refresh' => true,
+            ];
     });
 });

@@ -1,13 +1,14 @@
 <?php
 
 use App\Events\ChatMessagesViewedBroadcast;
+use App\Events\ChatUnreadCountBroadcast;
 use App\Models\ChatMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 
 it('marks an unviewed message as viewed and broadcasts a read receipt', function () {
-    Event::fake([ChatMessagesViewedBroadcast::class]);
+    Event::fake([ChatMessagesViewedBroadcast::class, ChatUnreadCountBroadcast::class]);
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
@@ -29,10 +30,16 @@ it('marks an unviewed message as viewed and broadcasts a read receipt', function
         return $event->conversation->is($conversation)
             && $event->broadcastWith() === ['public_ids' => [$message->public_id]];
     });
+
+    Event::assertDispatched(ChatUnreadCountBroadcast::class, function (ChatUnreadCountBroadcast $event) use ($bob, $conversation) {
+        return $event->recipient->is($bob)
+            && $event->conversation->is($conversation)
+            && $event->unreadMessagesCount === 0;
+    });
 });
 
 it('does not rebroadcast when the message is already viewed', function () {
-    Event::fake([ChatMessagesViewedBroadcast::class]);
+    Event::fake([ChatMessagesViewedBroadcast::class, ChatUnreadCountBroadcast::class]);
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
@@ -50,10 +57,11 @@ it('does not rebroadcast when the message is already viewed', function () {
         ->assertNoContent();
 
     Event::assertNotDispatched(ChatMessagesViewedBroadcast::class);
+    Event::assertNotDispatched(ChatUnreadCountBroadcast::class);
 });
 
 it('rejects marking the viewers own message as viewed', function () {
-    Event::fake([ChatMessagesViewedBroadcast::class]);
+    Event::fake([ChatMessagesViewedBroadcast::class, ChatUnreadCountBroadcast::class]);
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
@@ -72,10 +80,11 @@ it('rejects marking the viewers own message as viewed', function () {
     expect($message->fresh()->is_viewed)->toBeFalse();
 
     Event::assertNotDispatched(ChatMessagesViewedBroadcast::class);
+    Event::assertNotDispatched(ChatUnreadCountBroadcast::class);
 });
 
 it('hides messages outside the viewers conversations', function () {
-    Event::fake([ChatMessagesViewedBroadcast::class]);
+    Event::fake([ChatMessagesViewedBroadcast::class, ChatUnreadCountBroadcast::class]);
 
     $alice = User::factory()->create();
     $bob = User::factory()->create();
@@ -95,6 +104,7 @@ it('hides messages outside the viewers conversations', function () {
     expect($message->fresh()->is_viewed)->toBeFalse();
 
     Event::assertNotDispatched(ChatMessagesViewedBroadcast::class);
+    Event::assertNotDispatched(ChatUnreadCountBroadcast::class);
 });
 
 it('returns not found for an unknown message public id', function () {
