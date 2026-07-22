@@ -188,20 +188,28 @@ readonly class CachedChatMessageRepository implements ChatMessageRepositoryInter
      * @param  Closure(): mixed  $callback
      * @param  Closure(mixed): CarbonInterface  $ttlResolver
      */
+    /**
+     * @phpstan-impure
+     */
+    private function cacheHas(CacheRepository $cache, string $key): bool
+    {
+        return $cache->has($key);
+    }
+
     private function rememberLocked(
         CacheRepository $cache,
         string $key,
         Closure $callback,
         Closure $ttlResolver,
     ): mixed {
-        if ($cache->has($key)) {
+        if ($this->cacheHas($cache, $key)) {
             return $cache->get($key);
         }
 
         return $this->cache->withoutOverlapping(
             "lock:{$key}",
             function () use ($cache, $key, $callback, $ttlResolver): mixed {
-                if ($cache->has($key)) {
+                if ($this->cacheHas($cache, $key)) {
                     return $cache->get($key);
                 }
 
