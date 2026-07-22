@@ -6,6 +6,7 @@ use App\Actions\Interfaces\PreparesSendPivotData;
 use App\Actions\PrepareSendPivotDataAction;
 use App\Gates\MarkChatMessageAsViewed;
 use App\Models\User;
+use App\Repositories\Eloquent\CachedChatMessageRepository;
 use App\Repositories\Eloquent\CachedSendsRepository;
 use App\Repositories\Eloquent\ChatMessageRepository;
 use App\Repositories\Eloquent\ConversationRepository;
@@ -50,6 +51,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SendRepositoryInterface::class, SendRepository::class);
         $this->app->bind(SendWriteServiceInterface::class, SendWriteService::class);
         $this->app->bind(SendReadServiceInterface::class, SendReadService::class);
+
+        $this->app->extend(ChatMessageRepositoryInterface::class, function (ChatMessageRepositoryInterface $repository, Application $app) {
+            return new CachedChatMessageRepository(
+                $repository,
+                $app->make('cache.store')
+            );
+        });
 
         $this->app->extend(SendRepositoryInterface::class, function (SendRepositoryInterface $repository, Application $app) {
             return new CachedSendsRepository(

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'cache_ttl' => env('CHAT_CACHE_TTL', 60),
     'payload' => [
         'max_length' => env('CHAT_ENCRYPTED_MAX_LENGTH', 8192),
     ],

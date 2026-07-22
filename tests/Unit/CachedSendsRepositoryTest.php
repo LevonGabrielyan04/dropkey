@@ -38,7 +38,7 @@ function makeCachedRepository(
     ?CacheRepository $cache = null,
 ): array {
     $innerRepository ??= Mockery::mock(SendRepositoryInterface::class);
-    $cache ??= Cache::store('array');
+    $cache ??= Cache::store();
 
     return [
         new CachedSendsRepository($innerRepository, $cache),
@@ -55,7 +55,7 @@ it('find returns a cached send without querying the inner repository', function 
     $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
 
     expect($repository->find($send->id))->toBe($send)
-        ->and($repository->find($send->id))->toBe($send);
+        ->and($repository->find($send->id))->toEqual($send);
 });
 
 it('find queries the inner repository on a cache miss', function () {
@@ -91,8 +91,8 @@ it('find returns an expired send and caches it with the negative ttl', function 
     $innerRepository->shouldReceive('find')->once()->with($send->id)->andReturn($send);
 
     expect($repository->find($send->id))->toBe($send)
-        ->and($repository->find($send->id))->toBe($send)
-        ->and($cache->get("send_{$send->id}"))->toBe($send);
+        ->and($repository->find($send->id))->toEqual($send)
+        ->and($cache->get("send_{$send->id}"))->toEqual($send);
 });
 
 it('find uses the configured ttl for active sends', function () {
@@ -102,7 +102,7 @@ it('find uses the configured ttl for active sends', function () {
     $send = SendFactory::make();
     $send->valid_to = now()->addMinutes(30);
 
-    [$repository, $innerRepository] = makeCachedRepository();
+    [$repository, $innerRepository] = makeCachedRepository(cache: Cache::store('array'));
 
     $innerRepository->shouldReceive('find')->twice()->with($send->id)->andReturn($send);
 
@@ -119,7 +119,7 @@ it('find uses the negative cache ttl for missing sends', function () {
 
     $sendId = (string) Str::ulid();
 
-    [$repository, $innerRepository] = makeCachedRepository();
+    [$repository, $innerRepository] = makeCachedRepository(cache: Cache::store('array'));
 
     $innerRepository->shouldReceive('find')->twice()->with($sendId)->andReturnNull();
 
@@ -141,7 +141,7 @@ it('findAll returns a cached collection without querying the inner repository', 
     $innerRepository->shouldReceive('findAll')->once()->with($userId, $columns)->andReturn($collection);
 
     expect($repository->findAll($userId, $columns))->toHaveCount(1)
-        ->and($repository->findAll($userId, $columns)->first())->toBe($send);
+        ->and($repository->findAll($userId, $columns)->first())->toEqual($send);
 });
 
 it('findAll queries the inner repository on a cache miss', function () {
@@ -213,7 +213,7 @@ it('findAll recovers when the cached collection contains non-send items', functi
     $result = $repository->findAll($userId, $columns);
 
     expect($result)->toBe($collection)
-        ->and($result->first())->toBe($send);
+        ->and($result->first())->toEqual($send);
 });
 
 it('create stores the send in cache and invalidates the user send list cache', function () {
@@ -240,7 +240,7 @@ it('create stores the send in cache and invalidates the user send list cache', f
     $cache->put("active_sends_count_{$userId}", 1, now()->addMinutes(60));
 
     expect($repository->create($sendData))->toBe($send)
-        ->and($cache->get("send_{$send->id}"))->toBe($send)
+        ->and($cache->get("send_{$send->id}"))->toEqual($send)
         ->and($cache->has("sends_{$userId}"))->toBeFalse()
         ->and($cache->has(sendsListCacheKey($userId, $columns)))->toBeFalse()
         ->and($cache->has("active_sends_count_{$userId}"))->toBeFalse();
@@ -270,7 +270,7 @@ it('countActiveForUser uses remember with an expiration derived from send valid_
     $send->valid_to = now()->addMinutes(30);
     $collection = new Collection([$send]);
 
-    [$repository, $innerRepository, $cache] = makeCachedRepository();
+    [$repository, $innerRepository, $cache] = makeCachedRepository(cache: Cache::store('array'));
 
     $cache->put(sendsListCacheKey($userId, ['valid_to']), $collection, now()->addMinutes(60));
 

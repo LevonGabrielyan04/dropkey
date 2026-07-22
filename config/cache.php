@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\ChatMessage;
+use App\Models\Send;
+use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -138,6 +142,12 @@ return [
         Collection::class,
         CarbonImmutable::class,
         stdClass::class,
+
+        // Application repositories cache Eloquent models and collections in Redis.
+        EloquentCollection::class,
+        ChatMessage::class,
+        Send::class,
+        User::class,
     ],
 
 ];

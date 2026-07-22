@@ -29,7 +29,7 @@
         <env name="REVERB_HOST" value="localhost"/>
         <env name="REVERB_PORT" value="8080"/>
         <env name="REVERB_SCHEME" value="http"/>
-        <env name="CACHE_STORE" value="array"/>
+        <env name="CACHE_STORE" value="redis"/>
         <env name="CSP_ENABLED_WHILE_HOT_RELOADING" value="true"/>
 
         <env name="DB_CONNECTION" value="sqlite"/>
