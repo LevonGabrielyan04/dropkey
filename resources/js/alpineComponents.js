@@ -190,6 +190,7 @@ document.addEventListener('alpine:init', () => {
                     return false;
                 }
 
+                // Avoid turnstile.ready() with async/defer api.js — Cloudflare throws TurnstileError.
                 this.widgetId = window.turnstile.render(this.$el, {
                     sitekey: this.$el.dataset.sitekey,
                     theme: this.$el.dataset.theme || 'auto',
@@ -202,24 +203,13 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            if (window.turnstile) {
-                window.turnstile.ready(() => {
-                    tryRender();
-                });
-
-                return;
-            }
-
             this.pollId = window.setInterval(() => {
-                if (! window.turnstile) {
+                if (! tryRender()) {
                     return;
                 }
 
                 window.clearInterval(this.pollId);
                 this.pollId = null;
-                window.turnstile.ready(() => {
-                    tryRender();
-                });
             }, 50);
         },
 
