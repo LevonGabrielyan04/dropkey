@@ -118,6 +118,7 @@
                     @input="setNewViewer"
                     @keydown.enter.prevent="addViewer"
                     @keydown.comma.prevent="addViewer"
+                    enterkeyhint="enter"
                     placeholder="{{ __('Enter a user name and press Enter') }}"
                     class="mt-2 block w-full !rounded-none border-2 border-zinc-950 bg-white px-3 py-2.5 font-mono text-sm text-zinc-950 focus:border-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:border-zinc-100 dark:bg-zinc-900 dark:text-zinc-50 @error('viewers') border-red-600 @enderror"
                     :required="isViewerInputRequired"

@@ -23,6 +23,7 @@ it('shows the encryption indicator on the create form', function () {
         ->assertSee('data-min-password-length="'.$minLength.'"', false)
         ->assertSee('placeholder="Minimum '.$minLength.' characters"', false)
         ->assertSee('placeholder="Enter a user name and press Enter"', false)
+        ->assertSee('enterkeyhint="enter"', false)
         ->assertDontSee('Enter an email address and press Enter', false)
         ->assertDontSee('leave blank', false)
         ->assertDontSee('(Optional)', false);
